@@ -65,7 +65,7 @@ Nenhuma chave de serviço, pagamento ou modelo usa prefixo `NEXT_PUBLIC_`.
 ## Vercel
 
 - Runtime Node, não Edge, nas rotas de mapa, webhook, PDF e jobs.
-- Cron em `vercel.json` chama `/api/jobs/run` a cada cinco minutos. A Vercel precisa enviar `Authorization: Bearer $CRON_SECRET`.
+- Cron em `vercel.json` chama `/api/jobs/run` uma vez por dia, às 11:00 UTC (08:00 em Brasília), no limite do plano Hobby. A Vercel precisa enviar `Authorization: Bearer $CRON_SECRET`. O webhook da InfinitePay já dispara os jobs na hora do pagamento.
 - Webhook da InfinitePay: `https://SEU_DOMINIO/api/webhooks/infinitepay`. Em localhost a URL de webhook não é enviada, porque o provedor não alcança a máquina.
 - Habilite o Checkout Integrado no app da InfinitePay e confirme Pix e cartão. O app não desenha um checkout de cartão. A volta do navegador e o webhook não liberam a leitura sozinhos: o servidor consulta `payment_check`.
 
