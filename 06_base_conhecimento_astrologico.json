@@ -1,0 +1,457 @@
+{
+  "status": "RASCUNHO_EDITORIZAVEL_NAO_PUBLICADO",
+  "descricao": "Resumos operacionais elaborados a partir dos dois PDFs-base enviados. NÃO substituem a fonte original nem devem ir diretamente à IA de produção antes de revisão/aprovação editorial. O material não oferece um glossário autônomo completo dos signos.",
+  "casas": [
+    {
+      "numero": 1,
+      "titulo": "Individualização e presença",
+      "resumo": "Início da experiência, identidade em formação, corpo, expressão pessoal e como a pessoa encontra a vida. O Ascendente representa uma lente inicial de percepção e resposta, que pode ser desenvolvida conscientemente.",
+      "palavras_chave": [
+        "identidade",
+        "presença",
+        "iniciativa",
+        "autodescoberta",
+        "ascendente"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "1–4"
+    },
+    {
+      "numero": 2,
+      "titulo": "Valor, recursos e sustentação",
+      "resumo": "Recursos próprios, corpo, bens, talentos, valores, desejo, autoestima e segurança. O foco vai além de dinheiro: como cada pessoa reconhece e cultiva aquilo que lhe dá sustentação.",
+      "palavras_chave": [
+        "recursos",
+        "valores",
+        "segurança",
+        "autoestima",
+        "desejo"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "4–7"
+    },
+    {
+      "numero": 3,
+      "titulo": "Percepção e comunicação",
+      "resumo": "Relação com o entorno imediato, aprendizagem, linguagem, mente concreta, irmãos e deslocamentos próximos. Destaca os filtros por meio dos quais interpretamos informações e experiências.",
+      "palavras_chave": [
+        "aprendizagem",
+        "comunicação",
+        "ambiente próximo",
+        "linguagem",
+        "percepção"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "7–10"
+    },
+    {
+      "numero": 4,
+      "titulo": "Raízes e base interior",
+      "resumo": "Lar, origem, família, raízes, intimidade, sensação de pertencimento e imagens internalizadas das figuras parentais. Trata da construção de uma base emocional própria.",
+      "palavras_chave": [
+        "origem",
+        "lar",
+        "pertencimento",
+        "raízes",
+        "vida privada",
+        "base emocional"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "10–13"
+    },
+    {
+      "numero": 5,
+      "titulo": "Expressão criativa e prazer",
+      "resumo": "Alegria de viver, criatividade, romances, filhos, hobbies, espontaneidade e capacidade de colocar algo próprio no mundo. Expressar-se sem depender exclusivamente de aplausos externos.",
+      "palavras_chave": [
+        "criatividade",
+        "prazer",
+        "expressão",
+        "romance",
+        "filhos",
+        "brilho"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "13–16"
+    },
+    {
+      "numero": 6,
+      "titulo": "Rotina, serviço e aperfeiçoamento",
+      "resumo": "Vida cotidiana, trabalho prático, hábitos, saúde como tema simbólico de rotina e cuidado, serviço e desenvolvimento progressivo de habilidades. Não constitui diagnóstico de saúde.",
+      "palavras_chave": [
+        "rotina",
+        "trabalho cotidiano",
+        "serviço",
+        "hábitos",
+        "disciplina",
+        "aperfeiçoamento"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "16–17"
+    },
+    {
+      "numero": 7,
+      "titulo": "O encontro com o outro",
+      "resumo": "Relacionamentos, casamento, acordos, sociedades, compromisso e projeção de qualidades nos parceiros. Envolve equilibrar identidade própria e vínculo com outras pessoas.",
+      "palavras_chave": [
+        "parcerias",
+        "relacionamento",
+        "compromisso",
+        "projeção",
+        "espelhamento"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "17–18"
+    },
+    {
+      "numero": 8,
+      "titulo": "Transformação e compartilhamento",
+      "resumo": "Crises e renascimentos simbólicos, recursos compartilhados, intimidade, perdas, controle e regeneração. A linguagem deve evitar prever acontecimentos concretos ou traumas.",
+      "palavras_chave": [
+        "transformação",
+        "intimidade",
+        "recursos compartilhados",
+        "perda",
+        "regeneração"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "18–19"
+    },
+    {
+      "numero": 9,
+      "titulo": "Sentido e expansão da visão",
+      "resumo": "Busca de significado, filosofia, fé, religião, espiritualidade, ensino superior, longas viagens, contato com outras culturas e sistemas de compreensão mais amplos.",
+      "palavras_chave": [
+        "propósito",
+        "filosofia",
+        "espiritualidade",
+        "ensino superior",
+        "visão de mundo"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "19–22"
+    },
+    {
+      "numero": 10,
+      "titulo": "Realização pública e vocação",
+      "resumo": "Carreira, contribuição ao mundo, responsabilidade, imagem pública, autoridade e reconhecimento. O Meio-do-Céu se relaciona ao ápice visível da jornada social.",
+      "palavras_chave": [
+        "carreira",
+        "vocação",
+        "autoridade",
+        "reputação",
+        "reconhecimento"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "22–23"
+    },
+    {
+      "numero": 11,
+      "titulo": "Grupos e futuro compartilhado",
+      "resumo": "Amizades, coletivos, comunidade, cooperação, ideais, redes sociais, participação no todo e projetos para o futuro.",
+      "palavras_chave": [
+        "amizades",
+        "grupos",
+        "comunidade",
+        "cooperação",
+        "ideais",
+        "futuro"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "23–25"
+    },
+    {
+      "numero": 12,
+      "titulo": "Inconsciente e experiência de unidade",
+      "resumo": "Dimensões inconscientes, recolhimento, entrega, compaixão, dissolução dos limites habituais do eu e experiência simbólica de conexão com algo maior. Evitar diagnosticar estados psicológicos.",
+      "palavras_chave": [
+        "inconsciente",
+        "recolhimento",
+        "transcendência",
+        "entrega",
+        "compaixão"
+      ],
+      "fonte": "Casas Astrológicas .pdf",
+      "paginas_fonte": "25–28"
+    }
+  ],
+  "pontos": [
+    {
+      "id": "sun",
+      "nome": "Sol",
+      "resumo": "Desenvolvimento consciente de identidade, individualidade e expressão do eu; a casa assinala um campo em que a pessoa busca autorrealização e reconhecimento.",
+      "palavras_chave": [
+        "identidade",
+        "consciência",
+        "expressão",
+        "realização"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "1"
+    },
+    {
+      "id": "moon",
+      "nome": "Lua",
+      "resumo": "Natureza emocional, reações instintivas, necessidades de conforto e segurança, cuidado, hábitos e formas de absorver a atmosfera do ambiente.",
+      "palavras_chave": [
+        "emoções",
+        "segurança",
+        "instintos",
+        "cuidado",
+        "hábitos"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "1–2"
+    },
+    {
+      "id": "mercury",
+      "nome": "Mercúrio",
+      "resumo": "Pensamento, aprendizagem, interpretação do mundo, linguagem e comunicação. A casa indica onde observação e troca de informações ganham destaque.",
+      "palavras_chave": [
+        "mente",
+        "linguagem",
+        "comunicação",
+        "aprendizagem"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "3"
+    },
+    {
+      "id": "venus",
+      "nome": "Vênus",
+      "resumo": "Afeto, vínculos, valores, autoestima, apreciação, prazer e harmonia. A casa sugere temas nos quais amor e reconhecimento de valor se expressam.",
+      "palavras_chave": [
+        "afeto",
+        "valores",
+        "relacionamentos",
+        "autoestima",
+        "prazer"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "3–4"
+    },
+    {
+      "id": "mars",
+      "nome": "Marte",
+      "resumo": "Ação, vontade, coragem, iniciativa e modo de enfrentar obstáculos e afirmar necessidades; possibilidade de impulsividade quando a energia perde direção.",
+      "palavras_chave": [
+        "ação",
+        "vontade",
+        "iniciativa",
+        "coragem",
+        "afirmação"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "4–5"
+    },
+    {
+      "id": "jupiter",
+      "nome": "Júpiter",
+      "resumo": "Expansão de horizontes, confiança, fé, estudos, propósito e capacidade de converter experiências em compreensão e sabedoria.",
+      "palavras_chave": [
+        "expansão",
+        "sentido",
+        "confiança",
+        "aprendizagem",
+        "sabedoria"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "5–6"
+    },
+    {
+      "id": "saturn",
+      "nome": "Saturno",
+      "resumo": "Limites, disciplina, responsabilidade, maturidade e estrutura; o que inicialmente exige esforço pode favorecer competência e autonomia.",
+      "palavras_chave": [
+        "estrutura",
+        "limites",
+        "responsabilidade",
+        "maturidade"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "7–8"
+    },
+    {
+      "id": "uranus",
+      "nome": "Urano",
+      "resumo": "Individuação, liberdade, inovação, ruptura de padrões cristalizados e abertura para formas mais autênticas de existência.",
+      "palavras_chave": [
+        "liberdade",
+        "ruptura",
+        "renovação",
+        "originalidade"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "8–9"
+    },
+    {
+      "id": "neptune",
+      "nome": "Netuno",
+      "resumo": "Sensibilidade, imaginação, idealização, inspiração, compaixão e busca de transcendência, com necessidade de discernimento entre intuição e fantasia.",
+      "palavras_chave": [
+        "sensibilidade",
+        "imaginação",
+        "transcendência",
+        "discernimento"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "9"
+    },
+    {
+      "id": "pluto",
+      "nome": "Plutão",
+      "resumo": "Sombra simbólica, poder, controle, crise, transformação e regeneração. Interpretar sem alegar acontecimentos inevitáveis ou diagnosticar experiências.",
+      "palavras_chave": [
+        "poder",
+        "transformação",
+        "sombra",
+        "regeneração"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "9–10"
+    },
+    {
+      "id": "chiron",
+      "nome": "Quíron",
+      "resumo": "Vulnerabilidade e possibilidade de transformar uma experiência sentida como ferida em compreensão, integração e sabedoria. Não inferir trauma real.",
+      "palavras_chave": [
+        "vulnerabilidade",
+        "integração",
+        "compreensão",
+        "sabedoria"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "10–11"
+    },
+    {
+      "id": "part_of_fortune",
+      "nome": "Roda da Fortuna",
+      "resumo": "Potencial simbólico de satisfação e realização associado à harmonia de Sol, Lua e Ascendente; não representa garantia de sorte ou prosperidade financeira.",
+      "palavras_chave": [
+        "satisfação",
+        "realização",
+        "integração",
+        "alegria"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "2–3"
+    },
+    {
+      "id": "south_node",
+      "nome": "Nodo Sul",
+      "resumo": "Padrões conhecidos, hábitos e tendências arraigadas que podem servir de recurso ou limitar a abertura a novas experiências.",
+      "palavras_chave": [
+        "passado simbólico",
+        "padrões",
+        "comodidade",
+        "experiência"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "5"
+    },
+    {
+      "id": "north_node",
+      "nome": "Nodo Norte",
+      "resumo": "Direção simbólica de desenvolvimento, possibilidades novas de aprendizagem, expansão da consciência e saída da zona de conforto.",
+      "palavras_chave": [
+        "desenvolvimento",
+        "aprendizagem",
+        "direção",
+        "novos caminhos"
+      ],
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
+      "paginas_fonte": "5"
+    }
+  ],
+  "signos": [
+    {
+      "id": "aries",
+      "nome": "Áries",
+      "elemento": "fogo",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "touro",
+      "nome": "Touro",
+      "elemento": "terra",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "gemeos",
+      "nome": "Gêmeos",
+      "elemento": "ar",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "cancer",
+      "nome": "Câncer",
+      "elemento": "água",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "leao",
+      "nome": "Leão",
+      "elemento": "fogo",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "virgem",
+      "nome": "Virgem",
+      "elemento": "terra",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "libra",
+      "nome": "Libra",
+      "elemento": "ar",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "escorpiao",
+      "nome": "Escorpião",
+      "elemento": "água",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "sagitario",
+      "nome": "Sagitário",
+      "elemento": "fogo",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "capricornio",
+      "nome": "Capricórnio",
+      "elemento": "terra",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "aquario",
+      "nome": "Aquário",
+      "elemento": "ar",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    },
+    {
+      "id": "peixes",
+      "nome": "Peixes",
+      "elemento": "água",
+      "significado_editorial": null,
+      "status": "PENDENTE_DE_GLOSSARIO_AUTORAL"
+    }
+  ],
+  "orientacoes": [
+    "Luz e sombra são modos possíveis de expressão da energia, não juízos morais.",
+    "Não fazer inferências clínicas ou previsões de eventos concretos a partir das casas e planetas.",
+    "Registrar a versão editorial publicada antes de usá-la em interpretações pagas."
+  ]
+}

@@ -1,0 +1,193 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f6f1;
+  --surface: #ffffff;
+  --ink: #241d22;
+  --muted: #5e5664;
+  --border: #e7e2da;
+  --wine: #482931;
+  --wine-deep: #2b1924;
+  --gold: #b99b62;
+  --gold-soft: #e8dcc6;
+  --fire: #b96a42;
+  --earth: #687b59;
+  --air: #7283b1;
+  --water: #4e8390;
+  --danger: #8c3a3a;
+  --success: #2f5d50;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-wine: var(--wine);
+  --color-wine-deep: var(--wine-deep);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-fire: var(--fire);
+  --color-earth: var(--earth);
+  --color-air: var(--air);
+  --color-water: var(--water);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-fraunces);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--ink);
+  font-family: var(--font-manrope), sans-serif;
+}
+
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+[role="button"],
+.ui-button {
+  cursor: pointer;
+  transition:
+    filter 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+button:hover:not(:disabled),
+[type="button"]:hover:not(:disabled),
+[type="submit"]:hover:not(:disabled),
+[type="reset"]:hover:not(:disabled),
+[role="button"]:hover,
+.ui-button:hover {
+  filter: brightness(0.86);
+}
+
+button:disabled,
+[type="button"]:disabled,
+[type="submit"]:disabled,
+[type="reset"]:disabled {
+  cursor: not-allowed;
+  filter: none;
+}
+
+summary {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wine);
+  outline-offset: 3px;
+}
+
+.input-shell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  transition:
+    border-color 180ms ease,
+    outline-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.input-shell:focus-within {
+  border-color: var(--wine);
+  outline-color: var(--wine);
+}
+
+.input-shell :focus-visible {
+  outline: none;
+}
+
+.input-shell-field {
+  min-height: 2.75rem;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  padding: 0 0.75rem;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.input-shell-field::placeholder {
+  color: var(--muted);
+}
+
+select.input-shell-field {
+  padding-right: 0.5rem;
+  font-size: 0.875rem;
+}
+
+textarea.input-shell-field {
+  min-height: 7rem;
+  align-self: stretch;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  resize: vertical;
+}
+
+@media (min-width: 640px) {
+  select.input-shell-field {
+    font-size: 1rem;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes admin-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.admin-drawer {
+  animation: admin-drawer-in 280ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

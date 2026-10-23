@@ -1,0 +1,46 @@
+.city-autocomplete.input-shell {
+  display: block;
+  position: relative;
+}
+
+.city-autocomplete .geoapify-autocomplete-input {
+  width: 100%;
+  min-height: 2.75rem;
+  height: 2.75rem;
+  padding: 0 2.25rem 0 0.75rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.city-autocomplete .geoapify-autocomplete-input:focus,
+.city-autocomplete .geoapify-autocomplete-input:focus-visible {
+  outline: none;
+}
+
+.city-autocomplete .geoapify-autocomplete-items {
+  z-index: 30;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.city-autocomplete .geoapify-autocomplete-items div {
+  padding: 0.75rem;
+  color: var(--ink);
+}
+
+.city-autocomplete .geoapify-autocomplete-items div:hover,
+.city-autocomplete .geoapify-autocomplete-items .active {
+  background: var(--gold-soft);
+}
+
+.city-autocomplete .geoapify-close-button {
+  color: var(--muted);
+}

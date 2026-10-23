@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" role="img" aria-label="Espaço reservado para a arte original da carta">
+  <rect width="600" height="900" fill="#F8F6F1"/>
+  <rect x="28" y="28" width="544" height="844" fill="none" stroke="#B99B62" stroke-width="2"/>
+  <text x="300" y="430" text-anchor="middle" fill="#706772" font-family="Georgia, serif" font-size="28">Arte original pendente</text>
+</svg>
