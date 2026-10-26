@@ -31,6 +31,7 @@ Aplicar, nesta ordem, no SQL editor do Supabase ou com `psql "$SUPABASE_DB_URL"`
 
 1. `supabase/migrations/20261022000000_init.sql`
 2. `supabase/migrations/20261022000001_storage.sql`
+3. `supabase/migrations/20261026000000_coupons.sql`
 
 Depois:
 

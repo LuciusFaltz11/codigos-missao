@@ -31,6 +31,24 @@ export const priceUpdateSchema = z.object({
   active: z.boolean(),
 });
 
+export const couponSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    code: z.string().trim().min(3).max(32).regex(/^[A-Za-z0-9_-]+$/),
+    kind: z.enum(["percent", "fixed"]),
+    percent: z.number().int().min(1).max(100).nullable(),
+    amountCents: z.number().int().min(1).max(100_000_00).nullable(),
+    active: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.kind === "percent" && value.percent == null) {
+      ctx.addIssue({ code: "custom", path: ["percent"], message: "Informe o percentual." });
+    }
+    if (value.kind === "fixed" && value.amountCents == null) {
+      ctx.addIssue({ code: "custom", path: ["amountCents"], message: "Informe o valor." });
+    }
+  });
+
 export const glossaryUpdateSchema = z.object({
   title: z.string().trim().min(1).max(160),
   summary: z.string().trim().min(1).max(8000),

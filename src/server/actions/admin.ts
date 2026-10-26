@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { DEFAULT_ACTIVATION_POINTS, PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
-import { adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, firstAccessSchema, glossaryUpdateSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
+import { adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
+import { normalizeCouponCode } from "@/features/checkout/coupons";
 import { isAdminRole } from "@/server/auth/rbac";
 import { getAdminSession, requirePermission } from "@/server/auth/session";
 import { tryServiceClient, trySessionClient } from "@/server/db/clients";
@@ -251,6 +252,73 @@ export async function updatePrice(formData: FormData) {
     .eq("slug", "leitura-completa");
   await audit(auth.admin.userId, "price_updated", "products", "leitura-completa");
   redirect("/admin/configuracoes?salvo=1");
+}
+
+function parseCouponForm(formData: FormData) {
+  const kind = formData.get("kind") === "fixed" ? "fixed" : "percent";
+  const percentRaw = String(formData.get("percent") ?? "").trim();
+  const amountRaw = String(formData.get("amount") ?? "").replace(",", ".");
+  return couponSchema.safeParse({
+    name: formData.get("name"),
+    code: normalizeCouponCode(String(formData.get("code") ?? "")),
+    kind,
+    percent: kind === "percent" && percentRaw ? Number(percentRaw) : null,
+    amountCents: kind === "fixed" && amountRaw ? Math.round(Number(amountRaw) * 100) : null,
+    active: formData.get("active") === "on",
+  });
+}
+
+export async function createCoupon(formData: FormData) {
+  const auth = await requirePermission("settings.write");
+  if (!auth.ok) redirect("/admin/cupons?erro=permissao");
+  const service = tryServiceClient();
+  if (!service) redirect("/admin/cupons?erro=config");
+  const parsed = parseCouponForm(formData);
+  if (!parsed.success) redirect("/admin/cupons?novo=1&erro=1");
+  const existing = await service.from("coupons").select("id").eq("code", parsed.data.code).maybeSingle();
+  if (existing.data) redirect("/admin/cupons?novo=1&erro=existe");
+  const inserted = await service
+    .from("coupons")
+    .insert({
+      name: parsed.data.name,
+      code: parsed.data.code,
+      kind: parsed.data.kind,
+      percent: parsed.data.kind === "percent" ? parsed.data.percent : null,
+      amount_cents: parsed.data.kind === "fixed" ? parsed.data.amountCents : null,
+      active: parsed.data.active,
+    })
+    .select("id")
+    .maybeSingle();
+  if (!inserted.data) redirect("/admin/cupons?novo=1&erro=1");
+  await audit(auth.admin.userId, "coupon_created", "coupons", String(inserted.data.id));
+  redirect("/admin/cupons?salvo=1");
+}
+
+export async function updateCoupon(id: string, formData: FormData) {
+  const auth = await requirePermission("settings.write");
+  if (!auth.ok) redirect(`/admin/cupons?editar=${id}&erro=permissao`);
+  const service = tryServiceClient();
+  if (!service) redirect(`/admin/cupons?editar=${id}&erro=config`);
+  const parsed = parseCouponForm(formData);
+  if (!parsed.success) redirect(`/admin/cupons?editar=${id}&erro=1`);
+  const clash = await service.from("coupons").select("id").eq("code", parsed.data.code).neq("id", id).maybeSingle();
+  if (clash.data) redirect(`/admin/cupons?editar=${id}&erro=existe`);
+  const updated = await service
+    .from("coupons")
+    .update({
+      name: parsed.data.name,
+      code: parsed.data.code,
+      kind: parsed.data.kind,
+      percent: parsed.data.kind === "percent" ? parsed.data.percent : null,
+      amount_cents: parsed.data.kind === "fixed" ? parsed.data.amountCents : null,
+      active: parsed.data.active,
+    })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (!updated.data) redirect(`/admin/cupons?editar=${id}&erro=1`);
+  await audit(auth.admin.userId, "coupon_updated", "coupons", id);
+  redirect("/admin/cupons?salvo=1");
 }
 
 export async function createAdminUser(formData: FormData) {

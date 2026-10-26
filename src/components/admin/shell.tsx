@@ -14,6 +14,7 @@ const links = [
   ["Leads", "/admin/leads"],
   ["Mapas", "/admin/mapas"],
   ["Pedidos", "/admin/pedidos"],
+  ["Cupons", "/admin/cupons"],
   ["Relatórios", "/admin/relatorios"],
   ["Usuários", "/admin/usuarios"],
   ["Auditoria", "/admin/auditoria"],

@@ -12,6 +12,7 @@ const labels: Record<string, string> = {
   leads: "Leads",
   mapas: "Mapas",
   pedidos: "Pedidos",
+  cupons: "Cupons",
   relatorios: "Relatórios",
   usuarios: "Usuários",
   auditoria: "Auditoria",
