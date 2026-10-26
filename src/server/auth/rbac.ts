@@ -24,6 +24,7 @@ const MATRIX: Record<AdminRole, readonly Permission[]> = {
     "dashboard.read",
     "content.read",
     "content.write",
+    "methodology.publish",
     "leads.read",
     "orders.read",
     "orders.reprocess",

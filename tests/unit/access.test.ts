@@ -130,9 +130,10 @@ describe("validador da leitura", () => {
 });
 
 describe("RBAC", () => {
-  it("restringe publicação e convite ao super admin", () => {
+  it("restringe convite ao super admin e publicação a admin e super admin", () => {
     expect(roleHas("super_admin", "methodology.publish")).toBe(true);
-    expect(roleHas("admin", "methodology.publish")).toBe(false);
+    expect(roleHas("admin", "methodology.publish")).toBe(true);
+    expect(roleHas("editor", "methodology.publish")).toBe(false);
     expect(roleHas("editor", "content.write")).toBe(true);
     expect(roleHas("editor", "leads.read")).toBe(false);
     expect(roleHas("support", "orders.read")).toBe(true);

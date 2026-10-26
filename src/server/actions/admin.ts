@@ -125,7 +125,7 @@ export async function updateGlossary(kind: "house" | "point", id: string, formDa
 
 export async function saveMethodologyDraft(formData: FormData) {
   const auth = await requirePermission("content.write");
-  if (!auth.ok) redirect("/admin/login");
+  if (!auth.ok) redirect(auth.status === 401 ? "/admin/login" : "/admin/metodologia?erro=permissao");
   const service = tryServiceClient();
   if (!service) redirect("/admin/metodologia?erro=config");
   const parsed = methodologyDraftSchema.safeParse({
@@ -138,18 +138,28 @@ export async function saveMethodologyDraft(formData: FormData) {
     rulesValidated: formData.get("rulesValidated") === "on",
   });
   if (!parsed.success) redirect("/admin/metodologia?erro=1");
-  await service
-    .from("methodology_versions")
-    .update({
-      zodiac: parsed.data.zodiac,
-      house_system: parsed.data.houseSystem,
-      node_mode: parsed.data.nodeMode,
-      fortuna_rule: parsed.data.fortunaRule,
-      activate_ascendant: parsed.data.activateAscendant,
-      free_preview_point: parsed.data.freePreviewPoint,
-      rules_validated: parsed.data.rulesValidated,
-    })
-    .eq("status", "draft");
+  const fields = {
+    zodiac: parsed.data.zodiac,
+    house_system: parsed.data.houseSystem,
+    node_mode: parsed.data.nodeMode,
+    fortuna_rule: parsed.data.fortunaRule,
+    activate_ascendant: parsed.data.activateAscendant,
+    free_preview_point: parsed.data.freePreviewPoint,
+    rules_validated: parsed.data.rulesValidated,
+  };
+  const draft = await service.from("methodology_versions").select("id").eq("status", "draft").maybeSingle();
+  if (draft.data) {
+    await service.from("methodology_versions").update(fields).eq("id", draft.data.id);
+  } else {
+    const inserted = await service.from("methodology_versions").insert({
+      ...fields,
+      label: "rascunho",
+      status: "draft",
+      activation_points: [...DEFAULT_ACTIVATION_POINTS],
+      rules_note: PROVISIONAL_ASTROLOGY_NOTICE,
+    });
+    if (inserted.error) redirect("/admin/metodologia?erro=1");
+  }
   await audit(auth.admin.userId, "methodology_draft_saved", "methodology_versions", "draft");
   redirect("/admin/metodologia?salvo=1");
 }
