@@ -162,6 +162,8 @@ describe("RBAC", () => {
   it("restringe convite ao super admin e publicação a admin e super admin", () => {
     expect(roleHas("super_admin", "methodology.publish")).toBe(true);
     expect(roleHas("admin", "methodology.publish")).toBe(true);
+    expect(roleHas("admin", "users.invite")).toBe(true);
+    expect(roleHas("editor", "users.invite")).toBe(false);
     expect(roleHas("editor", "methodology.publish")).toBe(false);
     expect(roleHas("editor", "content.write")).toBe(true);
     expect(roleHas("editor", "leads.read")).toBe(false);
@@ -171,6 +173,26 @@ describe("RBAC", () => {
 });
 
 describe("usuários do painel", () => {
+  it("exige senha coincidente para cadastro direto", async () => {
+    const { adminUserCreateSchema } = await import("@/lib/schemas/forms");
+    expect(
+      adminUserCreateSchema.safeParse({
+        email: "nova@example.com",
+        role: "editor",
+        password: "senhaforte",
+        confirm: "senhaforte",
+      }).success,
+    ).toBe(true);
+    expect(
+      adminUserCreateSchema.safeParse({
+        email: "nova@example.com",
+        role: "editor",
+        password: "senhaforte",
+        confirm: "outra",
+      }).success,
+    ).toBe(false);
+  });
+
   it("monta o link de primeiro acesso e classifica o status", async () => {
     const { adminUserStatus, firstAccessUrl } = await import("@/features/admin/users");
     expect(firstAccessUrl("http://localhost:3000/", "abcToken", "invite")).toBe(

@@ -356,12 +356,18 @@ export async function createAdminUser(formData: FormData) {
   const parsed = adminUserCreateSchema.safeParse({
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     role: formData.get("role"),
+    password: formData.get("password"),
+    confirm: formData.get("confirm"),
   });
-  if (!parsed.success) redirect("/admin/usuarios?novo=1&erro=1");
+  if (!parsed.success) redirect("/admin/usuarios?novo=1&erro=senha");
+  if (parsed.data.role === "super_admin" && auth.admin.role !== "super_admin") {
+    redirect("/admin/usuarios?novo=1&erro=permissao");
+  }
   const existing = await service.from("admin_profiles").select("id").eq("email", parsed.data.email).maybeSingle();
   if (existing.data) redirect("/admin/usuarios?novo=1&erro=existe");
   const created = await service.auth.admin.createUser({
     email: parsed.data.email,
+    password: parsed.data.password,
     email_confirm: true,
   });
   if (created.error || !created.data.user) redirect("/admin/usuarios?novo=1&erro=existe");
@@ -372,10 +378,8 @@ export async function createAdminUser(formData: FormData) {
     created_by: auth.admin.userId,
   });
   if (inserted.error) redirect("/admin/usuarios?novo=1&erro=1");
-  const mailed = await sendAdminAccessEmail(parsed.data.email, "invite");
-  if (!mailed.ok) redirect(`/admin/usuarios?editar=${created.data.user.id}&erro=${mailed.code}`);
-  await audit(auth.admin.userId, "admin_invited", "admin_profiles", created.data.user.id);
-  redirect("/admin/usuarios?salvo=convite");
+  await audit(auth.admin.userId, "admin_created", "admin_profiles", created.data.user.id);
+  redirect("/admin/usuarios?salvo=usuario");
 }
 
 export async function updateAdminUser(id: string, formData: FormData) {

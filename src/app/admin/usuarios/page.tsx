@@ -15,11 +15,12 @@ export default async function UsersPage({
   const session = await getAdminSession();
   const rows = await loadAdminUsers();
   const canManage = session ? roleHas(session.role, "users.invite") : false;
+  const canAssignSuper = session?.role === "super_admin";
   return (
     <AdminPanel>
       <h1 className="font-display text-4xl">Usuários</h1>
       <p className="mt-2 text-sm text-muted">
-        O papel fica no banco. Quem entra pela primeira vez cria a própria senha pelo e-mail de convite.
+        Cadastre e-mail, papel e senha neste painel. A pessoa entra com esses dados, sem depender do e-mail de convite.
       </p>
       {rows.length === 0 ? (
         <div className="mt-6">
@@ -29,6 +30,7 @@ export default async function UsersPage({
       <UsersPanel
         rows={rows}
         canManage={canManage}
+        canAssignSuper={canAssignSuper}
         currentUserId={session?.userId ?? null}
         initialId={notice.editar}
         creating={notice.novo === "1"}

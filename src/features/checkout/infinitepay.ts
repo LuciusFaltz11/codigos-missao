@@ -41,8 +41,45 @@ export function slugFromCheckoutUrl(checkoutUrl: string) {
   }
 }
 
+export type CheckoutLinkInput = {
+  handle: string;
+  orderNsu: string;
+  title: string;
+  amountCents: number;
+  customerName: string;
+  customerEmail: string;
+  appUrl: string;
+};
+
 function textField(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+export function parseProviderError(body: unknown) {
+  const record = asRecord(body);
+  if (!record) return null;
+  return textField(record.message) ?? textField(record.error);
+}
+
+export function buildCheckoutLinkPayload(input: CheckoutLinkInput) {
+  const appUrl = input.appUrl.replace(/\/$/, "");
+  const payload: Record<string, unknown> = {
+    handle: input.handle,
+    order_nsu: input.orderNsu,
+    items: [{ quantity: 1, price: input.amountCents, description: input.title }],
+  };
+  if (appUrl.startsWith("https://")) {
+    payload.redirect_url = `${appUrl}/pagamento/retorno`;
+    payload.webhook_url = `${appUrl}/api/webhooks/infinitepay`;
+  }
+  const name = input.customerName.trim();
+  const email = input.customerEmail.trim();
+  if (name && email) payload.customer = { name, email };
+  return payload;
 }
 
 function centsField(value: unknown) {
@@ -54,10 +91,21 @@ function parseEvent(value: unknown): InfinitePayEvent | null {
 }
 
 export function parseCheckoutLink(body: unknown): CheckoutLink | null {
-  if (!body || typeof body !== "object") return null;
-  const checkoutUrl = textField((body as { checkout_url?: unknown }).checkout_url);
+  const record = asRecord(body);
+  if (!record) return null;
+  const nested = asRecord(record.data);
+  const checkoutUrl =
+    textField(record.checkout_url) ??
+    textField(record.checkoutUrl) ??
+    textField(record.url) ??
+    (nested
+      ? textField(nested.checkout_url) ?? textField(nested.checkoutUrl) ?? textField(nested.url)
+      : null);
   if (!checkoutUrl) return null;
-  return { checkoutUrl, slug: slugFromCheckoutUrl(checkoutUrl) };
+  return {
+    checkoutUrl,
+    slug: slugFromCheckoutUrl(checkoutUrl) ?? textField(record.invoice_slug) ?? textField(record.slug),
+  };
 }
 
 export function parsePaymentCheck(body: unknown): PaymentCheck | null {

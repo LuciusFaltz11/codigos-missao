@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { parseCheckoutLink, parsePaymentCheck, parseWebhookPayload, slugFromCheckoutUrl } from "@/features/checkout/infinitepay";
+import {
+  buildCheckoutLinkPayload,
+  parseCheckoutLink,
+  parsePaymentCheck,
+  parseProviderError,
+  parseWebhookPayload,
+  slugFromCheckoutUrl,
+} from "@/features/checkout/infinitepay";
 import { decidePaymentTransition, type ProviderPayment } from "@/features/checkout/transition";
 
 const order = {
@@ -22,12 +29,43 @@ function payment(overrides: Partial<ProviderPayment> = {}): ProviderPayment {
   };
 }
 
+const linkInput = {
+  handle: "minha-loja",
+  orderNsu: "ord_1",
+  title: "Leitura completa",
+  amountCents: 3500,
+  customerName: "Maria Silva",
+  customerEmail: "maria@example.com",
+  appUrl: "https://codigosmissao.com",
+};
+
 describe("link da InfinitePay", () => {
   it("lê o slug em checkout_url", () => {
     const parsed = parseCheckoutLink({ checkout_url: "https://checkout.infinitepay.io/minha-loja/1RxANX7tdF" });
     expect(parsed?.checkoutUrl).toContain("checkout.infinitepay.io");
     expect(parsed?.slug).toBe("1RxANX7tdF");
     expect(slugFromCheckoutUrl("https://checkout.infinitepay.io/minha-loja/abc123")).toBe("abc123");
+    expect(parseCheckoutLink({ data: { checkout_url: "https://checkout.infinitepay.io/minha-loja/nested" } })?.slug).toBe("nested");
+    expect(parseCheckoutLink({ url: "https://checkout.infinitepay.io/minha-loja/live-url" })?.slug).toBe("live-url");
+    expect(parseProviderError({ success: false, message: "param is missing or the value is empty or invalid: handle" })).toContain("handle");
+  });
+
+  it("envia só os campos documentados do Checkout Integrado", () => {
+    const httpsPayload = buildCheckoutLinkPayload(linkInput);
+    expect(httpsPayload).toEqual({
+      handle: "minha-loja",
+      order_nsu: "ord_1",
+      items: [{ quantity: 1, price: 3500, description: "Leitura completa" }],
+      redirect_url: "https://codigosmissao.com/pagamento/retorno",
+      webhook_url: "https://codigosmissao.com/api/webhooks/infinitepay",
+      customer: { name: "Maria Silva", email: "maria@example.com" },
+    });
+    expect(httpsPayload).not.toHaveProperty("options");
+    expect(httpsPayload).not.toHaveProperty("webhook");
+
+    const localPayload = buildCheckoutLinkPayload({ ...linkInput, appUrl: "http://localhost:3000" });
+    expect(localPayload.redirect_url).toBeUndefined();
+    expect(localPayload.webhook_url).toBeUndefined();
   });
 });
 

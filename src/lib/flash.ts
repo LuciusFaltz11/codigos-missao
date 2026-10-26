@@ -63,9 +63,11 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
     },
     "/admin/usuarios": () => {
       if (salvo === "1") return successFlash("Alteração salva.");
+      if (salvo === "usuario") return successFlash("Usuário criado. Já é possível entrar no painel com este e-mail e senha.");
       if (salvo === "convite") return successFlash("Convite enviado. A pessoa cria a senha no primeiro acesso.");
       if (salvo === "email") return successFlash("E-mail de acesso reenviado.");
       if (erro === "permissao") return errorFlash("Seu papel não gerencia usuários.");
+      if (erro === "senha") return errorFlash("A senha precisa ter pelo menos 8 caracteres e coincidir com a confirmação.");
       if (erro === "email") return errorFlash("Configure o envio de e-mail para cadastrar ou reenviar o acesso.");
       if (erro === "existe") return errorFlash("Já existe um usuário com este e-mail.");
       if (erro === "ultimo") return errorFlash("O último super admin ativo não pode ser bloqueado nem rebaixado.");

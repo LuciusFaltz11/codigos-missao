@@ -6,6 +6,7 @@ import { Pencil, Plus, X } from "lucide-react";
 import { PANEL_ROLES, ROLE_LABEL, type AdminUserRow } from "@/features/admin/users";
 import { formatDateTimePt } from "@/lib/formatters";
 import { Input, Select } from "@/components/ui/input";
+import { PasswordField } from "@/components/ui/password-field";
 import { createAdminUser, resendAdminAccess, updateAdminUser } from "@/server/actions/admin";
 
 const STATUS_LABEL: Record<AdminUserRow["status"], string> = {
@@ -17,12 +18,14 @@ const STATUS_LABEL: Record<AdminUserRow["status"], string> = {
 export function UsersPanel({
   rows,
   canManage,
+  canAssignSuper,
   currentUserId,
   initialId,
   creating,
 }: {
   rows: AdminUserRow[];
   canManage: boolean;
+  canAssignSuper: boolean;
   currentUserId: string | null;
   initialId?: string;
   creating?: boolean;
@@ -75,7 +78,9 @@ export function UsersPanel({
             Novo usuário
           </button>
         </div>
-      ) : null}
+      ) : (
+        <p className="mt-4 text-sm text-muted">Somente admin ou super admin cadastra usuários neste painel.</p>
+      )}
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-160 border-collapse text-left text-sm">
           <thead>
@@ -142,7 +147,7 @@ export function UsersPanel({
                 <div>
                   <Dialog.Title className="font-display text-3xl">Novo usuário</Dialog.Title>
                   <Dialog.Description className="mt-1 text-sm text-muted">
-                    Um e-mail de primeiro acesso será enviado para a pessoa criar a própria senha.
+                    A pessoa entra no painel com o e-mail e a senha definidos aqui.
                   </Dialog.Description>
                 </div>
                 <Dialog.Close className="grid size-10 shrink-0 place-items-center rounded-lg text-muted hover:bg-gold-soft hover:text-ink" aria-label="Fechar cadastro">
@@ -152,16 +157,24 @@ export function UsersPanel({
               <form action={createAdminUser} className="grid gap-3 overflow-y-auto px-6 py-5">
                 <label className="grid gap-1 text-sm">
                   E-mail
-                  <Input type="email" name="email" required />
+                  <Input type="email" name="email" required autoComplete="off" />
                 </label>
                 <label className="grid gap-1 text-sm">
                   Papel
                   <Select name="role" defaultValue="editor">
-                    <RoleOptions />
+                    <RoleOptions allowSuper={canAssignSuper} />
                   </Select>
                 </label>
+                <label className="grid gap-1 text-sm">
+                  Senha
+                  <PasswordField name="password" placeholder="Mínimo de 8 caracteres" autoComplete="new-password" minLength={8} />
+                </label>
+                <label className="grid gap-1 text-sm">
+                  Confirmar senha
+                  <PasswordField name="confirm" placeholder="Repita a senha" autoComplete="new-password" minLength={8} />
+                </label>
                 <button className="min-h-11 rounded-xl bg-wine text-white" type="submit" disabled={!canManage}>
-                  Cadastrar e enviar e-mail
+                  Cadastrar usuário
                 </button>
               </form>
             </Dialog.Content>
@@ -190,7 +203,7 @@ export function UsersPanel({
                   <label className="grid gap-1 text-sm">
                     Papel
                     <Select name="role" defaultValue={selected.role} disabled={!canManage}>
-                      <RoleOptions />
+                      <RoleOptions allowSuper={canAssignSuper || selected.role === "super_admin"} />
                     </Select>
                   </label>
                   <label className="flex items-center gap-2 text-sm">
@@ -217,10 +230,11 @@ export function UsersPanel({
   );
 }
 
-function RoleOptions() {
+function RoleOptions({ allowSuper = true }: { allowSuper?: boolean }) {
+  const roles = allowSuper ? PANEL_ROLES : PANEL_ROLES.filter((role) => role !== "super_admin");
   return (
     <>
-      {PANEL_ROLES.map((role) => (
+      {roles.map((role) => (
         <option key={role} value={role}>
           {ROLE_LABEL[role]}
         </option>

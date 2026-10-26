@@ -3,6 +3,7 @@ import { houseNumberForLongitude, wholeSignHouse } from "@/features/astrology/ho
 import { signFromLongitude } from "@/features/astrology/longitude";
 import { resolveLocalDateTime, type TimeOption } from "@/features/astrology/time";
 import { activatePositions, type MissionActivation } from "@/features/missions/activate";
+import { attachStoredCardArt } from "@/features/missions/card-art";
 import type { MethodologySnapshot } from "@/features/interpretation/context";
 import { adoptPublishedSnapshot, provisionalSnapshot } from "@/features/methodology/snapshot";
 import { buildNatalChart, longitudeFromAngle, parseCusps, parseWheelPositions } from "@/features/astrology/wheel";
@@ -308,6 +309,20 @@ function rowToActivation(row: ActivationRow): MissionActivation {
   };
 }
 
+async function overlayActivationCardArt(service: Service, activations: MissionActivation[]) {
+  const codeIds = [...new Set(activations.map((item) => item.code.id))];
+  if (codeIds.length === 0) return activations;
+  const stored = await service.from("mission_codes").select("id,image_url,updated_at").in("id", codeIds);
+  return attachStoredCardArt(
+    activations,
+    (stored.data ?? []).map((row) => ({
+      id: String(row.id),
+      imageUrl: typeof row.image_url === "string" ? row.image_url : null,
+      version: row.updated_at ? String(row.updated_at) : null,
+    })),
+  );
+}
+
 export async function loadChartByToken(token: string) {
   const service = tryServiceClient();
   if (!service) return null;
@@ -361,7 +376,7 @@ export async function loadChartByToken(token: string) {
     positions: chart.data.positions,
     cusps: chart.data.cusps,
     birth: birth.data,
-    activations: ((activationRows.data ?? []) as ActivationRow[]).map(rowToActivation),
+    activations: await overlayActivationCardArt(service, ((activationRows.data ?? []) as ActivationRow[]).map(rowToActivation)),
     entitlement: entitlement.data
       ? entitlement.data.refund_pending_policy
         ? ("refund_pending_policy" as const)

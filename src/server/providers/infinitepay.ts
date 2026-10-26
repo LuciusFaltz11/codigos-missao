@@ -1,11 +1,7 @@
 import "server-only";
+import { buildCheckoutLinkPayload, INFINITEPAY_API, normalizeHandle, parseCheckoutLink, parsePaymentCheck, parseProviderError } from "@/features/checkout/infinitepay";
 import { getServerEnv } from "@/server/env";
-import {
-  INFINITEPAY_API,
-  normalizeHandle,
-  parseCheckoutLink,
-  parsePaymentCheck,
-} from "@/features/checkout/infinitepay";
+import { logEvent } from "@/server/logging";
 
 function credentials() {
   const env = getServerEnv();
@@ -37,28 +33,25 @@ export async function createCheckoutLink(input: {
 }) {
   const config = credentials();
   if (!config) throw new Error("infinitepay_not_configured");
-  const webhookUrl = config.appUrl.startsWith("https://") ? `${config.appUrl}/api/webhooks/infinitepay` : undefined;
-  const payload: Record<string, unknown> = {
+  const payload = buildCheckoutLinkPayload({
     handle: config.handle,
-    order_nsu: input.orderNsu,
-    redirect_url: `${config.appUrl}/pagamento/retorno`,
-    items: [{ quantity: 1, price: input.amountCents, description: input.title }],
-    customer: { name: input.customerName, email: input.customerEmail },
-    options: {
-      single_payment: true,
-      require_delivery_address: false,
-      payment_methods_enabled: ["credit_card", "pix"],
-    },
-  };
-  if (webhookUrl) {
-    payload.webhook = {
-      url: webhookUrl,
-      events: ["paid", "refunded", "canceled", "payment_failed"],
-    };
-  }
+    orderNsu: input.orderNsu,
+    title: input.title,
+    amountCents: input.amountCents,
+    customerName: input.customerName,
+    customerEmail: input.customerEmail,
+    appUrl: config.appUrl,
+  });
   const response = await postJson("/links", payload);
   const link = parseCheckoutLink(response.body);
-  if (!response.ok || !link) throw new Error("checkout_link_incomplete");
+  if (!response.ok || !link) {
+    logEvent("error", "checkout_link_failed", {
+      code: "checkout_link_incomplete",
+      status: response.status,
+      provider: parseProviderError(response.body),
+    });
+    throw new Error("checkout_link_incomplete");
+  }
   return link;
 }
 

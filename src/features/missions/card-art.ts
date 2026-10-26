@@ -22,6 +22,29 @@ export function cardArtDisplayUrl(codeId: string, imageUrl: string | null, versi
   return `/api/media/card-art/${encodeURIComponent(codeId)}${qs}`;
 }
 
+export type StoredCardArtRow = {
+  id: string;
+  imageUrl: string | null;
+  version?: string | number | null;
+};
+
+export function attachStoredCardArt<T extends { code: { id: string; imageUrl: string | null } }>(
+  items: T[],
+  stored: StoredCardArtRow[],
+): T[] {
+  const byId = new Map(stored.map((row) => [row.id, row]));
+  return items.map((item) => {
+    const art = byId.get(item.code.id);
+    return {
+      ...item,
+      code: {
+        ...item.code,
+        imageUrl: cardArtDisplayUrl(item.code.id, art?.imageUrl ?? item.code.imageUrl, art?.version),
+      },
+    };
+  });
+}
+
 export function extensionForCardArtType(contentType: string) {
   return EXTENSION_BY_TYPE[contentType] ?? null;
 }

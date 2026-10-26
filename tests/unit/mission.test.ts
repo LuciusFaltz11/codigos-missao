@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { houseNumberForLongitude, wholeSignHouse } from "@/features/astrology/houses";
 import { normalizeLongitude, signFromLongitude } from "@/features/astrology/longitude";
 import { resolveLocalDateTime } from "@/features/astrology/time";
-import { cardArtDisplayUrl, isStoredCardArtPath, readCardArtUpload } from "@/features/missions/card-art";
+import { attachStoredCardArt, cardArtDisplayUrl, isStoredCardArtPath, readCardArtUpload } from "@/features/missions/card-art";
 import { officialCatalog } from "@/features/missions/catalog";
 import { activatePositions, decanFromDegree } from "@/features/missions/activate";
 import { fireCardsMissingOilAndTarot, inspectCatalog, shadowLooksContaminated } from "@/features/missions/integrity";
@@ -115,6 +115,11 @@ describe("arte dos códigos", () => {
     expect(cardArtDisplayUrl("aries-1", "https://cdn.example/carta.png")).toBe("https://cdn.example/carta.png");
     expect(isStoredCardArtPath("aries-1.png")).toBe(true);
     expect(isStoredCardArtPath("https://cdn.example/carta.png")).toBe(false);
+    expect(
+      attachStoredCardArt([{ code: { id: "aries-2", imageUrl: null } }], [
+        { id: "aries-2", imageUrl: "aries-2.png", version: "abc" },
+      ])[0]?.code.imageUrl,
+    ).toBe("/api/media/card-art/aries-2?v=abc");
   });
 
   it("aceita PNG pequeno e recusa tipo inválido", async () => {

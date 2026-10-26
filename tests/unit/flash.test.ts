@@ -45,6 +45,13 @@ describe("avisos em toast", () => {
     });
   });
 
+  it("confirma cadastro direto de usuário no painel", () => {
+    expect(resolveFlash("/admin/usuarios", params("salvo=usuario"))).toEqual({
+      kind: "success",
+      message: "Usuário criado. Já é possível entrar no painel com este e-mail e senha.",
+    });
+  });
+
   it("ignora parâmetros que não são aviso", () => {
     expect(resolveFlash("/admin/cupons", params("editar=1&novo=1"))).toBeNull();
   });
