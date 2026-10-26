@@ -17,7 +17,7 @@ function read(name: string): string | undefined {
 
 export function getServerEnv() {
   return {
-    appUrl: read("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000",
+    appUrl: read("NEXT_APP_URL") ?? "http://localhost:3000",
     supabaseUrl: read("NEXT_PUBLIC_SUPABASE_URL"),
     supabaseAnonKey: read("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     serviceRoleKey: read("SUPABASE_SERVICE_ROLE_KEY"),

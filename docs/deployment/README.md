@@ -45,7 +45,7 @@ O seed grava os 36 códigos, o glossário como rascunho e um produto sem preço.
 
 | Variável | Uso |
 |---|---|
-| `NEXT_PUBLIC_APP_URL` | URL pública, retornos e links de e-mail |
+| `NEXT_APP_URL` | URL pública, retornos e links de e-mail. Somente servidor |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Auth do admin no browser e no servidor |
 | `SUPABASE_SERVICE_ROLE_KEY` | Somente servidor. Também deriva a chave que sela o token de acesso |
 | `SUPABASE_DB_URL` | Aplicar migrations com psql. O app não usa essa URL em runtime |

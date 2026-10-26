@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import { Toaster } from "sonner";
+import { getServerEnv } from "@/server/env";
 import "./globals.css";
 
 const sans = Manrope({
@@ -13,7 +14,7 @@ const display = Fraunces({
   variable: "--font-fraunces",
 });
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const appUrl = getServerEnv().appUrl;
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
