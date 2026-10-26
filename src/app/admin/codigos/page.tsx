@@ -28,7 +28,7 @@ function fromCatalog(): AdminCodeRow[] {
 export default async function CodesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ editar?: string; erro?: string; salvo?: string }>;
+  searchParams: Promise<{ editar?: string }>;
 }) {
   const notice = await searchParams;
   const service = tryServiceClient();
@@ -59,13 +59,8 @@ export default async function CodesPage({
     <AdminPanel>
       <h1 className="font-display text-4xl">36 códigos</h1>
       {!seeded ? <p className="mt-2 text-sm text-muted">Exibindo o arquivo oficial ainda não semeado no banco.</p> : null}
-      {notice.erro === "config" ? (
-        <p className="mt-2 text-sm text-danger" role="alert">
-          O banco não está configurado para salvar.
-        </p>
-      ) : null}
       {rows.length === 0 ? <Empty>Nenhum código.</Empty> : null}
-      <CodesEditor rows={rows} initialId={notice.editar} notice={{ erro: notice.erro, salvo: notice.salvo }} />
+      <CodesEditor rows={rows} initialId={notice.editar} />
     </AdminPanel>
   );
 }

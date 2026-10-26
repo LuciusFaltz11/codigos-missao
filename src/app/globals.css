@@ -181,6 +181,57 @@ textarea.input-shell-field {
   animation: admin-drawer-in 280ms ease-out;
 }
 
+[data-sonner-toaster] {
+  z-index: 100000 !important;
+  font-family: var(--font-manrope), sans-serif;
+}
+
+[data-sonner-toast].app-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 32px rgba(36, 29, 34, 0.12);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+[data-sonner-toast][data-type="success"].app-toast {
+  background: color-mix(in srgb, var(--success) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--success) 42%, white);
+  color: var(--success);
+}
+
+[data-sonner-toast][data-type="error"].app-toast {
+  background: color-mix(in srgb, var(--danger) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--danger) 42%, white);
+  color: var(--danger);
+}
+
+[data-sonner-toast][data-type="success"].app-toast [data-icon] {
+  color: var(--success);
+}
+
+[data-sonner-toast][data-type="error"].app-toast [data-icon] {
+  color: var(--danger);
+}
+
+[data-sonner-toast].app-toast [data-content] {
+  flex: 1 1 auto;
+}
+
+[data-sonner-toast].app-toast [data-title] {
+  font-weight: 600;
+}
+
+[data-sonner-toast].app-toast [data-close-button] {
+  border-color: currentColor;
+  background: white;
+  color: inherit;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

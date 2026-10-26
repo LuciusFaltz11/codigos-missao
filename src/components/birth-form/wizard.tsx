@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { birthHours, birthMinutes, birthMonths, birthYears, composeBirthDate, composeBirthTime, daysInMonth } from "@/components/birth-form/birth-fields";
 import { CityAutocomplete, type CitySearchStatus } from "@/components/birth-form/city-autocomplete";
 import { Button } from "@/components/ui/button";
@@ -51,11 +52,11 @@ export function BirthWizard() {
     const date = composeBirthDate(birth.year, birth.month, birth.day);
     const time = composeBirthTime(birth.hour, birth.minute);
     if (!date.ok) {
-      setMessage(date.reason === "future" ? "A data de nascimento não pode estar no futuro." : "Essa data não existe.");
+      toast.error(date.reason === "future" ? "A data de nascimento não pode estar no futuro." : "Essa data não existe.");
       return;
     }
     if (!time) {
-      setMessage("Informe a hora e o minuto do nascimento.");
+      toast.error("Informe a hora e o minuto do nascimento.");
       return;
     }
     if (!form.cityLabel) return;
@@ -88,7 +89,7 @@ export function BirthWizard() {
       setMessage(body.message);
       return;
     }
-    setMessage(body.message ?? "Não foi possível gerar o mapa.");
+    toast.error(body.message ?? "Não foi possível gerar o mapa.");
   }
 
   const dayCount = daysInMonth(birth.year, birth.month);

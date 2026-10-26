@@ -45,7 +45,7 @@ export function SiteFooter() {
           <Link href="/termos">Termos</Link>
           <Link href="/contato">Contato</Link>
         </nav>
-        <p>Metodologia autoral de Val Wilges. As artes originais das cartas ainda não foram publicadas neste ambiente.</p>
+        <p>Metodologia autoral de Val Wilges.</p>
       </div>
     </footer>
   );

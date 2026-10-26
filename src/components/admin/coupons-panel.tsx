@@ -13,13 +13,11 @@ export function CouponsPanel({
   canManage,
   initialId,
   creating,
-  notice,
 }: {
   rows: AdminCouponRow[];
   canManage: boolean;
   initialId?: string;
   creating?: boolean;
-  notice?: { erro?: string; salvo?: string };
 }) {
   const [openId, setOpenId] = useState(initialId ?? null);
   const [createOpen, setCreateOpen] = useState(Boolean(creating));
@@ -69,27 +67,6 @@ export function CouponsPanel({
             Novo cupom
           </button>
         </div>
-      ) : null}
-      {notice?.salvo === "1" ? <p className="mt-4 text-sm text-muted">Cupom salvo.</p> : null}
-      {notice?.erro === "permissao" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Seu papel não altera cupons.
-        </p>
-      ) : null}
-      {notice?.erro === "existe" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Já existe um cupom com este código.
-        </p>
-      ) : null}
-      {notice?.erro === "1" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Informe nome, código e um desconto em percentual ou em reais.
-        </p>
-      ) : null}
-      {notice?.erro === "config" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          O banco ainda não está configurado.
-        </p>
       ) : null}
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-160 border-collapse text-left text-sm">

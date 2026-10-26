@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCoupon, couponDiscountLabel, normalizeCouponCode, type CouponRecord } from "@/features/checkout/coupons";
+import { applyCoupon, couponDiscountLabel, couponOfferLabel, normalizeCouponCode, type CouponRecord } from "@/features/checkout/coupons";
 import { formatBrl } from "@/lib/formatters";
 
 function coupon(partial: Partial<CouponRecord>): CouponRecord {
@@ -39,5 +39,12 @@ describe("cupons", () => {
   it("rotula percentual e valor para o painel", () => {
     expect(couponDiscountLabel({ kind: "percent", percent: 15, amountCents: null })).toBe("15%");
     expect(couponDiscountLabel({ kind: "fixed", percent: null, amountCents: 2500 })).toBe(formatBrl(2500));
+  });
+
+  it("descreve o cupom aplicado na oferta", () => {
+    expect(couponOfferLabel(coupon({ code: "TESTE90", percent: 90 }))).toBe("TESTE90 · 90% de desconto");
+    expect(couponOfferLabel(coupon({ kind: "fixed", percent: null, amountCents: 2000 }))).toBe(
+      `LANCA10 · ${formatBrl(2000)} de desconto`,
+    );
   });
 });

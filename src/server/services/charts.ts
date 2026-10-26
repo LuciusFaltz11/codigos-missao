@@ -4,7 +4,7 @@ import { signFromLongitude } from "@/features/astrology/longitude";
 import { resolveLocalDateTime, type TimeOption } from "@/features/astrology/time";
 import { activatePositions, type MissionActivation } from "@/features/missions/activate";
 import type { MethodologySnapshot } from "@/features/interpretation/context";
-import { provisionalSnapshot } from "@/features/methodology/snapshot";
+import { adoptPublishedSnapshot, provisionalSnapshot } from "@/features/methodology/snapshot";
 import { buildNatalChart, longitudeFromAngle, parseCusps, parseWheelPositions } from "@/features/astrology/wheel";
 import { toFreePreview, type PreparedChart } from "@/features/preview/redact";
 import type { ChartRequest } from "@/lib/schemas/forms";
@@ -338,6 +338,15 @@ export async function loadChartByToken(token: string) {
     .maybeSingle();
   const product = await service.from("products").select("name,price_cents,currency,active").eq("active", true).limit(1).maybeSingle();
   const lead = await service.from("leads").select("name,email").eq("id", access.data.lead_id).maybeSingle();
+  const frozen = chart.data.methodology_snapshot as MethodologySnapshot;
+  const live = await currentSnapshot(service);
+  const snapshot = adoptPublishedSnapshot(frozen, live, {
+    chartComplete: String(chart.data.status) === "complete",
+    hasEntitlement: Boolean(entitlement.data),
+  });
+  if (snapshot !== frozen) {
+    await service.from("natal_charts").update({ methodology_snapshot: snapshot }).eq("id", chart.data.id);
+  }
   return {
     service,
     chartId: String(chart.data.id),
@@ -346,7 +355,7 @@ export async function loadChartByToken(token: string) {
     leadEmail: String(lead.data?.email ?? ""),
     status: String(chart.data.status) as PreparedChart["status"],
     errorCode: (chart.data.error_code as string | null) ?? null,
-    snapshot: chart.data.methodology_snapshot as MethodologySnapshot,
+    snapshot,
     ascendant: chart.data.ascendant as PreparedChart["ascendant"],
     midheaven: chart.data.midheaven as PreparedChart["midheaven"],
     positions: chart.data.positions,

@@ -13,6 +13,7 @@ import { officialCatalog, type MissionCode } from "@/features/missions/catalog";
 import { inspectCatalog } from "@/features/missions/integrity";
 import { activatePositions } from "@/features/missions/activate";
 import type { MethodologySnapshot } from "@/features/interpretation/context";
+import { adoptPublishedSnapshot } from "@/features/methodology/snapshot";
 
 function loginRedirect(code: string, email?: string): never {
   const params = new URLSearchParams({ erro: code });
@@ -137,7 +138,7 @@ export async function saveMethodologyDraft(formData: FormData) {
     freePreviewPoint: formData.get("freePreviewPoint"),
     rulesValidated: formData.get("rulesValidated") === "on",
   });
-  if (!parsed.success) redirect("/admin/metodologia?erro=1");
+  if (!parsed.success) redirect("/admin/metodologia?erro=salvar");
   const fields = {
     zodiac: parsed.data.zodiac,
     house_system: parsed.data.houseSystem,
@@ -149,7 +150,8 @@ export async function saveMethodologyDraft(formData: FormData) {
   };
   const draft = await service.from("methodology_versions").select("id").eq("status", "draft").maybeSingle();
   if (draft.data) {
-    await service.from("methodology_versions").update(fields).eq("id", draft.data.id);
+    const updated = await service.from("methodology_versions").update(fields).eq("id", draft.data.id);
+    if (updated.error) redirect("/admin/metodologia?erro=salvar");
   } else {
     const inserted = await service.from("methodology_versions").insert({
       ...fields,
@@ -158,7 +160,7 @@ export async function saveMethodologyDraft(formData: FormData) {
       activation_points: [...DEFAULT_ACTIVATION_POINTS],
       rules_note: PROVISIONAL_ASTROLOGY_NOTICE,
     });
-    if (inserted.error) redirect("/admin/metodologia?erro=1");
+    if (inserted.error) redirect("/admin/metodologia?erro=salvar");
   }
   await audit(auth.admin.userId, "methodology_draft_saved", "methodology_versions", "draft");
   redirect("/admin/metodologia?salvo=1");
@@ -174,7 +176,8 @@ export async function publishMethodology(formData: FormData) {
   const codes = await service.from("mission_codes").select("*").order("number");
   const houses = await service.from("house_meanings").select("*").order("house_number");
   const points = await service.from("point_meanings").select("*");
-  if (!draft.data || (codes.data ?? []).length !== 36) redirect("/admin/metodologia?erro=catalogo");
+  if (!draft.data) redirect("/admin/metodologia?erro=rascunho");
+  if ((codes.data ?? []).length !== 36) redirect("/admin/metodologia?erro=catalogo");
   const mapped: MissionCode[] = (codes.data ?? []).map((row) => ({
     id: String(row.id),
     number: Number(row.number),
@@ -241,6 +244,20 @@ export async function publishMethodology(formData: FormData) {
     published_by: auth.admin.userId,
   });
   if (inserted.error) redirect("/admin/metodologia?erro=1");
+  const unpaid = await service.from("natal_charts").select("id,status,methodology_snapshot");
+  const entitled = await service.from("entitlements").select("chart_id");
+  const entitledIds = new Set((entitled.data ?? []).map((row) => String(row.chart_id)));
+  for (const chart of unpaid.data ?? []) {
+    if (entitledIds.has(String(chart.id))) continue;
+    const frozen = chart.methodology_snapshot as MethodologySnapshot;
+    const next = adoptPublishedSnapshot(frozen, snapshot, {
+      chartComplete: String(chart.status) === "complete",
+      hasEntitlement: false,
+    });
+    if (next !== frozen) {
+      await service.from("natal_charts").update({ methodology_snapshot: next }).eq("id", chart.id);
+    }
+  }
   await audit(auth.admin.userId, "methodology_published", "methodology_versions", snapshot.versionLabel);
   redirect("/admin/metodologia?publicado=1");
 }

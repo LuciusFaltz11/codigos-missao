@@ -34,12 +34,7 @@ function StatusPill({ state }: { state: IntegrationState }) {
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>{STATUS_LABEL[state]}</span>;
 }
 
-export default async function SettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ erro?: string; salvo?: string }>;
-}) {
-  const notice = await searchParams;
+export default async function SettingsPage() {
   const session = await getAdminSession();
   const canWrite = session ? roleHas(session.role, "settings.write") : false;
   const env = getServerEnv();
@@ -57,22 +52,6 @@ export default async function SettingsPage({
       <p className="mt-2 max-w-2xl text-sm text-muted">
         Preço da leitura completa e o estado das integrações. Nenhuma chave secreta aparece aqui.
       </p>
-      {notice.salvo === "1" ? <p className="mt-4 text-sm text-muted">Preço salvo.</p> : null}
-      {notice.erro === "permissao" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Seu papel não altera o preço.
-        </p>
-      ) : null}
-      {notice.erro === "config" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          O banco ainda não está configurado.
-        </p>
-      ) : null}
-      {notice.erro === "1" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Informe um valor entre R$ 1,00 e R$ 100.000,00.
-        </p>
-      ) : null}
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
         <section className="rounded-3xl border border-border bg-surface p-6">

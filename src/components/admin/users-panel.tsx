@@ -20,14 +20,12 @@ export function UsersPanel({
   currentUserId,
   initialId,
   creating,
-  notice,
 }: {
   rows: AdminUserRow[];
   canManage: boolean;
   currentUserId: string | null;
   initialId?: string;
   creating?: boolean;
-  notice?: { erro?: string; salvo?: string };
 }) {
   const [openId, setOpenId] = useState(initialId ?? null);
   const [createOpen, setCreateOpen] = useState(Boolean(creating));
@@ -77,39 +75,6 @@ export function UsersPanel({
             Novo usuário
           </button>
         </div>
-      ) : null}
-      {notice?.salvo === "1" ? <p className="mt-4 text-sm text-muted">Alteração salva.</p> : null}
-      {notice?.salvo === "convite" ? <p className="mt-4 text-sm text-muted">Convite enviado. A pessoa cria a senha no primeiro acesso.</p> : null}
-      {notice?.salvo === "email" ? <p className="mt-4 text-sm text-muted">E-mail de acesso reenviado.</p> : null}
-      {notice?.erro === "permissao" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Seu papel não gerencia usuários.
-        </p>
-      ) : null}
-      {notice?.erro === "email" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Configure o envio de e-mail para cadastrar ou reenviar o acesso.
-        </p>
-      ) : null}
-      {notice?.erro === "existe" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Já existe um usuário com este e-mail.
-        </p>
-      ) : null}
-      {notice?.erro === "ultimo" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          O último super admin ativo não pode ser bloqueado nem rebaixado.
-        </p>
-      ) : null}
-      {notice?.erro === "proprio" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Você não pode bloquear o próprio acesso.
-        </p>
-      ) : null}
-      {notice?.erro === "1" || notice?.erro === "config" || notice?.erro === "link" || notice?.erro === "send" ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          Não foi possível concluir esta ação.
-        </p>
       ) : null}
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-160 border-collapse text-left text-sm">

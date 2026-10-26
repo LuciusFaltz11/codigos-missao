@@ -1,14 +1,62 @@
 import Link from "next/link";
 import { PageShell } from "@/components/site/chrome";
 import { MissionCard } from "@/components/mission-cards/mission-card";
+import { cardArtDisplayUrl } from "@/features/missions/card-art";
 import { officialCatalog } from "@/features/missions/catalog";
 import { elementLabel, signBySlug, DISCLAIMER } from "@/lib/constants/astrology";
+import { tryServiceClient } from "@/server/db/clients";
 
-const samples = ["aries-1", "touro-2", "peixes-3"]
-  .map((id) => officialCatalog.find((code) => code.id === id))
-  .filter((code) => code !== undefined);
+export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+const HOME_SAMPLE_IDS = ["aries-1", "touro-2", "peixes-3"];
+
+type HomeSample = {
+  id: string;
+  archetype: string;
+  keyword: string;
+  signSlug: string;
+  signName: string;
+  decan: number;
+  imageSrc: string | null;
+};
+
+function pickHomeSampleIds(rows: { id: string; image_url: string | null }[]) {
+  const withArt = new Set(rows.filter((row) => row.image_url).map((row) => String(row.id)));
+  const preferred = HOME_SAMPLE_IDS.filter((id) => withArt.has(id));
+  if (preferred.length === HOME_SAMPLE_IDS.length) return preferred;
+  const rest = rows.map((row) => String(row.id)).filter((id) => withArt.has(id) && !preferred.includes(id));
+  const picked = [...preferred, ...rest].slice(0, 3);
+  return picked.length > 0 ? picked : HOME_SAMPLE_IDS;
+}
+
+async function loadHomeSamples(): Promise<HomeSample[]> {
+  const service = tryServiceClient();
+  const stored = service
+    ? await service.from("mission_codes").select("id,image_url,updated_at").order("number")
+    : null;
+  const rows = stored?.data ?? [];
+  const art = new Map(rows.map((row) => [String(row.id), row]));
+  const ids = pickHomeSampleIds(rows.map((row) => ({ id: String(row.id), image_url: (row.image_url as string | null) ?? null })));
+  return ids
+    .map((id) => officialCatalog.find((code) => code.id === id))
+    .filter((code): code is NonNullable<typeof code> => Boolean(code))
+    .map((code) => {
+      const row = art.get(code.id);
+      const storedUrl = typeof row?.image_url === "string" ? row.image_url : null;
+      return {
+        id: code.id,
+        archetype: code.archetype,
+        keyword: code.keyword,
+        signSlug: code.signSlug,
+        signName: code.signName,
+        decan: code.decan,
+        imageSrc: cardArtDisplayUrl(code.id, storedUrl ?? code.imageUrl, row?.updated_at ? String(row.updated_at) : null),
+      };
+    });
+}
+
+export default async function HomePage() {
+  const samples = await loadHomeSamples();
   return (
     <PageShell>
       <section className="overflow-hidden bg-wine text-white">
@@ -27,10 +75,17 @@ export default function HomePage() {
           </div>
           <div className="grid min-w-0 grid-cols-3 gap-3">
             {samples.map((code) => (
-              <div key={code.id} className="min-w-0 overflow-hidden rounded-2xl bg-gold-soft p-3 text-ink">
-                <p className="text-[10px] tracking-widest text-muted uppercase">{elementLabel(signBySlug(code.signSlug)?.element ?? "")}</p>
-                <p className="mt-6 font-display text-lg leading-tight break-words">{code.archetype}</p>
-                <p className="mt-2 text-xs uppercase">{code.keyword}</p>
+              <div key={code.id} className="min-w-0 overflow-hidden rounded-2xl bg-gold-soft text-ink">
+                {code.imageSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={code.imageSrc} alt={`Carta ${code.archetype}`} className="aspect-2/3 h-full w-full object-cover" />
+                ) : (
+                  <div className="flex aspect-2/3 flex-col justify-end p-3">
+                    <p className="text-[10px] tracking-widest text-muted uppercase">{elementLabel(signBySlug(code.signSlug)?.element ?? "")}</p>
+                    <p className="mt-6 font-display text-lg leading-tight wrap-break-word">{code.archetype}</p>
+                    <p className="mt-2 text-xs uppercase">{code.keyword}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -65,6 +120,7 @@ export default function HomePage() {
             element={signBySlug(code.signSlug)?.element}
             signName={code.signName}
             decan={code.decan}
+            imageUrl={code.imageSrc}
             caption="Exemplo do catálogo, não é um mapa calculado."
           />
         ))}

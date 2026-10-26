@@ -27,16 +27,6 @@ export default async function FirstAccessPage({
           .
         </p>
       ) : null}
-      {params.erro === "senha" ? (
-        <p className="text-sm text-danger" role="alert">
-          A senha precisa ter pelo menos 8 caracteres e coincidir com a confirmação.
-        </p>
-      ) : null}
-      {params.erro === "1" ? (
-        <p className="text-sm text-danger" role="alert">
-          Este link expirou ou já foi usado. Peça um novo e-mail no painel.
-        </p>
-      ) : null}
       {ready ? (
         <form action={completeFirstAccess} className="grid gap-3">
           <input type="hidden" name="tokenHash" value={tokenHash} />

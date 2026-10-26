@@ -1,6 +1,11 @@
 import { AdminPanel } from "@/components/admin/shell";
+import { ImmediateFlash } from "@/components/ui/flash-toast";
 import { Input, Select } from "@/components/ui/input";
-import { PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
+import type { MethodologySnapshot } from "@/features/interpretation/context";
+import { glossaryReady } from "@/features/methodology/snapshot";
+import { pointLabel, PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
+import { formatDateTimePt } from "@/lib/formatters";
+import { resolveFlash } from "@/lib/flash";
 import { publishMethodology, saveMethodologyDraft } from "@/server/actions/admin";
 import { roleHas } from "@/server/auth/rbac";
 import { getAdminSession } from "@/server/auth/session";
@@ -8,37 +13,136 @@ import { tryServiceClient } from "@/server/db/clients";
 
 export const dynamic = "force-dynamic";
 
-const ERROR_MESSAGE: Record<string, string> = {
-  permissao: "Seu papel não salva nem publica a metodologia.",
-  config: "O banco ainda não está configurado.",
-  catalogo: "A publicação exige os 36 códigos íntegros no banco.",
-  "1": "Não foi possível publicar esta versão.",
+const ZODIAC_LABEL: Record<string, string> = {
+  tropical: "Tropical",
+  sidereal: "Sideral",
 };
+
+const HOUSE_LABEL: Record<string, string> = {
+  placidus: "Placidus",
+  whole_sign: "Signo inteiro",
+};
+
+const NODE_LABEL: Record<string, string> = {
+  true: "Verdadeiro",
+  mean: "Médio",
+};
+
+const FORTUNA_LABEL: Record<string, string> = {
+  pending_approval: "Pendente de homologação",
+  day_night_traditional: "Fórmula diurna/noturna tradicional, ainda provisória",
+};
+
+function asSnapshot(value: unknown): MethodologySnapshot | null {
+  if (!value || typeof value !== "object") return null;
+  return value as MethodologySnapshot;
+}
 
 export default async function MethodologyAdminPage({
   searchParams,
 }: {
   searchParams: Promise<{ erro?: string; salvo?: string; publicado?: string }>;
 }) {
-  const notice = await searchParams;
+  const query = await searchParams;
+  const flashParams = new URLSearchParams();
+  if (query.erro) flashParams.set("erro", query.erro);
+  if (query.salvo) flashParams.set("salvo", query.salvo);
+  if (query.publicado) flashParams.set("publicado", query.publicado);
+  const flash = resolveFlash("/admin/metodologia", flashParams);
   const session = await getAdminSession();
   const canWrite = session ? roleHas(session.role, "content.write") : false;
   const canPublish = session ? roleHas(session.role, "methodology.publish") : false;
   const service = tryServiceClient();
   const draft = service ? await service.from("methodology_versions").select("*").eq("status", "draft").maybeSingle() : null;
+  const published = service
+    ? await service
+        .from("methodology_versions")
+        .select(
+          "label,zodiac,house_system,node_mode,fortuna_rule,activate_ascendant,free_preview_point,rules_validated,rules_note,snapshot,published_at",
+        )
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : null;
   const row = draft?.data;
+  const live = published?.data ?? null;
+  const snapshot = asSnapshot(live?.snapshot);
+  const glossaryPublished = snapshot ? glossaryReady(snapshot) : false;
+  const homologated = Boolean(live?.rules_validated);
   return (
     <AdminPanel>
+      <ImmediateFlash flash={flash} />
       <h1 className="font-display text-4xl">Metodologia</h1>
-      <p className="mt-3 max-w-2xl rounded-2xl bg-gold-soft p-4 text-sm">{PROVISIONAL_ASTROLOGY_NOTICE}</p>
-      {notice.salvo === "1" ? <p className="mt-4 text-sm text-muted">Rascunho salvo.</p> : null}
-      {notice.publicado === "1" ? <p className="mt-4 text-sm text-muted">Versão publicada. Mapas novos passam a usar este pacote.</p> : null}
-      {notice.erro && ERROR_MESSAGE[notice.erro] ? (
-        <p className="mt-4 text-sm text-danger" role="alert">
-          {ERROR_MESSAGE[notice.erro]}
-        </p>
-      ) : null}
-      <form action={saveMethodologyDraft} className="mt-6 grid max-w-xl gap-3">
+      <p className="mt-2 max-w-2xl text-sm text-muted">
+        Salvar o rascunho não libera o checkout. Mapas ainda não pagos passam a usar a versão publicada se zodíaco, casas e nodo forem os mesmos. Se as regras de cálculo mudarem, é preciso gerar um mapa novo.
+      </p>
+
+      <section className="mt-8 rounded-3xl border border-border bg-surface p-6">
+        <h2 className="font-display text-2xl">Versão publicada</h2>
+        {live ? (
+          <>
+            <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-muted">Rótulo</dt>
+                <dd className="mt-1 font-medium">{String(live.label)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Publicada em</dt>
+                <dd className="mt-1">{live.published_at ? formatDateTimePt(String(live.published_at)) : "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Homologação</dt>
+                <dd className={`mt-1 font-medium ${homologated ? "text-success" : "text-danger"}`}>
+                  {homologated ? "Regras homologadas pela especialista" : "Ainda não homologada"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">Textos de casas e pontos</dt>
+                <dd className={`mt-1 font-medium ${glossaryPublished ? "text-success" : "text-danger"}`}>
+                  {glossaryPublished ? "Publicados nesta versão" : "Ainda não publicados nesta versão"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted">Zodíaco</dt>
+                <dd className="mt-1">{ZODIAC_LABEL[String(live.zodiac)] ?? String(live.zodiac)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Casas</dt>
+                <dd className="mt-1">{HOUSE_LABEL[String(live.house_system)] ?? String(live.house_system)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Nodo</dt>
+                <dd className="mt-1">{NODE_LABEL[String(live.node_mode)] ?? String(live.node_mode)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Roda da Fortuna</dt>
+                <dd className="mt-1">{FORTUNA_LABEL[String(live.fortuna_rule)] ?? String(live.fortuna_rule)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Ponto da prévia gratuita</dt>
+                <dd className="mt-1">{pointLabel(String(live.free_preview_point))}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Ascendente</dt>
+                <dd className="mt-1">{live.activate_ascendant ? "Ativado nesta versão" : "Fora desta versão"}</dd>
+              </div>
+            </dl>
+            {live.rules_note && !homologated ? (
+              <p className="mt-4 rounded-2xl bg-gold-soft p-4 text-sm">{String(live.rules_note)}</p>
+            ) : null}
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-muted">
+            Nenhuma versão publicada. Mapas novos usam o pacote provisório até a primeira publicação homologada.
+          </p>
+        )}
+      </section>
+
+      {!live || !homologated ? <p className="mt-6 max-w-2xl rounded-2xl bg-gold-soft p-4 text-sm">{PROVISIONAL_ASTROLOGY_NOTICE}</p> : null}
+
+      <form action={saveMethodologyDraft} className="mt-8 grid max-w-xl gap-3">
+        <h2 className="font-display text-2xl">Rascunho</h2>
         <label className="grid gap-1 text-sm">
           Zodíaco
           <Select name="zodiac" defaultValue={String(row?.zodiac ?? "tropical")}>

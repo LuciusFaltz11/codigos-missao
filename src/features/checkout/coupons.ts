@@ -42,3 +42,7 @@ export function couponDiscountLabel(coupon: Pick<CouponRecord, "kind" | "percent
   if (coupon.amountCents == null) return "—";
   return formatBrl(coupon.amountCents);
 }
+
+export function couponOfferLabel(coupon: Pick<CouponRecord, "code" | "kind" | "percent" | "amountCents">) {
+  return `${coupon.code} · ${couponDiscountLabel(coupon)} de desconto`;
+}

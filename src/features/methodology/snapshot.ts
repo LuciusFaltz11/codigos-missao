@@ -45,6 +45,25 @@ export function glossaryReady(snapshot: MethodologySnapshot) {
   return snapshot.status === "published" && housesReady && pointsReady;
 }
 
+export function methodologySellable(snapshot: MethodologySnapshot) {
+  return snapshot.rulesValidated && glossaryReady(snapshot);
+}
+
+export function calculationCompatible(frozen: MethodologySnapshot, published: MethodologySnapshot) {
+  return frozen.zodiac === published.zodiac && frozen.houseSystem === published.houseSystem && frozen.nodeMode === published.nodeMode;
+}
+
+export function adoptPublishedSnapshot(
+  frozen: MethodologySnapshot,
+  published: MethodologySnapshot | null,
+  input: { chartComplete: boolean; hasEntitlement: boolean },
+) {
+  if (input.hasEntitlement || !input.chartComplete || !published) return frozen;
+  if (methodologySellable(frozen)) return frozen;
+  if (!methodologySellable(published) || !calculationCompatible(frozen, published)) return frozen;
+  return published;
+}
+
 export function checkoutBlockers(input: {
   chartStatus: string;
   snapshot: MethodologySnapshot;
@@ -58,10 +77,14 @@ export function checkoutBlockers(input: {
     blockers.push("O mapa ainda não tem um cálculo astronômico concluído.");
   }
   if (input.snapshot.status !== "published" || !input.snapshot.rulesValidated) {
-    blockers.push("A metodologia publicada e homologada ainda não está associada a este mapa.");
+    blockers.push(
+      "Este mapa ainda usa a metodologia do momento em que foi gerado. Publique e homologue no painel; mapas não pagos com o mesmo zodíaco, casas e nodo entram na venda sozinhos.",
+    );
   }
   if (!glossaryReady(input.snapshot)) {
-    blockers.push("Os textos de casas e pontos ainda não foram publicados pela edição.");
+    blockers.push(
+      "Os textos de casas e pontos desta versão ainda não foram publicados. Na publicação, marque que os textos podem ir para a interpretação.",
+    );
   }
   if (input.priceCents === null) blockers.push("O preço do produto ainda não foi configurado.");
   if (input.integrations.infinitepay !== "configured") blockers.push("A InfinitePay não está configurada.");

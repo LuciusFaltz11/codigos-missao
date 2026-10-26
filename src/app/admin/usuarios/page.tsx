@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ editar?: string; novo?: string; erro?: string; salvo?: string }>;
+  searchParams: Promise<{ editar?: string; novo?: string }>;
 }) {
   const notice = await searchParams;
   const session = await getAdminSession();
@@ -32,7 +32,6 @@ export default async function UsersPage({
         currentUserId={session?.userId ?? null}
         initialId={notice.editar}
         creating={notice.novo === "1"}
-        notice={{ erro: notice.erro, salvo: notice.salvo }}
       />
     </AdminPanel>
   );

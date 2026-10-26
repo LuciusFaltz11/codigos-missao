@@ -26,11 +26,9 @@ export type AdminCodeRow = {
 export function CodesEditor({
   rows,
   initialId,
-  notice,
 }: {
   rows: AdminCodeRow[];
   initialId?: string;
-  notice?: { erro?: string; salvo?: string };
 }) {
   const [openId, setOpenId] = useState(initialId ?? null);
   const selected = rows.find((row) => row.id === openId) ?? null;
@@ -140,24 +138,6 @@ export function CodesEditor({
                   <p className="mb-4 rounded-xl bg-gold-soft p-3 text-sm">
                     O campo de sombra contém o texto “Código da Missão”, o que parece resíduo de extração. O valor oficial foi
                     preservado. Confira a ficha no PDF antes de publicar.
-                  </p>
-                ) : null}
-                {notice?.salvo === "1" && initialId === selected.id ? (
-                  <p className="mb-4 text-sm text-muted">Rascunho salvo.</p>
-                ) : null}
-                {notice?.erro === "imagem" ? (
-                  <p className="mb-4 text-sm text-danger" role="alert">
-                    Envie um PNG, JPG ou WebP de até 4 MB.
-                  </p>
-                ) : null}
-                {notice?.erro === "upload" ? (
-                  <p className="mb-4 text-sm text-danger" role="alert">
-                    Não foi possível guardar a imagem. Confira o bucket card-art no Supabase.
-                  </p>
-                ) : null}
-                {notice?.erro === "1" ? (
-                  <p className="mb-4 text-sm text-danger" role="alert">
-                    Não foi possível salvar este rascunho.
                   </p>
                 ) : null}
                 <form action={updateCode.bind(null, selected.id)} className="grid gap-3" key={selected.id}>

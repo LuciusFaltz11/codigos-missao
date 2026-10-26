@@ -37,7 +37,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-screen bg-background text-ink antialiased">
         {children}
-        <Toaster position="top-center" />
+        <Toaster
+          theme="light"
+          position="top-center"
+          duration={5200}
+          visibleToasts={3}
+          closeButton
+          offset={{ top: "1.25rem" }}
+          style={{ zIndex: 100000 }}
+          toastOptions={{ className: "app-toast" }}
+        />
       </body>
     </html>
   );

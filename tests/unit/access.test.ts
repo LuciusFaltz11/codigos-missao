@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { decidePaymentTransition } from "@/features/checkout/transition";
-import { checkoutBlockers, glossaryReady, provisionalSnapshot } from "@/features/methodology/snapshot";
+import {
+  adoptPublishedSnapshot,
+  calculationCompatible,
+  checkoutBlockers,
+  glossaryReady,
+  methodologySellable,
+  provisionalSnapshot,
+} from "@/features/methodology/snapshot";
 import { toFreePreview, type PreparedChart } from "@/features/preview/redact";
 import { validateAgainstEvidence, type InterpretationResult } from "@/features/interpretation/validate";
 import { roleHas } from "@/server/auth/rbac";
@@ -103,6 +110,28 @@ describe("pagamento", () => {
     });
     expect(blockers.length).toBeGreaterThan(0);
     expect(glossaryReady(provisionalSnapshot())).toBe(false);
+  });
+
+  it("associa a metodologia publicada a mapa não pago com o mesmo cálculo", () => {
+    const frozen = provisionalSnapshot();
+    const published = {
+      ...frozen,
+      versionLabel: "1.0.0",
+      status: "published" as const,
+      rulesValidated: true,
+      notice: "",
+      houses: frozen.houses.map((house) => ({ ...house, published: true })),
+      points: frozen.points.map((point) => ({ ...point, published: true })),
+    };
+    expect(calculationCompatible(frozen, published)).toBe(true);
+    expect(methodologySellable(published)).toBe(true);
+    expect(
+      adoptPublishedSnapshot(frozen, published, { chartComplete: true, hasEntitlement: false }).versionLabel,
+    ).toBe("1.0.0");
+    expect(adoptPublishedSnapshot(frozen, published, { chartComplete: true, hasEntitlement: true })).toBe(frozen);
+    expect(
+      adoptPublishedSnapshot(frozen, { ...published, houseSystem: "whole_sign" }, { chartComplete: true, hasEntitlement: false }),
+    ).toBe(frozen);
   });
 });
 
