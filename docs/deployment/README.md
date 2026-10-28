@@ -53,8 +53,8 @@ O seed grava os 36 códigos, o glossário como rascunho e um produto sem preço.
 | `INFINITEPAY_HANDLE` | InfiniteTag da conta, sem o `$` inicial |
 | `INFINITEPAY_API_KEY` | Chave do Checkout Integrado, somente no servidor. Aparece uma vez na criação, no app da InfinitePay |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Adaptador de e-mail |
-| `LLM_PROVIDER` | `openai`, `anthropic` ou outro nome tratado como API compatível com OpenAI |
-| `LLM_API_KEY` / `LLM_MODEL` / `LLM_API_BASE` | Modelo. `LLM_API_BASE` só é necessário fora da OpenAI |
+| `LLM_PROVIDER` | `openai`, `anthropic`, `gemini` (também `google`) ou outro nome tratado como API compatível com OpenAI |
+| `LLM_API_KEY` / `LLM_MODEL` / `LLM_API_BASE` | Modelo. Para Gemini, se `LLM_API_BASE` estiver vazio o app usa `https://generativelanguage.googleapis.com/v1beta/openai`. Sem isso no Vercel, a chamada ia para a OpenAI e gerava `llm_http_error`. Use `gemini-3.8-flash` com `reasoning_effort` baixo — o nível `minimal` desse modelo devolve erro HTTP. |
 | `ASTROLOGY_ENGINE` | `caelus` (padrão), `none` ou `swiss_worker` |
 | `ASTROLOGY_LICENSE_CONFIRMED` | precisa ser `true` para chamar o worker do Swiss Ephemeris. O Caelus não usa essa chave |
 | `GEOCODING_PROVIDER` | `geoapify`. `opencage` e `mapbox` continuam no código |
@@ -65,7 +65,7 @@ Nenhuma chave de serviço, pagamento ou modelo usa prefixo `NEXT_PUBLIC_`.
 
 ## Vercel
 
-- Runtime Node, não Edge, nas rotas de mapa, webhook, PDF e jobs.
+- Runtime Node, não Edge, nas rotas de mapa, webhook, PDF e jobs. As rotas de jobs, webhook e checkout pedem até 300s (`maxDuration`); no plano Hobby a Vercel corta em 10s e a interpretação com Gemini 3 pode falhar. Pro ou Fluid Compute cobrem a geração completa.
 - Cron em `vercel.json` chama `/api/jobs/run` uma vez por dia, às 11:00 UTC (08:00 em Brasília), no limite do plano Hobby. A Vercel precisa enviar `Authorization: Bearer $CRON_SECRET`. O webhook da InfinitePay já dispara os jobs na hora do pagamento.
 - Webhook da InfinitePay: `https://SEU_DOMINIO/api/webhooks/infinitepay`. Em localhost a URL de webhook não é enviada, porque o provedor não alcança a máquina.
 - Habilite o Checkout Integrado no app da InfinitePay e confirme Pix e cartão. O app não desenha um checkout de cartão. A volta do navegador e o webhook não liberam a leitura sozinhos: o servidor consulta `payment_check`.

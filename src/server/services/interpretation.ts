@@ -16,7 +16,7 @@ import {
 import { derivePatterns } from "@/features/missions/patterns";
 import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
-import { createInterpretationProvider } from "@/server/providers/llm";
+import { createInterpretationProvider, LlmHttpError } from "@/server/providers/llm";
 import { loadChartByToken } from "@/server/services/charts";
 import { openToken } from "@/server/security/tokens";
 
@@ -177,9 +177,19 @@ export async function generateInterpretation(entitlementId: string) {
     logEvent("info", "reading_completed", { model: provider.model });
     return { ok: true as const, readingId };
   } catch (error) {
-    const code = error instanceof Error ? error.message : "reading_failed";
+    const code = error instanceof LlmHttpError ? error.code : error instanceof Error ? error.message : "reading_failed";
     await service.from("readings").update({ status: code === "failed_validation" ? "failed_validation" : "retryable_failed", last_error: code }).eq("id", readingId);
-    logEvent("error", "reading_failed", { code });
+    if (error instanceof LlmHttpError) {
+      logEvent("error", "reading_failed", {
+        code,
+        status: error.status,
+        llmStatus: error.llmStatus,
+        provider: error.provider,
+        model: error.model,
+      });
+    } else {
+      logEvent("error", "reading_failed", { code });
+    }
     return { ok: false as const, error: code };
   }
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { jobRetryDelayMs } from "@/features/interpretation/llm-request";
 import { InterpretationResultSchema } from "@/features/interpretation/validate";
 import { tryServiceClient } from "@/server/db/clients";
 import { getServerEnv } from "@/server/env";
@@ -47,7 +48,10 @@ async function finish(job: JobRow, status: "completed" | "retryable_failed" | "p
     .update({
       status: status === "retryable_failed" && attempts >= 5 ? "permanent_failed" : status,
       last_error: error ?? null,
-      next_run_at: status === "retryable_failed" ? new Date(Date.now() + attempts * 60_000).toISOString() : null,
+      next_run_at:
+        status === "retryable_failed"
+          ? new Date(Date.now() + jobRetryDelayMs(attempts, error)).toISOString()
+          : null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", job.id);

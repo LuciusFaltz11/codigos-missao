@@ -4,6 +4,7 @@ import { runDueJobs } from "@/server/jobs/runner";
 import { startCheckout } from "@/server/services/checkout";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 export async function POST(request: Request, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params;

@@ -1,4 +1,13 @@
 import "server-only";
+import {
+  isGeminiProvider,
+  llmApiBase,
+  llmErrorFields,
+  llmFailureCode,
+  openAiCompatiblePayload,
+  withLlmRetries,
+} from "@/features/interpretation/llm-request";
+import { logEvent } from "@/server/logging";
 import { getServerEnv } from "@/server/env";
 
 export type LlmCompletion = {
@@ -13,9 +22,38 @@ export interface InterpretationProvider {
   completeJson(input: { system: string; user: string }): Promise<LlmCompletion>;
 }
 
+export class LlmHttpError extends Error {
+  readonly code: ReturnType<typeof llmFailureCode>;
+  constructor(
+    readonly status: number,
+    readonly llmStatus: string | null,
+    readonly provider: string,
+    readonly model: string,
+  ) {
+    super(llmFailureCode(status));
+    this.name = "LlmHttpError";
+    this.code = llmFailureCode(status);
+  }
+}
+
 function extractJson(text: string) {
   const trimmed = text.trim().replace(/^```json\s*/i, "").replace(/```$/, "");
   return JSON.parse(trimmed) as unknown;
+}
+
+function isTimeout(error: unknown) {
+  return error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+}
+
+async function rejectIfHttpError(response: Response, provider: string, model: string) {
+  if (response.ok) return;
+  let llmStatus: string | null = null;
+  try {
+    llmStatus = llmErrorFields(await response.json()).llmStatus;
+  } catch {
+    llmStatus = null;
+  }
+  throw new LlmHttpError(response.status, llmStatus, provider, model);
 }
 
 export class NotConfiguredLlm implements InterpretationProvider {
@@ -37,27 +75,39 @@ export class HttpLlmProvider implements InterpretationProvider {
   ) {}
 
   async completeJson(input: { system: string; user: string }): Promise<LlmCompletion> {
-    if (this.provider === "anthropic") return this.anthropic(input);
-    return this.openAiCompatible(input);
+    try {
+      return await withLlmRetries(
+        () =>
+          this.provider.trim().toLowerCase() === "anthropic" ? this.anthropic(input) : this.openAiCompatible(input),
+        {
+          onRetry: ({ attempt, status }) => {
+            logEvent("info", "llm_retry", { attempt, status, provider: this.provider, model: this.model });
+          },
+        },
+      );
+    } catch (error) {
+      if (isTimeout(error)) throw new Error("llm_timeout");
+      throw error;
+    }
   }
 
   private async openAiCompatible(input: { system: string; user: string }): Promise<LlmCompletion> {
-    const base = this.apiBase ?? "https://api.openai.com/v1";
-    const response = await this.fetchImpl(`${base.replace(/\/$/, "")}/chat/completions`, {
+    const base = llmApiBase(this.provider, this.apiBase);
+    const response = await this.fetchImpl(`${base}/chat/completions`, {
       method: "POST",
       headers: { authorization: `Bearer ${this.apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({
-        model: this.model,
-        temperature: 0.4,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: input.system },
-          { role: "user", content: input.user },
-        ],
-      }),
-      signal: AbortSignal.timeout(60_000),
+      body: JSON.stringify(
+        openAiCompatiblePayload({
+          provider: this.provider,
+          model: this.model,
+          apiBase: this.apiBase ?? base,
+          system: input.system,
+          user: input.user,
+        }),
+      ),
+      signal: AbortSignal.timeout(isGeminiProvider(this.provider, this.apiBase) ? 90_000 : 60_000),
     });
-    if (!response.ok) throw new Error("llm_http_error");
+    await rejectIfHttpError(response, this.provider, this.model);
     const body = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
       usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -91,7 +141,7 @@ export class HttpLlmProvider implements InterpretationProvider {
       }),
       signal: AbortSignal.timeout(60_000),
     });
-    if (!response.ok) throw new Error("llm_http_error");
+    await rejectIfHttpError(response, this.provider, this.model);
     const body = (await response.json()) as {
       content?: Array<{ text?: string }>;
       usage?: { input_tokens?: number; output_tokens?: number };
