@@ -92,6 +92,16 @@ describe("roda do mapa", () => {
       productName: null,
     } satisfies PreparedChart);
     expect(JSON.stringify(preview)).not.toContain(mars.archetype);
+    expect(preview.activationPoints).toEqual([
+      {
+        pointId: "mars",
+        pointLabel: "Marte",
+        signName: mars.signName,
+        degreeLabel: "14°00′00″",
+        houseNumber: 7,
+        unlocked: false,
+      },
+    ]);
     expect(preview.chart?.bodies[0]?.signName).toBe("Áries");
   });
 });

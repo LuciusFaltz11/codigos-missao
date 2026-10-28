@@ -8,6 +8,7 @@ import type { MethodologySnapshot } from "@/features/interpretation/context";
 import { adoptPublishedSnapshot, provisionalSnapshot } from "@/features/methodology/snapshot";
 import { buildNatalChart, longitudeFromAngle, parseCusps, parseWheelPositions } from "@/features/astrology/wheel";
 import { toFreePreview, type PreparedChart } from "@/features/preview/redact";
+import { resolvedActivationPoints } from "@/lib/constants/astrology";
 import type { ChartRequest } from "@/lib/schemas/forms";
 import { tryServiceClient } from "@/server/db/clients";
 import { getServerEnv, integrationStatus } from "@/server/env";
@@ -205,10 +206,8 @@ export async function createBirthChart(input: ChartRequest): Promise<CreateChart
       retrograde: position.retrograde,
       houseNumber: housesFor(snapshot, position.longitude, calculation.cusps, calculation.ascendantLongitude),
     }));
-    const points = snapshot.activateAscendant
-      ? [...snapshot.activationPoints, "ascendant"]
-      : snapshot.activationPoints;
-    if (snapshot.activateAscendant) {
+    const points = resolvedActivationPoints(snapshot);
+    if (points.includes("ascendant") && !housed.some((item) => item.pointId === "ascendant")) {
       housed.push({
         pointId: "ascendant",
         longitude: calculation.ascendantLongitude,

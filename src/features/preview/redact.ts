@@ -3,6 +3,7 @@ import { formatDegree } from "@/features/astrology/longitude";
 import type { NatalChartView } from "@/features/astrology/wheel";
 import type { MissionActivation } from "@/features/missions/activate";
 import { cardArtDisplayUrl } from "@/features/missions/card-art";
+import { composeFreePreviewSummary, type FreePreviewSummary } from "@/features/preview/teaser";
 
 export type ChartAngle = {
   signName: string;
@@ -28,6 +29,15 @@ export type PreparedChart = {
   productName: string | null;
 };
 
+export type PreviewActivationPoint = {
+  pointId: string;
+  pointLabel: string;
+  signName: string;
+  degreeLabel: string;
+  houseNumber: number;
+  unlocked: boolean;
+};
+
 export type FreePreview = {
   status: PreparedChart["status"];
   errorCode: string | null;
@@ -49,9 +59,11 @@ export type FreePreview = {
     imageUrl: string | null;
     element: string | null;
   };
+  activationPoints: PreviewActivationPoint[];
   ascendant: null | { signName: string; degreeLabel: string };
   midheaven: null | { signName: string; degreeLabel: string };
   otherActivationCount: number | null;
+  interpretationSummary: FreePreviewSummary | null;
   chart: NatalChartView | null;
   entitlement: PreparedChart["entitlement"];
   price: null | { cents: number; currency: string; productName: string };
@@ -103,6 +115,14 @@ export function toFreePreview(chart: PreparedChart): FreePreview {
           element: ELEMENTS[free.signSlug] ?? null,
         }
       : null,
+    activationPoints: chart.activations.map((item) => ({
+      pointId: item.natalPointId,
+      pointLabel: pointLabel(item.natalPointId),
+      signName: item.signName,
+      degreeLabel: formatDegree(item.degreeWithinSign),
+      houseNumber: item.houseNumber,
+      unlocked: item.natalPointId === chart.freePointId,
+    })),
     ascendant: chart.ascendant
       ? { signName: chart.ascendant.signName, degreeLabel: formatDegree(chart.ascendant.degreeWithinSign) }
       : null,
@@ -110,6 +130,17 @@ export function toFreePreview(chart: PreparedChart): FreePreview {
       ? { signName: chart.midheaven.signName, degreeLabel: formatDegree(chart.midheaven.degreeWithinSign) }
       : null,
     otherActivationCount: chart.status === "complete" ? others.length : null,
+    interpretationSummary:
+      free && chart.status === "complete"
+        ? composeFreePreviewSummary({
+            pointId: free.natalPointId,
+            signName: free.signName,
+            houseNumber: free.houseNumber,
+            archetype: free.code.archetype,
+            keyword: free.code.keyword,
+            otherCount: others.length,
+          })
+        : null,
     chart: chart.chart,
     entitlement: chart.entitlement,
     price:

@@ -1,24 +1,33 @@
 import "server-only";
+import { isComplimentaryAmount, normalizeCouponCode } from "@/features/checkout/coupons";
 import { checkoutBlockers } from "@/features/methodology/snapshot";
-import { normalizeCouponCode } from "@/features/checkout/coupons";
 import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { createCheckoutLink } from "@/server/providers/infinitepay";
+import { createExternalReference } from "@/server/security/tokens";
 import { deliveryStatus, loadChartByToken } from "@/server/services/charts";
 import { quoteCoupon } from "@/server/services/coupons";
-import { createExternalReference } from "@/server/security/tokens";
+import { fulfillApprovedOrder } from "@/server/services/fulfillment";
 
-export async function startCheckout(token: string, couponCode = "") {
+export type StartCheckoutResult =
+  | { ok: true; redirectTo: string; runJobs?: boolean }
+  | { ok: true; initPoint: string }
+  | { ok: false; message: string; blockers?: string[]; code: string };
+
+export async function startCheckout(token: string, couponCode = ""): Promise<StartCheckoutResult> {
   const loaded = await loadChartByToken(token);
   if (!loaded) return { ok: false as const, message: "Mapa não encontrado.", code: "mapa" };
-  const blockers = checkoutBlockers({
-    chartStatus: loaded.status,
-    snapshot: loaded.snapshot,
-    priceCents: loaded.priceCents,
-    integrations: deliveryStatus(),
-    alreadyEntitled: loaded.entitlement === "active",
-  });
-  if (blockers.length > 0 || loaded.priceCents === null || !loaded.productName) {
+  if (loaded.entitlement === "active") {
+    return { ok: true as const, redirectTo: `/mapa/completo/${token}` };
+  }
+  if (loaded.priceCents === null || !loaded.productName) {
+    const blockers = checkoutBlockers({
+      chartStatus: loaded.status,
+      snapshot: loaded.snapshot,
+      priceCents: loaded.priceCents,
+      integrations: deliveryStatus(),
+      alreadyEntitled: false,
+    });
     return { ok: false as const, message: blockers[0] ?? "A compra não está disponível.", blockers, code: "bloqueio" };
   }
 
@@ -39,6 +48,19 @@ export async function startCheckout(token: string, couponCode = "") {
     storedCode = quoted.coupon.code;
   }
 
+  const complimentary = Boolean(storedCode) && isComplimentaryAmount(amountCents) && discountCents > 0;
+  const blockers = checkoutBlockers({
+    chartStatus: loaded.status,
+    snapshot: loaded.snapshot,
+    priceCents: loaded.priceCents,
+    integrations: deliveryStatus(),
+    alreadyEntitled: false,
+    requirePaymentProvider: !complimentary,
+  });
+  if (blockers.length > 0) {
+    return { ok: false as const, message: blockers[0] ?? "A compra não está disponível.", blockers, code: "bloqueio" };
+  }
+
   const pending = await loaded.service
     .from("orders")
     .select("id,init_point,amount_cents,coupon_code")
@@ -51,7 +73,7 @@ export async function startCheckout(token: string, couponCode = "") {
       (order.coupon_code ?? null) === storedCode &&
       order.init_point,
   );
-  if (reusable?.init_point) {
+  if (reusable?.init_point && !complimentary) {
     return { ok: true as const, initPoint: String(reusable.init_point) };
   }
   if (pending.data?.length) {
@@ -83,6 +105,25 @@ export async function startCheckout(token: string, couponCode = "") {
     .select("id")
     .single();
   if (order.error || !order.data) return { ok: false as const, message: "Não foi possível abrir o pedido.", blockers: [], code: "pedido" };
+
+  if (complimentary) {
+    const fulfilled = await fulfillApprovedOrder(loaded.service, {
+      orderId: String(order.data.id),
+      chartId: loaded.chartId,
+      leadId: loaded.leadId,
+      amountCents: 0,
+      currency: "BRL",
+      provider: "coupon",
+      providerPaymentId: `coupon:${order.data.id}`,
+      analyticsName: "payment_approved",
+      analyticsProperties: storedCode ? { coupon_code: storedCode, discount_cents: discountCents } : {},
+    });
+    if (!fulfilled.entitlementId) {
+      logEvent("error", "complimentary_fulfillment_failed", { code: "entitlement" });
+      return { ok: false as const, message: "Não foi possível liberar a leitura com este cupom.", blockers: [], code: "pedido" };
+    }
+    return { ok: true as const, redirectTo: `/mapa/completo/${token}`, runJobs: true };
+  }
 
   try {
     const link = await createCheckoutLink({

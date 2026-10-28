@@ -19,7 +19,7 @@ export default function MethodologyPage() {
         </p>
         <p className="rounded-2xl bg-gold-soft px-4 py-3 text-sm">{PROVISIONAL_ASTROLOGY_NOTICE}</p>
         <p>
-          O material autoral também menciona o Ascendente entre os pontos de entrada. Nesta versão ele é calculado e pode ser exibido, mas não ativa um código até a decisão da especialista. A fórmula da Roda da Fortuna e o modo do nodo lunar seguem a mesma lógica: ficam configuráveis e só entram no cálculo quando homologados.
+          Novos mapas incluem o Ascendente entre as ativações quando a metodologia publicada o ativa. A Roda da Fortuna só entra quando a fórmula estiver homologada. O Meio do Céu continua no mapa e não gera Código.
         </p>
         <p>A apresentação biográfica da criadora depende do texto autorizado das páginas finais do material. Ela não é reescrita aqui.</p>
       </article>

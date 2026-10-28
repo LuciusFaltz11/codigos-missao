@@ -37,7 +37,7 @@ export const NATAL_POINTS = [
 
 export type NatalPointId = (typeof NATAL_POINTS)[number]["id"];
 
-/** Posições que geram ativação no MVP. O Ascendente fica de fora até decisão da especialista. */
+/** Posições que geram ativação. O Ascendente entra nas novas versões; a Fortuna só se a fórmula estiver homologada. */
 export const DEFAULT_ACTIVATION_POINTS: NatalPointId[] = [
   "sun",
   "moon",
@@ -53,7 +53,17 @@ export const DEFAULT_ACTIVATION_POINTS: NatalPointId[] = [
   "part_of_fortune",
   "south_node",
   "north_node",
+  "ascendant",
 ];
+
+export function resolvedActivationPoints(input: {
+  activationPoints: readonly string[];
+  activateAscendant: boolean;
+}) {
+  const points = input.activationPoints.filter((id) => id !== "ascendant");
+  if (input.activateAscendant) points.push("ascendant");
+  return points;
+}
 
 export const FIRE_SIGN_SLUGS = ["aries", "leao", "sagitario"] as const;
 

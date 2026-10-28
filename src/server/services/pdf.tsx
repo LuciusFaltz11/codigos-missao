@@ -68,13 +68,13 @@ function ReportDocument(input: ReportDocumentInput) {
         return (
           <Page key={reading.activation_id} size="A4" style={styles.page}>
             <Text style={styles.kicker}>{activation?.code.keyword ?? "Código"}</Text>
-            <Text style={styles.heading}>{reading.headline}</Text>
+            <Text style={styles.heading}>{activation?.code.archetype ?? reading.headline}</Text>
             <Text style={styles.meta}>
               {activation ? `${activation.code.archetype} · ${activation.signName} ${formatDegree(activation.degreeWithinSign)} · casa ${activation.houseNumber}` : reading.activation_id}
             </Text>
+            {activation ? <Text style={styles.body}>Luz: {activation.code.light}</Text> : null}
+            {activation ? <Text style={styles.body}>Sombra: {activation.code.shadow}</Text> : null}
             <Text style={styles.body}>{reading.interpretation}</Text>
-            <Text style={styles.body}>Luz: {reading.light_expression}</Text>
-            <Text style={styles.body}>Sombra: {reading.shadow_expression}</Text>
             <Text style={styles.body}>{reading.reflective_question}</Text>
           </Page>
         );

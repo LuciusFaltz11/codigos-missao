@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
 import { pointHint } from "@/features/astrology/point-hints";
 import { chartAngle, chartPoint, forwardMidpoint, SIGN_GLYPHS, signElement, type NatalChartBody, type NatalChartView } from "@/features/astrology/wheel";
 
@@ -23,9 +23,13 @@ function beside(longitude: number, ascendant: number, amount: number) {
   return { x: -Math.sin(angle) * amount, y: -Math.cos(angle) * amount };
 }
 
+function round(value: number) {
+  return Math.round(value * 1000) / 1000;
+}
+
 function at(longitude: number, ascendant: number, radius: number) {
   const point = chartPoint(longitude, ascendant, radius);
-  return { x: CENTER + point.x, y: CENTER + point.y };
+  return { x: round(CENTER + point.x), y: round(CENTER + point.y) };
 }
 
 function sector(start: number, end: number, inner: number, outer: number, ascendant: number) {
@@ -85,24 +89,36 @@ function GlyphTip({
   x,
   y,
   active,
+  selected,
   onShow,
   onHide,
+  onSelect,
   children,
 }: {
   body: NatalChartBody;
   x: number;
   y: number;
   active: boolean;
+  selected: boolean;
   onShow: () => void;
   onHide: () => void;
+  onSelect?: (pointId: string) => void;
   children: ReactNode;
 }) {
   const hint = pointHint(body.pointId);
+  const select = () => onSelect?.(body.pointId);
+  const onKeyDown = (event: KeyboardEvent<SVGGElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      select();
+    }
+  };
   return (
     <g
-      role="img"
+      role="button"
       tabIndex={0}
       aria-label={`${body.label}. ${hint} ${positionLine(body)}.`}
+      aria-pressed={selected}
       className="cursor-pointer outline-none"
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse") onShow();
@@ -112,27 +128,77 @@ function GlyphTip({
       }}
       onFocus={onShow}
       onBlur={onHide}
+      onClick={select}
+      onKeyDown={onKeyDown}
       onPointerUp={(event) => {
         if (event.pointerType !== "mouse") onShow();
       }}
     >
-      <circle cx={x} cy={y} r="16" fill="transparent" stroke={active ? "#482931" : "none"} strokeWidth="1" />
+      <circle cx={x} cy={y} r="16" fill="transparent" stroke={active || selected ? "#482931" : "none"} strokeWidth="1" />
       {children}
     </g>
+  );
+}
+
+function CodeMarker({
+  clipId,
+  x,
+  y,
+  imageUrl,
+}: {
+  clipId: string;
+  x: number;
+  y: number;
+  imageUrl?: string;
+}) {
+  return (
+    <>
+      <circle cx={x} cy={y} r="15" fill="none" stroke="#b99b62" strokeWidth="2" pointerEvents="none" />
+      {imageUrl ? (
+        <>
+          <clipPath id={clipId}>
+            <circle cx={x + 14} cy={y - 12} r="8" />
+          </clipPath>
+          <image
+            href={imageUrl}
+            x={x + 6}
+            y={y - 20}
+            width="16"
+            height="16"
+            clipPath={`url(#${clipId})`}
+            pointerEvents="none"
+          />
+          <circle cx={x + 14} cy={y - 12} r="8" fill="none" stroke="#b99b62" strokeWidth="1" pointerEvents="none" />
+        </>
+      ) : null}
+    </>
   );
 }
 
 export function NatalWheel({
   chart,
   highlightPointId,
+  selectedPointId,
+  onSelectPoint,
+  markedPointIds = [],
+  markerImages = {},
   heading = "Mapa astral",
+  showPositions = true,
 }: {
   chart: NatalChartView;
-  highlightPointId: string | null;
+  highlightPointId?: string | null;
+  selectedPointId?: string | null;
+  onSelectPoint?: (pointId: string) => void;
+  markedPointIds?: string[];
+  markerImages?: Record<string, string>;
   heading?: string;
+  showPositions?: boolean;
 }) {
   const headingId = useId();
   const descId = useId();
+  const markerId = useId();
+  const selected = selectedPointId ?? highlightPointId ?? null;
+  const marked = new Set(markedPointIds);
   const ascendant = chart.ascendantLongitude;
   const planets = planetRadii(chart.bodies.filter((body) => body.pointId !== "ascendant" && body.pointId !== "midheaven"));
   const angles = chart.bodies.filter((body) => body.pointId === "ascendant" || body.pointId === "midheaven");
@@ -141,9 +207,15 @@ export function NatalWheel({
 
   return (
     <section className="grid gap-5" aria-labelledby={headingId}>
-      <h2 id={headingId} className="font-display text-3xl">
-        {heading}
-      </h2>
+      {heading ? (
+        <h2 id={headingId} className="font-display text-3xl">
+          {heading}
+        </h2>
+      ) : (
+        <h2 id={headingId} className="sr-only">
+          Mapa astral
+        </h2>
+      )}
       <div className="relative">
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="group" aria-labelledby={`${headingId} ${descId}`} className="h-auto w-full">
         <desc id={descId}>
@@ -219,7 +291,8 @@ export function NatalWheel({
         {planets.map((body) => {
           const position = at(body.longitude, ascendant, body.radius);
           const retrogradeMark = beside(body.longitude, ascendant, 11);
-          const highlighted = body.pointId === highlightPointId;
+          const isSelected = body.pointId === selected;
+          const isMarked = marked.has(body.pointId);
           return (
             <GlyphTip
               key={body.pointId}
@@ -227,11 +300,21 @@ export function NatalWheel({
               x={position.x}
               y={position.y}
               active={body.pointId === active?.pointId}
+              selected={isSelected}
+              onSelect={onSelectPoint}
               onShow={() => setActive({ pointId: body.pointId, x: position.x, y: position.y })}
               onHide={() => setActive((current) => (current?.pointId === body.pointId ? null : current))}
             >
-              {highlighted ? <circle cx={position.x} cy={position.y} r="13" fill="#e8dcc6" /> : null}
-              <text x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="16" fill={highlighted ? "#482931" : "#241d22"} pointerEvents="none">
+              {isSelected ? <circle cx={position.x} cy={position.y} r="13" fill="#e8dcc6" /> : null}
+              {isMarked ? (
+                <CodeMarker
+                  clipId={`${markerId}-${body.pointId}`}
+                  x={position.x}
+                  y={position.y}
+                  imageUrl={markerImages[body.pointId]}
+                />
+              ) : null}
+              <text x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="16" fill={isSelected || isMarked ? "#482931" : "#241d22"} pointerEvents="none">
                 {textGlyph(body.glyph)}
               </text>
               {body.retrograde ? (
@@ -255,6 +338,8 @@ export function NatalWheel({
           const offset = beside(body.longitude, ascendant, 14);
           const x = position.x + offset.x;
           const y = position.y + offset.y;
+          const isSelected = body.pointId === selected;
+          const isMarked = marked.has(body.pointId);
           return (
             <GlyphTip
               key={body.pointId}
@@ -262,9 +347,15 @@ export function NatalWheel({
               x={x}
               y={y}
               active={body.pointId === active?.pointId}
+              selected={isSelected}
+              onSelect={onSelectPoint}
               onShow={() => setActive({ pointId: body.pointId, x, y })}
               onHide={() => setActive((current) => (current?.pointId === body.pointId ? null : current))}
             >
+              {isSelected ? <circle cx={x} cy={y} r="13" fill="#e8dcc6" /> : null}
+              {isMarked ? (
+                <CodeMarker clipId={`${markerId}-${body.pointId}`} x={x} y={y} imageUrl={markerImages[body.pointId]} />
+              ) : null}
               <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill="#482931" pointerEvents="none">
                 {body.glyph}
               </text>
@@ -280,45 +371,68 @@ export function NatalWheel({
         </div>
       ) : null}
       </div>
-      <ul className="grid gap-2 sm:hidden">
-        {chart.bodies.map((body) => (
-          <li key={body.pointId} className={`rounded-xl px-3 py-2 text-sm ${body.pointId === highlightPointId ? "bg-gold-soft" : ""}`}>
-            <p className="font-medium">
-              {textGlyph(body.glyph)} {body.label}
-            </p>
-            <p>
-              {body.signName} {body.degreeLabel} · casa {body.houseNumber ?? "—"} · {body.retrograde === null ? "—" : body.retrograde ? "retrógrado" : "direto"}
-            </p>
-          </li>
-        ))}
-      </ul>
-      <div className="hidden overflow-x-auto sm:block">
-        <table className="w-full border-collapse text-left text-sm">
-          <caption className="sr-only">Posições do mapa: ponto, signo, grau, casa e movimento</caption>
-          <thead>
-            <tr className="border-b border-border text-muted">
-              <th scope="col" className="py-2 pr-3 font-medium">Ponto</th>
-              <th scope="col" className="py-2 pr-3 font-medium">Signo</th>
-              <th scope="col" className="py-2 pr-3 font-medium">Grau</th>
-              <th scope="col" className="py-2 pr-3 font-medium">Casa</th>
-              <th scope="col" className="py-2 font-medium">Movimento</th>
-            </tr>
-          </thead>
-          <tbody>
-            {chart.bodies.map((body) => (
-              <tr key={body.pointId} className={body.pointId === highlightPointId ? "bg-gold-soft" : undefined}>
-                <th scope="row" className="py-2 pr-3 font-medium">
-                  {textGlyph(body.glyph)} {body.label}
-                </th>
-                <td className="py-2 pr-3">{body.signName}</td>
-                <td className="py-2 pr-3">{body.degreeLabel}</td>
-                <td className="py-2 pr-3">{body.houseNumber ?? "—"}</td>
-                <td className="py-2">{body.retrograde === null ? "—" : body.retrograde ? "Retrógrado" : "Direto"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {showPositions ? (
+        <>
+          <ul className="grid gap-2 sm:hidden">
+            {chart.bodies.map((body) => {
+              const isSelected = body.pointId === selected;
+              return (
+                <li key={body.pointId}>
+                  <button
+                    type="button"
+                    aria-pressed={isSelected}
+                    className={`w-full rounded-xl px-3 py-2 text-left text-sm ${isSelected ? "bg-gold-soft" : ""}`}
+                    onClick={() => onSelectPoint?.(body.pointId)}
+                  >
+                    <p className="font-medium">
+                      {textGlyph(body.glyph)} {body.label}
+                    </p>
+                    <p>
+                      {body.signName} {body.degreeLabel} · casa {body.houseNumber ?? "—"} · {body.retrograde === null ? "—" : body.retrograde ? "retrógrado" : "direto"}
+                    </p>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full border-collapse text-left text-sm">
+              <caption className="sr-only">Posições do mapa: ponto, signo, grau, casa e movimento</caption>
+              <thead>
+                <tr className="border-b border-border text-muted">
+                  <th scope="col" className="py-2 pr-3 font-medium">Ponto</th>
+                  <th scope="col" className="py-2 pr-3 font-medium">Signo</th>
+                  <th scope="col" className="py-2 pr-3 font-medium">Grau</th>
+                  <th scope="col" className="py-2 pr-3 font-medium">Casa</th>
+                  <th scope="col" className="py-2 font-medium">Movimento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chart.bodies.map((body) => {
+                  const isSelected = body.pointId === selected;
+                  return (
+                    <tr
+                      key={body.pointId}
+                      className={isSelected ? "bg-gold-soft" : undefined}
+                      onClick={() => onSelectPoint?.(body.pointId)}
+                    >
+                      <th scope="row" className="py-2 pr-3 font-medium">
+                        <button type="button" aria-pressed={isSelected} className="text-left font-medium" onClick={() => onSelectPoint?.(body.pointId)}>
+                          {textGlyph(body.glyph)} {body.label}
+                        </button>
+                      </th>
+                      <td className="py-2 pr-3">{body.signName}</td>
+                      <td className="py-2 pr-3">{body.degreeLabel}</td>
+                      <td className="py-2 pr-3">{body.houseNumber ?? "—"}</td>
+                      <td className="py-2">{body.retrograde === null ? "—" : body.retrograde ? "Retrógrado" : "Direto"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }

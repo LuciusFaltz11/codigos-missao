@@ -180,7 +180,7 @@ export default async function MethodologyAdminPage({
           </Select>
         </label>
         <label className="flex gap-2 text-sm">
-          <input type="checkbox" name="activateAscendant" defaultChecked={Boolean(row?.activate_ascendant)} />
+          <input type="checkbox" name="activateAscendant" defaultChecked={row?.activate_ascendant ?? true} />
           Ativar também o Ascendente
         </label>
         <label className="flex gap-2 text-sm">

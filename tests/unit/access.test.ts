@@ -9,10 +9,14 @@ import {
   provisionalSnapshot,
 } from "@/features/methodology/snapshot";
 import { toFreePreview, type PreparedChart } from "@/features/preview/redact";
-import { validateAgainstEvidence, type InterpretationResult } from "@/features/interpretation/validate";
+import { IndividualReadingSchema, validateAgainstEvidence, type InterpretationResult } from "@/features/interpretation/validate";
+import { orderStatusLabel, paymentProviderLabel } from "@/features/admin/orders";
 import { roleHas } from "@/server/auth/rbac";
 import { officialCatalog } from "@/features/missions/catalog";
 import type { MissionActivation } from "@/features/missions/activate";
+import { INDIVIDUAL_SYSTEM_PROMPT, PROMPT_VERSION, SYNTHESIS_SYSTEM_PROMPT } from "@/features/interpretation/prompts";
+import { composeFreePreviewSummary } from "@/features/preview/teaser";
+import { DEFAULT_ACTIVATION_POINTS, resolvedActivationPoints } from "@/lib/constants/astrology";
 
 const activation = (point: string, codeId: string, house: number): MissionActivation => {
   const code = officialCatalog.find((item) => item.id === codeId)!;
@@ -58,6 +62,46 @@ describe("prévia gratuita", () => {
     expect(serialized).not.toContain("Filha da terra");
     expect(serialized).not.toContain("touro-1");
     expect(preview.otherActivationCount).toBe(1);
+    expect(serialized).not.toContain(officialCatalog.find((item) => item.id === "touro-1")!.keyword);
+    expect(preview.interpretationSummary?.kicker).toMatch(/Sol encontra Navegante do fogo/);
+    expect(preview.interpretationSummary?.body).toMatch(/casa 1/);
+    expect(preview.interpretationSummary?.invitation).toMatch(/outro Código/);
+    expect(JSON.stringify(preview.interpretationSummary)).not.toContain("Filha da terra");
+    expect(JSON.stringify(preview.interpretationSummary)).not.toContain("touro-1");
+    expect(preview.activationPoints).toEqual([
+      {
+        pointId: "sun",
+        pointLabel: "Sol",
+        signName: "Áries",
+        degreeLabel: "14°00′00″",
+        houseNumber: 1,
+        unlocked: true,
+      },
+      {
+        pointId: "mars",
+        pointLabel: "Marte",
+        signName: "Touro",
+        degreeLabel: "14°00′00″",
+        houseNumber: 7,
+        unlocked: false,
+      },
+    ]);
+  });
+
+  it("monta um resumo só do ponto livre para convidar à leitura completa", () => {
+    const summary = composeFreePreviewSummary({
+      pointId: "sun",
+      signName: "Áries",
+      houseNumber: 11,
+      archetype: "Soberana do horizonte",
+      keyword: "Iniciar",
+      otherCount: 14,
+    });
+    expect(summary.kicker).toBe("O Sol encontra Soberana do horizonte");
+    expect(summary.body).toMatch(/casa 11/);
+    expect(summary.body).toMatch(/Iniciar/);
+    expect(summary.invitation).toMatch(/outros 14 Códigos/);
+    expect(summary.body).not.toMatch(/Filha da terra|touro-1/);
   });
 });
 
@@ -109,7 +153,21 @@ describe("pagamento", () => {
       alreadyEntitled: false,
     });
     expect(blockers.length).toBeGreaterThan(0);
+    expect(blockers.some((item) => item.includes("InfinitePay"))).toBe(true);
     expect(glossaryReady(provisionalSnapshot())).toBe(false);
+  });
+
+  it("não exige InfinitePay quando o cupom zera o pedido", () => {
+    const blockers = checkoutBlockers({
+      chartStatus: "complete",
+      snapshot: provisionalSnapshot(),
+      priceCents: 35000,
+      integrations: { infinitepay: "not_configured", llm: "configured", email: "configured" },
+      alreadyEntitled: false,
+      requirePaymentProvider: false,
+    });
+    expect(blockers.some((item) => item.includes("InfinitePay"))).toBe(false);
+    expect(blockers.some((item) => item.includes("metodologia") || item.includes("textos"))).toBe(true);
   });
 
   it("associa a metodologia publicada a mapa não pago com o mesmo cálculo", () => {
@@ -169,6 +227,14 @@ describe("RBAC", () => {
     expect(roleHas("editor", "leads.read")).toBe(false);
     expect(roleHas("support", "orders.read")).toBe(true);
     expect(roleHas("support", "content.write")).toBe(false);
+    expect(roleHas("editor", "orders.read")).toBe(false);
+  });
+
+  it("rotula status e provedor do pedido", () => {
+    expect(orderStatusLabel("approved")).toBe("Aprovado");
+    expect(orderStatusLabel("pending")).toBe("Pendente");
+    expect(paymentProviderLabel("coupon")).toBe("Cupom");
+    expect(paymentProviderLabel("infinitepay")).toBe("InfinitePay");
   });
 });
 
@@ -209,5 +275,34 @@ describe("usuários do painel", () => {
     expect(loginErrorMessage("senha")).toMatch(/senha está incorreta/i);
     expect(loginErrorMessage("primeiro")).toMatch(/primeiro acesso/i);
     expect(loginErrorMessage("bloqueado")).toMatch(/bloqueado/i);
+  });
+});
+
+describe("ativações novas", () => {
+  it("inclui o Ascendente nas versões novas e não o inventa em mapas antigos", () => {
+    expect(DEFAULT_ACTIVATION_POINTS).toContain("ascendant");
+    expect(provisionalSnapshot().activateAscendant).toBe(true);
+    expect(resolvedActivationPoints({ activationPoints: ["sun", "moon"], activateAscendant: false })).toEqual([
+      "sun",
+      "moon",
+    ]);
+    expect(resolvedActivationPoints({ activationPoints: ["sun", "ascendant"], activateAscendant: false })).toEqual([
+      "sun",
+    ]);
+    expect(resolvedActivationPoints({ activationPoints: ["sun"], activateAscendant: true })).toEqual(["sun", "ascendant"]);
+  });
+});
+
+describe("prompt híbrido", () => {
+  it("sobe a versão e pede narrativa única sem blocos extras de Luz e Sombra", () => {
+    expect(PROMPT_VERSION).toBe("1.1.0");
+    expect(INDIVIDUAL_SYSTEM_PROMPT).toMatch(/2–3 parágrafos/);
+    expect(INDIVIDUAL_SYSTEM_PROMPT).toMatch(/ecos mínimos/);
+    expect(INDIVIDUAL_SYSTEM_PROMPT).not.toMatch(/light_expression \(40–80/);
+    expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/relações/);
+    expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/frase de impacto/);
+    expect(IndividualReadingSchema.shape.interpretation).toBeDefined();
+    expect(IndividualReadingSchema.shape.light_expression).toBeDefined();
+    expect(IndividualReadingSchema.shape.shadow_expression).toBeDefined();
   });
 });

@@ -1,9 +1,9 @@
 import "server-only";
 import { decidePaymentTransition, type InfinitePayEvent, type PaymentStatus, type ProviderPayment } from "@/features/checkout/transition";
-import { PROMPT_VERSION } from "@/features/interpretation/prompts";
 import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { checkPayment } from "@/server/providers/infinitepay";
+import { fulfillApprovedOrder } from "@/server/services/fulfillment";
 
 export async function recordAndProcessPayment(input: {
   orderNsu: string;
@@ -106,42 +106,32 @@ export async function recordAndProcessPayment(input: {
   }
 
   if (decision.action === "update") {
-    await service.from("payments").upsert(
-      {
-        order_id: order.data.id,
-        provider: "infinitepay",
-        provider_payment_id: payment.id,
-        status: decision.nextStatus,
-        amount_cents: Number(order.data.amount_cents),
+    if (decision.nextStatus === "approved") {
+      await fulfillApprovedOrder(service, {
+        orderId: String(order.data.id),
+        chartId: String(order.data.chart_id),
+        leadId: String(order.data.lead_id),
+        amountCents: Number(order.data.amount_cents),
         currency: String(order.data.currency),
-      },
-      { onConflict: "provider,provider_payment_id" },
-    );
-    await service.from("orders").update({ status: decision.nextStatus }).eq("id", order.data.id);
-    if (decision.grantEntitlement) {
-      const granted = await service
-        .from("entitlements")
-        .insert({ order_id: order.data.id, chart_id: order.data.chart_id, lead_id: order.data.lead_id })
-        .select("id")
-        .maybeSingle();
-      if (granted.data) {
-        await service.from("jobs").insert({
-          kind: "interpretation",
-          idempotency_key: `interpretation:${granted.data.id}:${PROMPT_VERSION}`,
-          status: "queued",
-          payload: { entitlementId: granted.data.id, chartId: order.data.chart_id },
-          next_run_at: new Date().toISOString(),
-        });
-        await service.from("analytics_events").insert({
-          name: "payment_approved",
+        provider: "infinitepay",
+        providerPaymentId: payment.id,
+      });
+    } else {
+      await service.from("payments").upsert(
+        {
           order_id: order.data.id,
-          chart_id: order.data.chart_id,
-          properties: {},
-        });
+          provider: "infinitepay",
+          provider_payment_id: payment.id,
+          status: decision.nextStatus,
+          amount_cents: Number(order.data.amount_cents),
+          currency: String(order.data.currency),
+        },
+        { onConflict: "provider,provider_payment_id" },
+      );
+      await service.from("orders").update({ status: decision.nextStatus }).eq("id", order.data.id);
+      if (decision.refundPendingPolicy) {
+        await service.from("entitlements").update({ refund_pending_policy: true }).eq("order_id", order.data.id);
       }
-    }
-    if (decision.refundPendingPolicy) {
-      await service.from("entitlements").update({ refund_pending_policy: true }).eq("order_id", order.data.id);
     }
   }
 

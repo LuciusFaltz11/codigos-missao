@@ -45,6 +45,11 @@ async function main() {
 
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 
+  const { data: existingCodes } = await supabase.from("mission_codes").select("id,image_url");
+  const imageById = new Map(
+    (existingCodes ?? []).map((row) => [String(row.id), typeof row.image_url === "string" ? row.image_url : null]),
+  );
+
   const codes = officialCatalog.map((code) => ({
     id: code.id,
     number: code.number,
@@ -60,13 +65,15 @@ async function main() {
     shadow: code.shadow,
     essential_oil: code.essentialOil,
     tarot_mirror_card: code.tarotMirrorCard,
-    image_url: code.imageUrl,
+    image_url: imageById.get(code.id) ?? code.imageUrl,
     source_page: code.sourcePage,
   }));
 
   const { error: codeError } = await supabase.from("mission_codes").upsert(codes);
   if (codeError) throw codeError;
 
+  const { data: existingHouses } = await supabase.from("house_meanings").select("house_number,published");
+  const housePublished = new Map((existingHouses ?? []).map((row) => [Number(row.house_number), Boolean(row.published)]));
   const { error: houseError } = await supabase.from("house_meanings").upsert(
     editorialKnowledge.casas.map((house) => ({
       house_number: house.numero,
@@ -74,11 +81,13 @@ async function main() {
       summary: house.resumo,
       keywords: house.palavras_chave,
       source: house.fonte,
-      published: false,
+      published: housePublished.get(house.numero) ?? false,
     })),
   );
   if (houseError) throw houseError;
 
+  const { data: existingPoints } = await supabase.from("point_meanings").select("id,published");
+  const pointPublished = new Map((existingPoints ?? []).map((row) => [String(row.id), Boolean(row.published)]));
   const { error: pointError } = await supabase.from("point_meanings").upsert(
     editorialKnowledge.pontos.map((point) => ({
       id: point.id,
@@ -86,7 +95,7 @@ async function main() {
       summary: point.resumo,
       keywords: point.palavras_chave,
       source: point.fonte,
-      published: false,
+      published: pointPublished.get(point.id) ?? false,
     })),
   );
   if (pointError) throw pointError;
@@ -108,6 +117,7 @@ async function main() {
       label: "rascunho",
       status: "draft",
       activation_points: DEFAULT_ACTIVATION_POINTS,
+      activate_ascendant: true,
       rules_validated: false,
       rules_note: PROVISIONAL_ASTROLOGY_NOTICE,
     });

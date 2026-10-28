@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PageShell } from "@/components/site/chrome";
 import { CheckoutCouponForm } from "@/components/checkout/coupon-form";
 import { ImmediateFlash } from "@/components/ui/flash-toast";
-import { couponOfferLabel, normalizeCouponCode } from "@/features/checkout/coupons";
+import { couponOfferLabel, isComplimentaryAmount, normalizeCouponCode } from "@/features/checkout/coupons";
 import { formatBrl } from "@/lib/formatters";
 import { checkoutBlockers } from "@/features/methodology/snapshot";
 import { quoteCoupon } from "@/server/services/coupons";
@@ -29,19 +29,21 @@ export default async function CheckoutPage({
   const query = await searchParams;
   const loaded = await loadChartByToken(token);
   if (!loaded) notFound();
-  const blockers = checkoutBlockers({
-    chartStatus: loaded.status,
-    snapshot: loaded.snapshot,
-    priceCents: loaded.priceCents,
-    integrations: deliveryStatus(),
-    alreadyEntitled: loaded.entitlement === "active",
-  });
   const typed = normalizeCouponCode(query.cupom ?? "");
   const quoted =
     typed && loaded.priceCents != null ? await quoteCoupon(loaded.priceCents, typed) : null;
   const couponError = typed && quoted && !quoted.ok ? (quoted.reason === "below_minimum" ? "minimo" : "cupom") : null;
   const applied = quoted?.ok ? quoted : null;
   const chargeCents = applied?.amountCents ?? loaded.priceCents;
+  const complimentary = Boolean(applied) && chargeCents !== null && isComplimentaryAmount(chargeCents);
+  const blockers = checkoutBlockers({
+    chartStatus: loaded.status,
+    snapshot: loaded.snapshot,
+    priceCents: loaded.priceCents,
+    integrations: deliveryStatus(),
+    alreadyEntitled: loaded.entitlement === "active",
+    requirePaymentProvider: !complimentary,
+  });
   const couponFlash = !query.erro && couponError ? ERROR_MESSAGE[couponError] : null;
   return (
     <PageShell>
@@ -50,8 +52,9 @@ export default async function CheckoutPage({
         <header className="grid gap-3">
           <h1 className="font-display text-4xl">Leitura completa</h1>
           <p className="max-w-xl text-lg leading-8 text-muted">
-            A prévia mostrou um código. Agora você libera todas as ativações do seu mapa, os padrões que se repetem e uma
-            síntese para guardar — em PDF e no seu e-mail.
+            {complimentary
+              ? "Com este cupom a leitura completa é liberada sem pagamento. O PDF chega no seu e-mail."
+              : "A prévia mostrou um código. Agora você libera todas as ativações do seu mapa, os padrões que se repetem e uma síntese para guardar — em PDF e no seu e-mail."}
           </p>
         </header>
 

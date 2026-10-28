@@ -1,366 +1,499 @@
 {
   "status": "RASCUNHO_EDITORIZAVEL_NAO_PUBLICADO",
-  "descricao": "Resumos operacionais elaborados a partir dos dois PDFs-base enviados. NÃO substituem a fonte original nem devem ir diretamente à IA de produção antes de revisão/aprovação editorial. O material não oferece um glossário autônomo completo dos signos.",
+  "descricao": "Resumos operacionais das 12 casas sintetizados a partir de Casas Astrológicas .md; pontos sintetizados a partir de Resumo planetas, kiron, nodos e roda da fortuna.md (o Ascendente também usa a casa 1). NÃO substituem a fonte original nem devem ir diretamente à IA de produção antes de revisão/aprovação editorial. O material não oferece um glossário autônomo completo dos signos.",
   "casas": [
     {
       "numero": 1,
-      "titulo": "Individualização e presença",
-      "resumo": "Início da experiência, identidade em formação, corpo, expressão pessoal e como a pessoa encontra a vida. O Ascendente representa uma lente inicial de percepção e resposta, que pode ser desenvolvida conscientemente.",
+      "titulo": "Individualização e entrada na experiência",
+      "resumo": "Princípio da individualização e da entrada na vida: o primeiro modo de existir, aparecer e responder ao mundo. O Ascendente funciona como lente inicial de percepção — presença, corpo, autoexpressão e a identidade em formação. Não descreve um destino fixo: é o ponto de partida a partir do qual a pessoa inicia, experimenta e, com o tempo, desenvolve a individualidade rumo à identidade solar. O aprendizado é tornar-se si mesma sem confundir essa primeira resposta ao mundo com a totalidade de quem é.",
       "palavras_chave": [
+        "individualização",
+        "nascimento",
+        "início",
         "identidade",
         "presença",
+        "corpo",
+        "autoexpressão",
+        "autonomia",
         "iniciativa",
-        "autodescoberta",
-        "ascendente"
+        "entrada na experiência",
+        "Ascendente",
+        "autodescoberta"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "1–4"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 1"
     },
     {
       "numero": 2,
-      "titulo": "Valor, recursos e sustentação",
-      "resumo": "Recursos próprios, corpo, bens, talentos, valores, desejo, autoestima e segurança. O foco vai além de dinheiro: como cada pessoa reconhece e cultiva aquilo que lhe dá sustentação.",
+      "titulo": "Valor, recursos e substância",
+      "resumo": "Campo da consolidação da existência por meio da posse, dos recursos, dos valores, dos desejos e da segurança. Mostra como a pessoa constrói substância, reconhece o próprio valor e estabelece bases materiais e afetivas de sustentação. Não se reduz a dinheiro: fala de talentos, habilidades, objetos significativos e da relação com o ter. O eixo é distinguir possuir e ser — desenvolver autoestima e segurança interior sem identificar o valor pessoal apenas com o que se acumula.",
       "palavras_chave": [
         "recursos",
         "valores",
         "segurança",
+        "substância",
+        "posse",
+        "dinheiro",
+        "talentos",
         "autoestima",
-        "desejo"
+        "desejo",
+        "sustentação",
+        "ter e ser"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "4–7"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 2"
     },
     {
       "numero": 3,
-      "titulo": "Percepção e comunicação",
-      "resumo": "Relação com o entorno imediato, aprendizagem, linguagem, mente concreta, irmãos e deslocamentos próximos. Destaca os filtros por meio dos quais interpretamos informações e experiências.",
+      "titulo": "Percepção, mente concreta e comunicação",
+      "resumo": "Ambiente imediato, mente concreta e os primeiros filtros de percepção. Relaciona-se à linguagem, à comunicação, à aprendizagem prática, aos irmãos, à vizinhança e aos deslocamentos próximos. É o modo de processar informações, nomear a experiência e trocar com o entorno. O desafio é ampliar os filtros perceptivos: o que se percebe, como se interpreta e como se comunica — sem reduzir a casa a comunicação de forma genérica.",
       "palavras_chave": [
-        "aprendizagem",
+        "percepção",
+        "mente concreta",
         "comunicação",
-        "ambiente próximo",
         "linguagem",
-        "percepção"
+        "aprendizagem",
+        "ambiente próximo",
+        "irmãos",
+        "vizinhança",
+        "deslocamentos próximos",
+        "informação",
+        "filtros perceptivos"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "7–10"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 3"
     },
     {
       "numero": 4,
-      "titulo": "Raízes e base interior",
-      "resumo": "Lar, origem, família, raízes, intimidade, sensação de pertencimento e imagens internalizadas das figuras parentais. Trata da construção de uma base emocional própria.",
+      "titulo": "Raízes, lar e base interior",
+      "resumo": "Raízes, origem, lar e a base interior a partir da qual a pessoa se constrói. Liga-se à família, à intimidade, ao Fundo-do-Céu e ao sentimento de pertencimento. Mostra de onde se vem e o que precisa ser enraizado para haver estabilidade emocional. O movimento maduro é honrar a origem e, ao mesmo tempo, construir uma base própria — um lar interno que sustente a vida, não apenas a casa física da infância.",
       "palavras_chave": [
-        "origem",
-        "lar",
-        "pertencimento",
         "raízes",
+        "lar",
+        "família",
+        "origem",
+        "intimidade",
+        "base emocional",
+        "pertencimento",
+        "Fundo-do-Céu",
         "vida privada",
-        "base emocional"
+        "ancestralidade"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "10–13"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 4"
     },
     {
       "numero": 5,
-      "titulo": "Expressão criativa e prazer",
-      "resumo": "Alegria de viver, criatividade, romances, filhos, hobbies, espontaneidade e capacidade de colocar algo próprio no mundo. Expressar-se sem depender exclusivamente de aplausos externos.",
+      "titulo": "Expressão criativa, prazer e self",
+      "resumo": "Expressão criativa do self: prazer, romance, filhos, arte, jogo e a criança interior. É o campo em que a identidade enraizada na casa 4 ganha forma visível e se arrisca a brilhar. Fala de autoexpressão, sexualidade lúdica, criação e da capacidade de gerar algo que nasça de si. O aprendizado é expressar-se e criar sem depender de ser o centro, nem reduzir o prazer à necessidade de aprovação.",
       "palavras_chave": [
         "criatividade",
         "prazer",
-        "expressão",
         "romance",
         "filhos",
+        "arte",
+        "diversão",
+        "sexualidade",
+        "autoexpressão",
+        "criança interior",
         "brilho"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "13–16"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 5"
     },
     {
       "numero": 6,
       "titulo": "Rotina, serviço e aperfeiçoamento",
-      "resumo": "Vida cotidiana, trabalho prático, hábitos, saúde como tema simbólico de rotina e cuidado, serviço e desenvolvimento progressivo de habilidades. Não constitui diagnóstico de saúde.",
+      "resumo": "Trabalho cotidiano, rotina, hábitos, serviço e o aperfeiçoamento do que se faz todos os dias. Não descreve carreira pública: fala das tarefas, da disciplina, da colaboração e da utilidade das próprias capacidades. Também assinala a relação com o corpo por meio de hábitos, alimentação, descanso e higiene — como escolhas diárias sustentam ou desequilibram o bem-estar, sem diagnosticar saúde. O desenvolvimento acontece nas pequenas tarefas contínuas.",
       "palavras_chave": [
         "rotina",
         "trabalho cotidiano",
-        "serviço",
         "hábitos",
+        "serviço",
         "disciplina",
-        "aperfeiçoamento"
+        "aperfeiçoamento",
+        "saúde simbólica",
+        "cuidado",
+        "colaboração",
+        "utilidade"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "16–17"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 6"
     },
     {
       "numero": 7,
-      "titulo": "O encontro com o outro",
-      "resumo": "Relacionamentos, casamento, acordos, sociedades, compromisso e projeção de qualidades nos parceiros. Envolve equilibrar identidade própria e vínculo com outras pessoas.",
+      "titulo": "O outro, parceria e espelhamento",
+      "resumo": "Experiência do outro: quem se atrai, como se relaciona, quais qualidades se busca ou se projeta nos parceiros e como integrar essas características em si. É a casa da parceria, do compromisso, das sociedades, dos contratos e também do confronto direto — o Descendente, oposto ao Ascendente. O grande aprendizado é equilibrar identidade e relacionamento: permanecer sendo si mesma sem exigir que o outro carregue o que ainda não se reconhece em si.",
       "palavras_chave": [
         "parcerias",
+        "casamento",
         "relacionamento",
+        "sociedades",
+        "contratos",
         "compromisso",
+        "o outro",
+        "Descendente",
         "projeção",
-        "espelhamento"
+        "espelhamento",
+        "cooperação",
+        "reciprocidade"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "17–18"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 7"
     },
     {
       "numero": 8,
-      "titulo": "Transformação e compartilhamento",
-      "resumo": "Crises e renascimentos simbólicos, recursos compartilhados, intimidade, perdas, controle e regeneração. A linguagem deve evitar prever acontecimentos concretos ou traumas.",
+      "titulo": "Transformação, intimidade e regeneração",
+      "resumo": "Transformação profunda, crises simbólicas, perdas, regeneração e a necessidade de abandonar o que já não pode continuar da mesma maneira. Diferente da casa 2, trata de recursos compartilhados, heranças, dívidas e trocas que envolvem o outro. Intimidade e sexualidade entram aqui pela abertura, confiança, vulnerabilidade, poder e entrega. Não prediz eventos: descreve o processo de deixar morrer uma forma antiga para que outra possa nascer — com potencial de renovação, não de diagnóstico.",
       "palavras_chave": [
         "transformação",
-        "intimidade",
-        "recursos compartilhados",
+        "crise simbólica",
         "perda",
-        "regeneração"
+        "regeneração",
+        "morte e renascimento",
+        "recursos compartilhados",
+        "intimidade",
+        "sexualidade",
+        "vulnerabilidade",
+        "poder",
+        "entrega"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "18–19"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 8"
     },
     {
       "numero": 9,
-      "titulo": "Sentido e expansão da visão",
-      "resumo": "Busca de significado, filosofia, fé, religião, espiritualidade, ensino superior, longas viagens, contato com outras culturas e sistemas de compreensão mais amplos.",
+      "titulo": "Sentido, verdade e expansão da visão",
+      "resumo": "Busca de significado, verdade e propósito: a passagem do conhecimento concreto da casa 3 para uma compreensão mais ampla e abstrata da existência. Filosofia, religião, espiritualidade, ensino superior, viagens, outras culturas e a capacidade de organizar experiências em um sistema maior de sentido. No nível coletivo, relaciona-se a leis, princípios e à disseminação de ideias. O desafio é não transformar a busca pela verdade em dogmatismo.",
       "palavras_chave": [
+        "verdade",
+        "significado",
         "propósito",
         "filosofia",
+        "religião",
         "espiritualidade",
-        "ensino superior",
-        "visão de mundo"
+        "conhecimento superior",
+        "viagens longas",
+        "visão de mundo",
+        "síntese",
+        "leis",
+        "ensino"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "19–22"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 9"
     },
     {
       "numero": 10,
-      "titulo": "Realização pública e vocação",
-      "resumo": "Carreira, contribuição ao mundo, responsabilidade, imagem pública, autoridade e reconhecimento. O Meio-do-Céu se relaciona ao ápice visível da jornada social.",
+      "titulo": "Realização pública, vocação e reconhecimento",
+      "resumo": "Realização no mundo, imagem pública e aquilo pelo qual se deseja ser reconhecida. Carreira, vocação, autoridade, reputação, status e contribuição visível — o Meio-do-Céu como ponto mais alto e visível do mapa. Se a casa 1 pergunta quem sou, a 10 pergunta o que farei com quem sou no mundo. Não se reduz a emprego: é o papel assumido perante a sociedade. A sombra é viver só para aprovação e afastar-se do que realmente se deseja construir.",
       "palavras_chave": [
+        "realização",
         "carreira",
         "vocação",
         "autoridade",
+        "reconhecimento",
+        "status",
         "reputação",
-        "reconhecimento"
+        "imagem pública",
+        "Meio-do-Céu",
+        "contribuição"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "22–23"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 10"
     },
     {
       "numero": 11,
-      "titulo": "Grupos e futuro compartilhado",
-      "resumo": "Amizades, coletivos, comunidade, cooperação, ideais, redes sociais, participação no todo e projetos para o futuro.",
+      "titulo": "Grupos, ideais e futuro compartilhado",
+      "resumo": "Grupos, amizades, redes, ideais coletivos, projetos de futuro e a consciência de pertencimento. Passagem do indivíduo para algo maior: aquilo que se constrói e se compartilha na comunidade. Evolui da mente próxima (casa 3) e do encontro com o outro (casa 7) para a mente grupal e a humanidade. Imaginar um futuro claro ajuda a direcionar ações; o risco é alinhar o self apenas às crenças do grupo ou buscar os amigos certos como identidade.",
       "palavras_chave": [
         "amizades",
         "grupos",
+        "pertencimento",
         "comunidade",
-        "cooperação",
         "ideais",
-        "futuro"
+        "consciência coletiva",
+        "cooperação",
+        "projetos futuros",
+        "redes",
+        "humanidade"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "23–25"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 11"
     },
     {
       "numero": 12,
-      "titulo": "Inconsciente e experiência de unidade",
-      "resumo": "Dimensões inconscientes, recolhimento, entrega, compaixão, dissolução dos limites habituais do eu e experiência simbólica de conexão com algo maior. Evitar diagnosticar estados psicológicos.",
+      "titulo": "Unidade, inconsciente e entrega",
+      "resumo": "Último estágio do percurso: da ideia de pertencer a um todo (casa 11) à experiência direta dessa unidade. Dissolução dos limites habituais do eu, inconsciente, imaginação, recolhimento, compaixão e entrega a algo maior. Os inimigos secretos muitas vezes são forças internas não reconhecidas, não pessoas externas. Isolamento pode ser externo ou psicológico. Integrada, essa sensibilidade vira criatividade, serviço e espiritualidade; sem integração, vira anulação, fuga ou autossabotagem. Não diagnostica estados clínicos: descreve o desafio simbólico do eu separado encontrar a totalidade.",
       "palavras_chave": [
         "inconsciente",
+        "unidade",
+        "dissolução do ego",
         "recolhimento",
         "transcendência",
         "entrega",
-        "compaixão"
+        "compaixão",
+        "imaginação",
+        "serviço",
+        "isolamento",
+        "inimigos secretos"
       ],
-      "fonte": "Casas Astrológicas .pdf",
-      "paginas_fonte": "25–28"
+      "fonte": "Casas Astrológicas .md",
+      "paginas_fonte": "Casa 12"
     }
   ],
   "pontos": [
     {
       "id": "sun",
       "nome": "Sol",
-      "resumo": "Desenvolvimento consciente de identidade, individualidade e expressão do eu; a casa assinala um campo em que a pessoa busca autorrealização e reconhecimento.",
+      "resumo": "Mostra quem se está desenvolvendo para ser: identidade, individualidade e força de expressão conscientes — não apenas o que surge de forma instintiva. A casa indica o campo em que se busca destaque, realização e reconhecimento, e onde obstáculos podem servir ao desenvolvimento do eu. Também pode evocar imagens do pai ou do animus, e inclinações vocacionais. Não descreve um destino fixo: é o caminho de conquistar conscientemente as qualidades construtivas do signo solar e irradiá-las na vida.",
       "palavras_chave": [
         "identidade",
-        "consciência",
+        "individualidade",
+        "ego consciente",
         "expressão",
-        "realização"
+        "realização",
+        "reconhecimento",
+        "vocação",
+        "animus"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "1"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Sol"
     },
     {
       "id": "moon",
       "nome": "Lua",
-      "resumo": "Natureza emocional, reações instintivas, necessidades de conforto e segurança, cuidado, hábitos e formas de absorver a atmosfera do ambiente.",
+      "resumo": "Natureza emocional e o modo instintivo de responder ao ambiente. Mostra necessidades de segurança, conforto, cuidado e nutrição, hábitos, a vida doméstica e a imagem do feminino — inclusive a relação com o ser provido. A casa indica onde se é mais sensível e reativo, onde se absorve a atmosfera e onde hábitos do passado ainda moldam a resposta; pode ser refúgio, mas também zona de regressão. Não diagnostica estados afetivos: descreve o padrão emocional simbólico e o que proporciona descanso.",
       "palavras_chave": [
         "emoções",
         "segurança",
+        "conforto",
         "instintos",
         "cuidado",
-        "hábitos"
+        "hábitos",
+        "nutrição",
+        "vida doméstica",
+        "reação ao ambiente"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "1–2"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Lua"
     },
     {
       "id": "mercury",
       "nome": "Mercúrio",
-      "resumo": "Pensamento, aprendizagem, interpretação do mundo, linguagem e comunicação. A casa indica onde observação e troca de informações ganham destaque.",
+      "resumo": "Mente, pensamento, aprendizagem e a ponte entre a experiência e a compreensão consciente. Mostra como se interpreta a realidade, se organizam informações, se questiona e se comunica. O signo descreve o estilo mental; a casa, o campo em que observar, aprender e trocar ganham destaque. Uma mente bem desenvolvida não só acumula dados: discerne e utiliza o conhecimento. Em desequilíbrio, pode haver racionalização excessiva, dispersão, ansiedade mental ou confundir o que se pensa com o que está acontecendo — sem diagnosticar quadro clínico.",
       "palavras_chave": [
         "mente",
+        "pensamento",
         "linguagem",
         "comunicação",
-        "aprendizagem"
+        "aprendizagem",
+        "interpretação",
+        "curiosidade",
+        "discernimento"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "3"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Mercúrio"
     },
     {
       "id": "venus",
       "nome": "Vênus",
-      "resumo": "Afeto, vínculos, valores, autoestima, apreciação, prazer e harmonia. A casa sugere temas nos quais amor e reconhecimento de valor se expressam.",
+      "resumo": "Capacidade de valorizar, apreciar, atrair e estabelecer relações. Mostra o que se considera belo e desejável, como se ama e se recebe afeto, e os valores pelos quais se está disposto a comprometer-se. Não se reduz a romance: fala de autoestima, prazer, diplomacia, harmonia e do reconhecimento do próprio valor. A casa indica onde se busca prazer, afeto e validação. Em desequilíbrio, o desejo de agradar pode abandonar valores próprios ou evitar conflito a qualquer custo.",
       "palavras_chave": [
         "afeto",
         "valores",
         "relacionamentos",
         "autoestima",
-        "prazer"
+        "prazer",
+        "harmonia",
+        "atração",
+        "apreciação"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "3–4"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Vênus"
     },
     {
       "id": "mars",
       "nome": "Marte",
-      "resumo": "Ação, vontade, coragem, iniciativa e modo de enfrentar obstáculos e afirmar necessidades; possibilidade de impulsividade quando a energia perde direção.",
+      "resumo": "Ação, impulso, iniciativa, coragem e a capacidade de lutar pelo que se quer. Transforma intenção em movimento: sem ele, desejos podem ficar só no plano mental. O signo descreve como se enfrentam desafios, se afirma o espaço e se lida com raiva e competição; a casa, onde se concentra energia e esforço. Bem direcionado, dá determinação. Em desequilíbrio, vira impulsividade, irritação ou luta desnecessária — modo de usar a força, não previsão de conflito.",
       "palavras_chave": [
         "ação",
         "vontade",
         "iniciativa",
         "coragem",
-        "afirmação"
+        "afirmação",
+        "desejo",
+        "esforço",
+        "conquista"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "4–5"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Marte"
     },
     {
       "id": "jupiter",
       "nome": "Júpiter",
-      "resumo": "Expansão de horizontes, confiança, fé, estudos, propósito e capacidade de converter experiências em compreensão e sabedoria.",
+      "resumo": "Expansão, crescimento, confiança, fé e busca de significado. Amplia o que toca: conhecimento, visão de mundo, espiritualidade, estudos e experiências que alargam o horizonte. A função elevada não é ter mais, e sim tornar-se maior por dentro — transformar experiência em compreensão e sabedoria. A casa mostra onde se busca crescimento e generosidade. Em desequilíbrio, a confiança vira excesso, a fé vira dogmatismo e a liberdade recusa limites. Precisa de Saturno: expansão sem estrutura dispersa; com limite adequado, vira crescimento real.",
       "palavras_chave": [
         "expansão",
         "sentido",
         "confiança",
-        "aprendizagem",
-        "sabedoria"
+        "fé",
+        "visão de mundo",
+        "sabedoria",
+        "generosidade",
+        "horizonte"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "5–6"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Júpiter"
     },
     {
       "id": "saturn",
       "nome": "Saturno",
-      "resumo": "Limites, disciplina, responsabilidade, maturidade e estrutura; o que inicialmente exige esforço pode favorecer competência e autonomia.",
+      "resumo": "Estrutura, limite, responsabilidade, realidade e o que precisa ser construído com tempo e esforço. Não é punição: pergunta o que é sustentável e o que se é capaz de realizar com o que se tem. Enquanto Júpiter expande, Saturno concentra e dá forma. A casa indica onde o crescimento pede persistência — e onde a dificuldade inicial pode virar competência. Medo, inadequação ou cobrança aparecem como convite à maturidade, não como sentença. Precisa de Júpiter: estrutura sem visão enrijece; com visão, vira instrumento de realização.",
       "palavras_chave": [
         "estrutura",
         "limites",
         "responsabilidade",
-        "maturidade"
+        "maturidade",
+        "disciplina",
+        "tempo",
+        "competência",
+        "autoridade interior"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "7–8"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Saturno"
     },
     {
       "id": "uranus",
       "nome": "Urano",
-      "resumo": "Individuação, liberdade, inovação, ruptura de padrões cristalizados e abertura para formas mais autênticas de existência.",
+      "resumo": "Liberdade, ruptura, individuação, inovação e despertar da consciência. Rompe quando uma estrutura já não comporta evolução — não muda só por mudar. A casa indica onde se precisa de autonomia, experimentação e quebra de padrões convencionais. Integrado, vira originalidade e visão de futuro; na sombra, rebeldia, instabilidade ou ruptura sem consciência. Complementa Saturno: um pergunta o que sustentar, o outro o que libertar. Não prediz acontecimentos súbitos: descreve a função de renovar o que se tornou obsoleto.",
       "palavras_chave": [
         "liberdade",
         "ruptura",
+        "individuação",
+        "inovação",
+        "autonomia",
         "renovação",
-        "originalidade"
+        "originalidade",
+        "despertar"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "8–9"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Urano"
     },
     {
       "id": "neptune",
       "nome": "Netuno",
-      "resumo": "Sensibilidade, imaginação, idealização, inspiração, compaixão e busca de transcendência, com necessidade de discernimento entre intuição e fantasia.",
+      "resumo": "Dissolução, sensibilidade, imaginação, idealização, transcendência e busca de unidade. Dissolve fronteiras rígidas do eu e abre para algo maior — inspiração, empatia, espiritualidade e criatividade. O desafio é manter discernimento: diferenciar intuição de fantasia, entrega de fuga, compaixão de sacrifício. A casa indica onde se idealiza, se sensibiliza e se dissolvem limites. Na sombra: ilusão, confusão, vitimização ou autoengano. Não diagnostica dissociação: descreve a questão de abrir-se ao que é maior sem perder o chão.",
       "palavras_chave": [
         "sensibilidade",
         "imaginação",
+        "idealização",
         "transcendência",
+        "compaixão",
+        "dissolução",
+        "inspiração",
         "discernimento"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "9"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Netuno"
     },
     {
       "id": "pluto",
       "nome": "Plutão",
-      "resumo": "Sombra simbólica, poder, controle, crise, transformação e regeneração. Interpretar sem alegar acontecimentos inevitáveis ou diagnosticar experiências.",
+      "resumo": "Poder, sombra, crise simbólica, transformação e regeneração. Conduz ao que está oculto ou enraizado e pede que se abandone uma forma antiga para que outra nasça. O tema é o poder que se exerce, o que se entrega e o que se tenta controlar por medo de perder. Integrado, a crise vira força interior e regeneração; na sombra, compulsão, manipulação ou luta permanente pelo controle. A casa indica o campo dessa confrontação. Não prediz perdas nem diagnostica trauma: descreve o processo simbólico de deixar morrer o que já cumpriu sua função.",
       "palavras_chave": [
         "poder",
-        "transformação",
         "sombra",
-        "regeneração"
+        "crise simbólica",
+        "transformação",
+        "regeneração",
+        "controle",
+        "profundidade",
+        "renascimento"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "9–10"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Plutão"
     },
     {
       "id": "chiron",
       "nome": "Quíron",
-      "resumo": "Vulnerabilidade e possibilidade de transformar uma experiência sentida como ferida em compreensão, integração e sabedoria. Não inferir trauma real.",
+      "resumo": "Ferida simbólica, vulnerabilidade e a transformação dessa experiência em consciência e sabedoria. Não é só a dor: é o processo de reconhecer, integrar e impedir que a fragilidade defina a identidade. O paradoxo é que o que mais dói pode virar empatia e orientação — ponte entre fragilidade e força. A casa mostra onde a inadequação é mais visível e também o potencial de desenvolvimento. Na sombra: vitimização ou compensação excessiva. Não inferir trauma real nem diagnosticar: a questão é como transformar o que feriu em compreensão.",
       "palavras_chave": [
+        "ferida simbólica",
         "vulnerabilidade",
         "integração",
-        "compreensão",
+        "consciência",
+        "empatia",
+        "ponte",
+        "cura simbólica",
         "sabedoria"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "10–11"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Quíron"
     },
     {
       "id": "part_of_fortune",
       "nome": "Roda da Fortuna",
-      "resumo": "Potencial simbólico de satisfação e realização associado à harmonia de Sol, Lua e Ascendente; não representa garantia de sorte ou prosperidade financeira.",
+      "resumo": "Ponto de potencial simbólico de alegria, satisfação e realização quando Sol, Lua e Ascendente funcionam em harmonia: identidade, necessidade emocional e modo de entrar no mundo alinhados. Não é sorte automática nem garantia de prosperidade: indica uma possibilidade a ser conquistada por esforço, consciência e direção. Mostra o desejo mais profundo de sentido; obstáculos no mapa podem ser lidos como degraus, não como infortúnio anunciado. Seus benefícios dependem de como se usam Sol, Lua e Ascendente — não prediz eventos nem confirma destino.",
       "palavras_chave": [
         "satisfação",
         "realização",
-        "integração",
-        "alegria"
+        "alegria",
+        "harmonia",
+        "Sol Lua Ascendente",
+        "propósito",
+        "potencial",
+        "sentido"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "2–3"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Roda da Fortuna"
     },
     {
       "id": "south_node",
       "nome": "Nodo Sul",
-      "resumo": "Padrões conhecidos, hábitos e tendências arraigadas que podem servir de recurso ou limitar a abertura a novas experiências.",
+      "resumo": "Polo do conhecido: padrões, hábitos e tendências arraigadas que já se desenvolveram e podem ser repetidos de forma automática. Funciona como base e zona de conforto — recurso da vida atual, mas limitador se a pessoa permanece só no que já sabe. Com o Nodo Norte, organiza o eixo de crescimento: o que é espontâneo porque já foi vivido versus o que ainda precisa ser desenvolvido. Não afirma reencarnação como fato: descreve um passado simbólico de competências e vícios de funcionamento. O Nodo Sul no cálculo é o Norte + 180°.",
       "palavras_chave": [
         "passado simbólico",
         "padrões",
-        "comodidade",
-        "experiência"
+        "hábitos",
+        "zona de conforto",
+        "tendências arraigadas",
+        "base",
+        "automaticidade"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "5"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Nodos Lunares"
     },
     {
       "id": "north_node",
       "nome": "Nodo Norte",
-      "resumo": "Direção simbólica de desenvolvimento, possibilidades novas de aprendizagem, expansão da consciência e saída da zona de conforto.",
+      "resumo": "Polo do desenvolvimento: direção simbólica para a qual crescer, aprender e integrar o que ainda não é espontâneo. Indica vocação de aprendizagem e novas experiências, usando o Nodo Sul como base — não como prisão. A vida atual é a transição entre o conhecido e o que amplia a consciência. Não é destino nem meta obrigatória: é o convite a desenvolver conscientemente o que ainda não está dado. Lê-se sempre em eixo com o Nodo Sul.",
       "palavras_chave": [
         "desenvolvimento",
         "aprendizagem",
         "direção",
-        "novos caminhos"
+        "novos caminhos",
+        "vocação de crescimento",
+        "integração",
+        "evolução da consciência"
       ],
-      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.pdf",
-      "paginas_fonte": "5"
+      "fonte": "Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Nodos Lunares"
+    },
+    {
+      "id": "ascendant",
+      "nome": "Ascendente",
+      "resumo": "Lente inicial de percepção e resposta da casa 1: o modo de entrar na experiência, aparecer e iniciar. Marca a identidade em formação, a presença e o corpo como primeira expressão. No eixo da Roda da Fortuna, é a personalidade que precisa se harmonizar com o Sol (identidade) e a Lua (necessidade emocional). Pode ser desenvolvida conscientemente e não descreve um destino fixo — é o ponto de partida rumo à identidade solar, não a totalidade de quem a pessoa é.",
+      "palavras_chave": [
+        "lente inicial",
+        "presença",
+        "identidade em formação",
+        "iniciativa",
+        "entrada na experiência",
+        "personalidade",
+        "autoexpressão"
+      ],
+      "fonte": "Casas Astrológicas .md; Resumo planetas, kiron, nodos e roda da fortuna.md",
+      "paginas_fonte": "Casa 1 · Roda da Fortuna"
     }
   ],
   "signos": [

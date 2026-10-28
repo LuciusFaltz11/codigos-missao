@@ -55,4 +55,15 @@ describe("avisos em toast", () => {
   it("ignora parâmetros que não são aviso", () => {
     expect(resolveFlash("/admin/cupons", params("editar=1&novo=1"))).toBeNull();
   });
+
+  it("explica o reenvio da leitura completa", () => {
+    expect(resolveFlash("/mapa/completo/abc", params("email=queued"))).toEqual({
+      kind: "success",
+      message: "O reenvio do e-mail foi enfileirado.",
+    });
+    expect(resolveFlash("/mapa/completo/abc", params("email=pending"))).toEqual({
+      kind: "error",
+      message: "A leitura ainda está sendo preparada. O e-mail sai automaticamente quando ela ficar pronta.",
+    });
+  });
 });

@@ -1,29 +1,49 @@
+import { OrdersPanel } from "@/components/admin/orders-panel";
 import { AdminPanel, Empty } from "@/components/admin/shell";
-import { formatBrl } from "@/lib/formatters";
-import { tryServiceClient } from "@/server/db/clients";
+import { maskEmail } from "@/lib/formatters";
+import { roleHas } from "@/server/auth/rbac";
+import { getAdminSession } from "@/server/auth/session";
+import { loadAdminOrders } from "@/server/services/admin-orders";
 
 export const dynamic = "force-dynamic";
 
-export default async function OrdersPage() {
-  const service = tryServiceClient();
-  const orders = service
-    ? await service.from("orders").select("id,status,amount_cents,currency,external_reference,coupon_code,discount_cents,created_at").order("created_at", { ascending: false }).limit(100)
-    : null;
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ver?: string }>;
+}) {
+  const query = await searchParams;
+  const session = await getAdminSession();
+  if (session && !roleHas(session.role, "orders.read")) {
+    return (
+      <AdminPanel>
+        <Empty>Seu papel não acessa pedidos.</Empty>
+      </AdminPanel>
+    );
+  }
+  const loaded = await loadAdminOrders();
+  const rows =
+    session?.role === "support"
+      ? loaded.map((order) => ({
+          ...order,
+          leadName: "Nome oculto para suporte",
+          leadEmail: maskEmail(order.leadEmail),
+        }))
+      : loaded;
   return (
     <AdminPanel>
       <h1 className="font-display text-4xl">Pedidos</h1>
-      {!orders?.data?.length ? <div className="mt-6"><Empty>Nenhum pedido.</Empty></div> : null}
-      <ul className="mt-6 grid gap-2 text-sm">
-        {(orders?.data ?? []).map((order) => (
-          <li key={String(order.id)} className="rounded-xl bg-surface px-4 py-3">
-            {String(order.status)} · {formatBrl(Number(order.amount_cents))}
-            {order.coupon_code ? ` · cupom ${String(order.coupon_code)}` : ""}
-            {Number(order.discount_cents) > 0 ? ` · −${formatBrl(Number(order.discount_cents))}` : ""}
-            {" · "}
-            {String(order.external_reference)}
-          </li>
-        ))}
-      </ul>
+      <p className="mt-2 max-w-2xl text-sm text-muted">
+        Cada linha é um pedido registrado. Clique para ver valores, cupom, pagamento, acesso e o andamento do PDF e do
+        e-mail.
+      </p>
+      {rows.length === 0 ? (
+        <div className="mt-6">
+          <Empty>Nenhum pedido.</Empty>
+        </div>
+      ) : (
+        <OrdersPanel rows={rows} initialId={query.ver} />
+      )}
     </AdminPanel>
   );
 }

@@ -33,8 +33,13 @@ export function applyCoupon(priceCents: number, coupon: CouponRecord): CouponApp
     discountCents = Math.min(coupon.amountCents, priceCents);
   }
   const amountCents = priceCents - discountCents;
+  if (amountCents === 0) return { ok: true, amountCents: 0, discountCents };
   if (amountCents < MIN_CHARGE_CENTS) return { ok: false, reason: "below_minimum" };
   return { ok: true, amountCents, discountCents };
+}
+
+export function isComplimentaryAmount(amountCents: number) {
+  return amountCents === 0;
 }
 
 export function couponDiscountLabel(coupon: Pick<CouponRecord, "kind" | "percent" | "amountCents">) {

@@ -1,5 +1,4 @@
-import { PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
-import { DEFAULT_ACTIVATION_POINTS } from "@/lib/constants/astrology";
+import { DEFAULT_ACTIVATION_POINTS, PROVISIONAL_ASTROLOGY_NOTICE, resolvedActivationPoints } from "@/lib/constants/astrology";
 import { editorialKnowledge, officialCatalog, type MissionCode } from "@/features/missions/catalog";
 import type { MethodologySnapshot } from "@/features/interpretation/context";
 
@@ -12,7 +11,7 @@ export function provisionalSnapshot(codes: MissionCode[] = officialCatalog): Met
     houseSystem: "placidus",
     nodeMode: "true",
     fortunaRule: "pending_approval",
-    activateAscendant: false,
+    activateAscendant: true,
     freePreviewPoint: "sun",
     activationPoints: [...DEFAULT_ACTIVATION_POINTS],
     codes,
@@ -37,7 +36,7 @@ export function glossaryReady(snapshot: MethodologySnapshot) {
     const house = snapshot.houses.find((item) => item.id === id);
     return Boolean(house?.published && house.summary.trim());
   });
-  const pointsReady = snapshot.activationPoints.every((id) => {
+  const pointsReady = resolvedActivationPoints(snapshot).every((id) => {
     if (id === "part_of_fortune" && snapshot.fortunaRule === "pending_approval") return true;
     const point = snapshot.points.find((item) => item.id === id);
     return Boolean(point?.published && point.summary.trim());
@@ -70,8 +69,10 @@ export function checkoutBlockers(input: {
   priceCents: number | null;
   integrations: { infinitepay: string; llm: string; email: string };
   alreadyEntitled: boolean;
+  requirePaymentProvider?: boolean;
 }) {
   const blockers: string[] = [];
+  const requirePaymentProvider = input.requirePaymentProvider ?? true;
   if (input.alreadyEntitled) blockers.push("Esta leitura já está liberada.");
   if (input.chartStatus !== "complete") {
     blockers.push("O mapa ainda não tem um cálculo astronômico concluído.");
@@ -87,7 +88,9 @@ export function checkoutBlockers(input: {
     );
   }
   if (input.priceCents === null) blockers.push("O preço do produto ainda não foi configurado.");
-  if (input.integrations.infinitepay !== "configured") blockers.push("A InfinitePay não está configurada.");
+  if (requirePaymentProvider && input.integrations.infinitepay !== "configured") {
+    blockers.push("A InfinitePay não está configurada.");
+  }
   if (input.integrations.llm !== "configured") blockers.push("O provedor de interpretação não está configurado.");
   if (input.integrations.email !== "configured") blockers.push("O e-mail transacional não está configurado.");
   return blockers;

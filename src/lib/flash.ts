@@ -3,7 +3,7 @@ import { loginErrorMessage } from "@/features/admin/users";
 export type FlashKind = "success" | "error";
 export type Flash = { kind: FlashKind; message: string };
 
-export const FLASH_PARAM_KEYS = ["erro", "salvo", "publicado"] as const;
+export const FLASH_PARAM_KEYS = ["erro", "salvo", "publicado", "email"] as const;
 
 function errorFlash(message: string): Flash {
   return { kind: "error", message };
@@ -110,6 +110,13 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
     if (erro === "minimo") return errorFlash("Este cupom deixa o valor abaixo do mínimo de cobrança.");
     if (erro === "link") return errorFlash("A InfinitePay não confirmou o link de pagamento.");
     if (erro === "1") return errorFlash("Não foi possível abrir o pagamento.");
+  }
+
+  if (pathname.startsWith("/mapa/completo/")) {
+    const email = params.get("email");
+    if (email === "queued") return successFlash("O reenvio do e-mail foi enfileirado.");
+    if (email === "limit") return errorFlash("Aguarde um pouco para pedir outro e-mail.");
+    if (email === "pending") return errorFlash("A leitura ainda está sendo preparada. O e-mail sai automaticamente quando ela ficar pronta.");
   }
 
   return null;
