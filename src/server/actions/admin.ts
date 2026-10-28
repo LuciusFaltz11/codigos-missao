@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { DEFAULT_ACTIVATION_POINTS, PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
-import { adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
+import { adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, interpretationPromptSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
+import { PROMPT_VERSION } from "@/features/interpretation/prompts";
 import { normalizeCouponCode } from "@/features/checkout/coupons";
 import { isAdminRole } from "@/server/auth/rbac";
 import { getAdminSession, requirePermission } from "@/server/auth/session";
@@ -122,6 +123,46 @@ export async function updateGlossary(kind: "house" | "point", id: string, formDa
   }
   await audit(auth.admin.userId, "glossary_updated", kind, id);
   redirect("/admin/astrologia?salvo=1");
+}
+
+export async function saveInterpretationPrompt(formData: FormData) {
+  const auth = await requirePermission("content.write");
+  if (!auth.ok) redirect(auth.status === 401 ? "/admin/login" : "/admin/prompts?erro=permissao");
+  const service = tryServiceClient();
+  if (!service) redirect("/admin/prompts?erro=config");
+  const parsed = interpretationPromptSchema.safeParse({
+    kind: formData.get("kind"),
+    body: formData.get("body"),
+  });
+  if (!parsed.success) redirect("/admin/prompts?erro=1");
+  const current = await service
+    .from("interpretation_prompts")
+    .select("id,version")
+    .eq("kind", parsed.data.kind)
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (current.data?.id) {
+    const updated = await service
+      .from("interpretation_prompts")
+      .update({ body: parsed.data.body })
+      .eq("id", current.data.id);
+    if (updated.error) redirect("/admin/prompts?erro=salvar");
+  } else {
+    const inserted = await service.from("interpretation_prompts").upsert(
+      {
+        kind: parsed.data.kind,
+        version: PROMPT_VERSION,
+        body: parsed.data.body,
+        status: "published",
+      },
+      { onConflict: "kind,version" },
+    );
+    if (inserted.error) redirect("/admin/prompts?erro=salvar");
+  }
+  await audit(auth.admin.userId, "interpretation_prompt_updated", "interpretation_prompts", parsed.data.kind);
+  redirect("/admin/prompts?salvo=1");
 }
 
 export async function saveMethodologyDraft(formData: FormData) {

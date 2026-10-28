@@ -1,10 +1,6 @@
 import "server-only";
 import { buildInterpretationContext } from "@/features/interpretation/context";
-import {
-  INDIVIDUAL_SYSTEM_PROMPT,
-  PROMPT_VERSION,
-  SYNTHESIS_SYSTEM_PROMPT,
-} from "@/features/interpretation/prompts";
+import { PROMPT_VERSION } from "@/features/interpretation/prompts";
 import {
   IndividualBatchSchema,
   InterpretationResultSchema,
@@ -18,6 +14,7 @@ import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { createInterpretationProvider, LlmHttpError } from "@/server/providers/llm";
 import { loadChartByToken } from "@/server/services/charts";
+import { loadLiveInterpretationPrompts } from "@/server/services/prompts";
 import { openToken } from "@/server/security/tokens";
 
 async function chartForEntitlement(entitlementId: string) {
@@ -64,11 +61,13 @@ export async function generateInterpretation(entitlementId: string) {
     patterns,
     calculationVersion: loaded.calculationVersion,
   });
+  const prompts = await loadLiveInterpretationPrompts(service);
+  const promptVersion = prompts.version || PROMPT_VERSION;
   const existing = await service
     .from("readings")
     .select("id,status")
     .eq("entitlement_id", entitlementId)
-    .eq("prompt_version", PROMPT_VERSION)
+    .eq("prompt_version", promptVersion)
     .maybeSingle();
 
   if (!built.ok) {
@@ -78,7 +77,7 @@ export async function generateInterpretation(entitlementId: string) {
         chart_id: loaded.chartId,
         entitlement_id: entitlementId,
         status: "editorial_blocked",
-        prompt_version: PROMPT_VERSION,
+        prompt_version: promptVersion,
         model: null,
         context_snapshot: null,
         result: null,
@@ -98,7 +97,7 @@ export async function generateInterpretation(entitlementId: string) {
     chart_id: loaded.chartId,
     entitlement_id: entitlementId,
     status: "processing",
-    prompt_version: PROMPT_VERSION,
+    prompt_version: promptVersion,
     model: provider.model,
     context_snapshot: built.context,
     last_error: null,
@@ -112,14 +111,14 @@ export async function generateInterpretation(entitlementId: string) {
       const batchContext = { ...built.context, activations: batch };
       const expected = batch.map((item) => item.activation_id);
       const user = `Interprete a seguinte lista de ativações estritamente com base nos fatos e textos editoriais fornecidos no objeto JSON. Retorne individual_readings cobrindo exatamente os activation_ids informados e não inclua ativações inventadas.\n\n<CONTEXT_JSON>\n${JSON.stringify(batchContext)}\n</CONTEXT_JSON>`;
-      let completion = await provider.completeJson({ system: INDIVIDUAL_SYSTEM_PROMPT, user });
+      let completion = await provider.completeJson({ system: prompts.individual, user });
       inputTokens += completion.usage?.inputTokens ?? 0;
       outputTokens += completion.usage?.outputTokens ?? 0;
       let parsed = IndividualBatchSchema.safeParse(completion.json);
       let idsOk = parsed.success && parsed.data.individual_readings.map((item) => item.activation_id).sort().join() === [...expected].sort().join();
       if (!parsed.success || !idsOk) {
         completion = await provider.completeJson({
-          system: INDIVIDUAL_SYSTEM_PROMPT,
+          system: prompts.individual,
           user: `${user}\n\nA resposta anterior foi rejeitada pelo validador. Devolva somente o JSON corrigido, com exatamente estes activation_ids: ${expected.join(", ")}.`,
         });
         inputTokens += completion.usage?.inputTokens ?? 0;
@@ -132,7 +131,7 @@ export async function generateInterpretation(entitlementId: string) {
     }
 
     const synthesisUser = `Escreva uma síntese autoral e integrada a partir de:\n- interpretation_context validado;\n- leituras individuais revisadas;\n- verified_patterns pré-calculados.\n\nRetorne APENAS JSON com os IDs e evidências existentes. Se não houver repetição literal, não afirme que há. Use somente pattern_id presentes em verified_patterns.\n\n<INPUT_JSON>\n${JSON.stringify({ context: built.context, individual_readings: readings })}\n</INPUT_JSON>`;
-    let synthesis = await provider.completeJson({ system: SYNTHESIS_SYSTEM_PROMPT, user: synthesisUser });
+    let synthesis = await provider.completeJson({ system: prompts.synthesis, user: synthesisUser });
     inputTokens += synthesis.usage?.inputTokens ?? 0;
     outputTokens += synthesis.usage?.outputTokens ?? 0;
     let synthesisParsed = SynthesisSchema.safeParse(synthesis.json);
@@ -148,7 +147,7 @@ export async function generateInterpretation(entitlementId: string) {
       : ["schema"];
     if (!result || evidenceErrors.length > 0) {
       synthesis = await provider.completeJson({
-        system: SYNTHESIS_SYSTEM_PROMPT,
+        system: prompts.synthesis,
         user: `${synthesisUser}\n\nA resposta anterior falhou na validação (${evidenceErrors.join(" ")}). Corrija o JSON sem inventar ids.`,
       });
       inputTokens += synthesis.usage?.inputTokens ?? 0;

@@ -10,6 +10,7 @@ const links = [
   ["Códigos", "/admin/codigos"],
   ["Astrologia", "/admin/astrologia"],
   ["Metodologia", "/admin/metodologia"],
+  ["Prompts", "/admin/prompts"],
   ["Simulador", "/admin/simulador"],
   ["Leads", "/admin/leads"],
   ["Mapas", "/admin/mapas"],

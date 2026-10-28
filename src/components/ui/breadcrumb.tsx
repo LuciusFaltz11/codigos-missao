@@ -8,6 +8,7 @@ const labels: Record<string, string> = {
   codigos: "Códigos",
   astrologia: "Astrologia",
   metodologia: "Metodologia",
+  prompts: "Prompts",
   simulador: "Simulador",
   leads: "Leads",
   mapas: "Mapas",

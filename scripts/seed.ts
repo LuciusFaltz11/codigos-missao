@@ -137,10 +137,24 @@ async function main() {
   );
   if (productError) throw productError;
 
+  const { data: existingPrompts } = await supabase.from("interpretation_prompts").select("kind,version,body");
+  const promptBodyByKey = new Map(
+    (existingPrompts ?? []).map((row) => [`${row.kind}:${row.version}`, String(row.body ?? "")]),
+  );
   const { error: promptError } = await supabase.from("interpretation_prompts").upsert(
     [
-      { kind: "individual", version: PROMPT_VERSION, body: INDIVIDUAL_SYSTEM_PROMPT, status: "published" },
-      { kind: "synthesis", version: PROMPT_VERSION, body: SYNTHESIS_SYSTEM_PROMPT, status: "published" },
+      {
+        kind: "individual",
+        version: PROMPT_VERSION,
+        body: promptBodyByKey.get(`individual:${PROMPT_VERSION}`)?.trim() || INDIVIDUAL_SYSTEM_PROMPT,
+        status: "published",
+      },
+      {
+        kind: "synthesis",
+        version: PROMPT_VERSION,
+        body: promptBodyByKey.get(`synthesis:${PROMPT_VERSION}`)?.trim() || SYNTHESIS_SYSTEM_PROMPT,
+        status: "published",
+      },
     ],
     { onConflict: "kind,version" },
   );

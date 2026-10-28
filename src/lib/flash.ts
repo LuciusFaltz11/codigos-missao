@@ -91,6 +91,14 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
       if (erro === "1") return errorFlash("Não foi possível salvar este texto.");
       return null;
     },
+    "/admin/prompts": () => {
+      if (salvo === "1") return successFlash("Prompt salvo. As próximas leituras usam este texto.");
+      if (erro === "permissao") return errorFlash("Seu papel não altera os prompts da leitura.");
+      if (erro === "config") return errorFlash("O banco ainda não está configurado.");
+      if (erro === "salvar") return errorFlash("Não foi possível guardar o prompt no banco.");
+      if (erro === "1") return errorFlash("O prompt precisa ter entre 80 e 20 mil caracteres.");
+      return null;
+    },
     "/admin/relatorios": () => {
       if (salvo === "1") return successFlash("Reprocessamento enfileirado.");
       if (erro === "permissao") return errorFlash("Seu papel não reprocessa relatórios.");

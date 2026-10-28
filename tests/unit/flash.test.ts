@@ -56,6 +56,17 @@ describe("avisos em toast", () => {
     expect(resolveFlash("/admin/cupons", params("editar=1&novo=1"))).toBeNull();
   });
 
+  it("confirma o prompt da leitura salvo no banco", () => {
+    expect(resolveFlash("/admin/prompts", params("salvo=1"))).toEqual({
+      kind: "success",
+      message: "Prompt salvo. As próximas leituras usam este texto.",
+    });
+    expect(resolveFlash("/admin/prompts", params("erro=1"))).toEqual({
+      kind: "error",
+      message: "O prompt precisa ter entre 80 e 20 mil caracteres.",
+    });
+  });
+
   it("explica o reenvio da leitura completa", () => {
     expect(resolveFlash("/mapa/completo/abc", params("email=queued"))).toEqual({
       kind: "success",

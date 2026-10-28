@@ -54,6 +54,11 @@ export const glossaryUpdateSchema = z.object({
   summary: z.string().trim().min(1).max(8000),
 });
 
+export const interpretationPromptSchema = z.object({
+  kind: z.enum(["individual", "synthesis"]),
+  body: z.string().trim().min(80).max(20_000),
+});
+
 export const adminUserCreateSchema = z
   .object({
     email: z.string().trim().email().max(200),
