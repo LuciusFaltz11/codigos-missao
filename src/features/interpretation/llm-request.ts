@@ -1,18 +1,50 @@
-export function llmApiBase(provider: string, apiBase?: string | null) {
-  const configured = apiBase?.trim().replace(/\/$/, "");
-  if (configured) return configured;
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
+const OPENAI_API_BASE = "https://api.openai.com/v1";
+const ANTHROPIC_API_BASE = "https://api.anthropic.com";
+
+export function llmProviderKind(provider: string) {
   const name = provider.trim().toLowerCase();
-  if (name === "gemini" || name === "google" || name === "google-ai") {
-    return "https://generativelanguage.googleapis.com/v1beta/openai";
+  if (name === "gemini" || name === "google" || name === "google-ai") return "gemini" as const;
+  if (name === "anthropic") return "anthropic" as const;
+  if (name === "openai") return "openai" as const;
+  return "openai_compatible" as const;
+}
+
+export function llmHostKind(url: string) {
+  const host = url.toLowerCase();
+  if (host.includes("generativelanguage.googleapis.com") || host.includes("ai.google.dev")) return "gemini" as const;
+  if (host.includes("api.anthropic.com")) return "anthropic" as const;
+  if (host.includes("api.openai.com")) return "openai" as const;
+  return "other" as const;
+}
+
+export function llmApiBase(provider: string, apiBase?: string | null) {
+  const configured = apiBase?.trim().replace(/\/$/, "") || "";
+  const kind = llmProviderKind(provider);
+  if (kind === "gemini") {
+    if (configured && llmHostKind(configured) !== "openai" && llmHostKind(configured) !== "anthropic") return configured;
+    return GEMINI_API_BASE;
   }
-  if (name === "anthropic") return "https://api.anthropic.com";
-  return "https://api.openai.com/v1";
+  if (kind === "anthropic") {
+    if (configured && llmHostKind(configured) !== "gemini" && llmHostKind(configured) !== "openai") return configured;
+    return ANTHROPIC_API_BASE;
+  }
+  if (configured && llmHostKind(configured) !== "gemini" && llmHostKind(configured) !== "anthropic") return configured;
+  return OPENAI_API_BASE;
 }
 
 export function isGeminiProvider(provider: string, apiBase?: string | null) {
-  const name = provider.trim().toLowerCase();
-  if (name === "gemini" || name === "google" || name === "google-ai") return true;
-  return Boolean(apiBase?.includes("generativelanguage.googleapis.com"));
+  if (llmProviderKind(provider) === "gemini") return true;
+  if (llmProviderKind(provider) === "openai" || llmProviderKind(provider) === "anthropic") return false;
+  return llmHostKind(llmApiBase(provider, apiBase)) === "gemini";
+}
+
+export function llmRequestHost(url: string) {
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
 }
 
 export function openAiCompatiblePayload(input: {
@@ -35,15 +67,17 @@ export function openAiCompatiblePayload(input: {
 }
 
 export function llmErrorFields(body: unknown) {
-  if (!body || typeof body !== "object") return { llmStatus: null as string | null };
+  if (!body || typeof body !== "object") return { llmStatus: null as string | null, llmMessage: null as string | null };
   const error = "error" in body && body.error && typeof body.error === "object" ? body.error : body;
   const record = error as Record<string, unknown>;
   const llmStatus =
     (typeof record.status === "string" && record.status) ||
     (typeof record.code === "string" && record.code) ||
     (typeof record.type === "string" && record.type) ||
+    (typeof record.code === "number" && String(record.code)) ||
     null;
-  return { llmStatus };
+  const llmMessage = typeof record.message === "string" ? record.message.replace(/\s+/g, " ").slice(0, 180) : null;
+  return { llmStatus, llmMessage };
 }
 
 export function llmFailureCode(status: number) {

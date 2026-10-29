@@ -54,7 +54,7 @@ O seed grava os 36 códigos, o glossário como rascunho e um produto sem preço.
 | `INFINITEPAY_API_KEY` | Chave do Checkout Integrado, somente no servidor. Aparece uma vez na criação, no app da InfinitePay |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Adaptador de e-mail |
 | `LLM_PROVIDER` | `openai`, `anthropic`, `gemini` (também `google`) ou outro nome tratado como API compatível com OpenAI |
-| `LLM_API_KEY` / `LLM_MODEL` / `LLM_API_BASE` | Modelo. Para Gemini, se `LLM_API_BASE` estiver vazio o app usa `https://generativelanguage.googleapis.com/v1beta/openai`. Sem isso no Vercel, a chamada ia para a OpenAI e gerava `llm_http_error`. Use `gemini-3.8-flash` com `reasoning_effort` baixo — o nível `minimal` desse modelo devolve erro HTTP. |
+| `LLM_API_KEY` / `LLM_MODEL` / `LLM_API_BASE` | Modelo. Com `openai`, deixe `LLM_API_BASE` vazio (o app usa `https://api.openai.com/v1`) e apague no Vercel qualquer URL antiga da Gemini — senão o pedido ia para o Google e voltava HTTP 400. Com `gemini`, se a base estiver vazia o app usa `https://generativelanguage.googleapis.com/v1beta/openai`. Use `gemini-3.8-flash` com `reasoning_effort` baixo. |
 | `ASTROLOGY_ENGINE` | `caelus` (padrão), `none` ou `swiss_worker` |
 | `ASTROLOGY_LICENSE_CONFIRMED` | precisa ser `true` para chamar o worker do Swiss Ephemeris. O Caelus não usa essa chave |
 | `GEOCODING_PROVIDER` | `geoapify`. `opencage` e `mapbox` continuam no código |

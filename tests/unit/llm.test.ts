@@ -24,6 +24,21 @@ describe("pedido ao modelo de interpretação", () => {
     expect(llmApiBase("openai")).toBe("https://api.openai.com/v1");
   });
 
+  it("ignora a URL da Gemini quando o provedor é OpenAI", () => {
+    const leftover = "https://generativelanguage.googleapis.com/v1beta/openai";
+    expect(llmApiBase("openai", leftover)).toBe("https://api.openai.com/v1");
+    expect(isGeminiProvider("openai", leftover)).toBe(false);
+    expect(
+      openAiCompatiblePayload({
+        provider: "openai",
+        model: "gpt-4.1",
+        apiBase: leftover,
+        system: "sys",
+        user: "user",
+      }),
+    ).toMatchObject({ response_format: { type: "json_object" } });
+  });
+
   it("usa raciocínio baixo no Gemini 3.8, sem json_object nem thinking minimal", () => {
     const payload = openAiCompatiblePayload({
       provider: "gemini",
@@ -53,6 +68,11 @@ describe("pedido ao modelo de interpretação", () => {
   it("extrai o status da API sem guardar o corpo inteiro", () => {
     expect(llmErrorFields({ error: { status: "INVALID_ARGUMENT", message: "thinking_level" } })).toEqual({
       llmStatus: "INVALID_ARGUMENT",
+      llmMessage: "thinking_level",
+    });
+    expect(llmErrorFields({ error: { message: "Unknown model gpt-4.1", type: "invalid_request_error", code: null } })).toEqual({
+      llmStatus: "invalid_request_error",
+      llmMessage: "Unknown model gpt-4.1",
     });
   });
 

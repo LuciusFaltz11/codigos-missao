@@ -4,6 +4,7 @@ import {
   llmApiBase,
   llmErrorFields,
   llmFailureCode,
+  llmRequestHost,
   openAiCompatiblePayload,
   withLlmRetries,
 } from "@/features/interpretation/llm-request";
@@ -29,6 +30,8 @@ export class LlmHttpError extends Error {
     readonly llmStatus: string | null,
     readonly provider: string,
     readonly model: string,
+    readonly host: string | null = null,
+    readonly llmMessage: string | null = null,
   ) {
     super(llmFailureCode(status));
     this.name = "LlmHttpError";
@@ -48,12 +51,15 @@ function isTimeout(error: unknown) {
 async function rejectIfHttpError(response: Response, provider: string, model: string) {
   if (response.ok) return;
   let llmStatus: string | null = null;
+  let llmMessage: string | null = null;
   try {
-    llmStatus = llmErrorFields(await response.json()).llmStatus;
+    const fields = llmErrorFields(await response.json());
+    llmStatus = fields.llmStatus;
+    llmMessage = fields.llmMessage;
   } catch {
     llmStatus = null;
   }
-  throw new LlmHttpError(response.status, llmStatus, provider, model);
+  throw new LlmHttpError(response.status, llmStatus, provider, model, llmRequestHost(response.url), llmMessage);
 }
 
 export class NotConfiguredLlm implements InterpretationProvider {
@@ -100,12 +106,12 @@ export class HttpLlmProvider implements InterpretationProvider {
         openAiCompatiblePayload({
           provider: this.provider,
           model: this.model,
-          apiBase: this.apiBase ?? base,
+          apiBase: base,
           system: input.system,
           user: input.user,
         }),
       ),
-      signal: AbortSignal.timeout(isGeminiProvider(this.provider, this.apiBase) ? 90_000 : 60_000),
+      signal: AbortSignal.timeout(isGeminiProvider(this.provider, base) ? 90_000 : 60_000),
     });
     await rejectIfHttpError(response, this.provider, this.model);
     const body = (await response.json()) as {

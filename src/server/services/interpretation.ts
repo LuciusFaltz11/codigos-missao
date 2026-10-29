@@ -204,6 +204,8 @@ export async function generateInterpretation(entitlementId: string) {
         code,
         status: error.status,
         llmStatus: error.llmStatus,
+        llmMessage: error.llmMessage,
+        host: error.host,
         provider: error.provider,
         model: error.model,
       });
