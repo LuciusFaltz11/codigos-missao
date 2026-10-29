@@ -5,6 +5,7 @@ import {
   IndividualBatchSchema,
   InterpretationResultSchema,
   SynthesisSchema,
+  summarizeZodError,
   validateAgainstEvidence,
   type IndividualReading,
   type InterpretationResult,
@@ -117,16 +118,27 @@ export async function generateInterpretation(entitlementId: string) {
       let parsed = IndividualBatchSchema.safeParse(completion.json);
       let idsOk = parsed.success && parsed.data.individual_readings.map((item) => item.activation_id).sort().join() === [...expected].sort().join();
       if (!parsed.success || !idsOk) {
+        const reason = parsed.success
+          ? `activation_ids divergentes; use exatamente: ${expected.join(", ")}`
+          : summarizeZodError(parsed.error);
+        logEvent("error", "reading_batch_rejected", { stage: "individual", reason: reason.slice(0, 300) });
         completion = await provider.completeJson({
           system: prompts.individual,
-          user: `${user}\n\nA resposta anterior foi rejeitada pelo validador. Devolva somente o JSON corrigido, com exatamente estes activation_ids: ${expected.join(", ")}.`,
+          user: `${user}\n\nA resposta anterior foi rejeitada pelo validador (${reason}). Devolva somente o JSON corrigido, com exatamente estes activation_ids: ${expected.join(", ")}.`,
         });
         inputTokens += completion.usage?.inputTokens ?? 0;
         outputTokens += completion.usage?.outputTokens ?? 0;
         parsed = IndividualBatchSchema.safeParse(completion.json);
         idsOk = parsed.success && parsed.data.individual_readings.map((item) => item.activation_id).sort().join() === [...expected].sort().join();
       }
-      if (!parsed.success || !idsOk) throw new Error("failed_validation");
+      if (!parsed.success || !idsOk) {
+        logEvent("error", "reading_failed", {
+          code: "failed_validation",
+          stage: "individual",
+          reason: parsed.success ? "activation_ids" : summarizeZodError(parsed.error).slice(0, 300),
+        });
+        throw new Error("failed_validation");
+      }
       readings.push(...parsed.data.individual_readings);
     }
 
@@ -146,9 +158,11 @@ export async function generateInterpretation(entitlementId: string) {
         })
       : ["schema"];
     if (!result || evidenceErrors.length > 0) {
+      const reason = result ? evidenceErrors.join(" ") : synthesisParsed.success ? "schema" : summarizeZodError(synthesisParsed.error);
+      logEvent("error", "reading_batch_rejected", { stage: "synthesis", reason: reason.slice(0, 300) });
       synthesis = await provider.completeJson({
         system: prompts.synthesis,
-        user: `${synthesisUser}\n\nA resposta anterior falhou na validação (${evidenceErrors.join(" ")}). Corrija o JSON sem inventar ids.`,
+        user: `${synthesisUser}\n\nA resposta anterior falhou na validação (${reason}). Corrija o JSON sem inventar ids. Não copie disclaimers; evite afirmar diagnóstico, destino fixo ou evento futuro sobre a pessoa.`,
       });
       inputTokens += synthesis.usage?.inputTokens ?? 0;
       outputTokens += synthesis.usage?.outputTokens ?? 0;
@@ -162,7 +176,14 @@ export async function generateInterpretation(entitlementId: string) {
           })
         : ["schema"];
     }
-    if (!result || evidenceErrors.length > 0) throw new Error("failed_validation");
+    if (!result || evidenceErrors.length > 0) {
+      logEvent("error", "reading_failed", {
+        code: "failed_validation",
+        stage: "synthesis",
+        reason: (result ? evidenceErrors.join(" ") : synthesisParsed.success ? "schema" : summarizeZodError(synthesisParsed.error)).slice(0, 300),
+      });
+      throw new Error("failed_validation");
+    }
     const stored = InterpretationResultSchema.parse(result);
     await service
       .from("readings")
@@ -186,7 +207,7 @@ export async function generateInterpretation(entitlementId: string) {
         provider: error.provider,
         model: error.model,
       });
-    } else {
+    } else if (code !== "failed_validation") {
       logEvent("error", "reading_failed", { code });
     }
     return { ok: false as const, error: code };

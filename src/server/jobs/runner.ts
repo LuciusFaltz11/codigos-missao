@@ -6,6 +6,7 @@ import { getServerEnv } from "@/server/env";
 import { logEvent } from "@/server/logging";
 import { createEmailProvider } from "@/server/providers/email";
 import { openToken } from "@/server/security/tokens";
+import { loadCardArtDataUris } from "@/server/services/card-art-embed";
 import { generateInterpretation } from "@/server/services/interpretation";
 import { renderReportPdf } from "@/server/services/pdf";
 
@@ -62,7 +63,7 @@ async function runInterpretation(job: JobRow) {
   if (!entitlementId) return finish(job, "permanent_failed", "missing_entitlement");
   const result = await generateInterpretation(entitlementId);
   if (!result.ok) {
-    const permanent = result.error === "editorial_not_published" || result.error === "methodology_not_published" || result.error === "failed_validation";
+    const permanent = result.error === "editorial_not_published" || result.error === "methodology_not_published";
     return finish(job, permanent ? "permanent_failed" : "retryable_failed", result.error);
   }
   const service = tryServiceClient();
@@ -92,6 +93,24 @@ async function runPdf(job: JobRow) {
   const leadRow = lead?.data;
   if (!chart.data || !birthRow || !leadRow) return finish(job, "permanent_failed", "chart_missing");
   const snapshot = chart.data.methodology_snapshot as { versionLabel: string; notice: string };
+  const mappedActivations = (activations.data ?? []).map((row) => ({
+    id: `ac-${row.point_id}`,
+    natalPointId: String(row.point_id),
+    signSlug: String(row.sign_slug),
+    signName: String((row.code_snapshot as { signName: string }).signName),
+    degreeWithinSign: Number(row.degree_within_sign),
+    houseNumber: Number(row.house_number),
+    missionCodeId: String(row.mission_code_id),
+    methodologyVersion: String(row.methodology_version),
+    longitude: Number(row.longitude),
+    retrograde: (row.retrograde as boolean | null) ?? null,
+    code: row.code_snapshot as never,
+    trail: (row.trail as string[]) ?? [],
+  }));
+  const cardImages = await loadCardArtDataUris(
+    service,
+    mappedActivations.map((activation) => activation.missionCodeId),
+  );
   const pdf = await renderReportPdf({
     name: String(leadRow.name),
     cityLabel: String(birthRow.city_label),
@@ -101,21 +120,9 @@ async function runPdf(job: JobRow) {
     methodologyVersion: snapshot.versionLabel,
     calculationVersion: String(chart.data.calculation_version ?? ""),
     notice: snapshot.notice,
-    activations: (activations.data ?? []).map((row) => ({
-      id: `ac-${row.point_id}`,
-      natalPointId: String(row.point_id),
-      signSlug: String(row.sign_slug),
-      signName: String((row.code_snapshot as { signName: string }).signName),
-      degreeWithinSign: Number(row.degree_within_sign),
-      houseNumber: Number(row.house_number),
-      missionCodeId: String(row.mission_code_id),
-      methodologyVersion: String(row.methodology_version),
-      longitude: Number(row.longitude),
-      retrograde: (row.retrograde as boolean | null) ?? null,
-      code: row.code_snapshot as never,
-      trail: (row.trail as string[]) ?? [],
-    })),
+    activations: mappedActivations,
     reading: parsed.data,
+    cardImages,
   });
   const existingReport = await service
     .from("reports")

@@ -39,20 +39,27 @@ export const InterpretationResultSchema = z.object({
 export type InterpretationResult = z.infer<typeof InterpretationResultSchema>;
 export type IndividualReading = z.infer<typeof IndividualReadingSchema>;
 
-const FORBIDDEN_PATTERNS: RegExp[] = [
-  /diagn[oó]stic/i,
-  /voc[eê] (tem|teve|sofre de) (um |uma )?(trauma|doen[cç]a|depress[aã]o|ansiedade)/i,
-  /vida passada/i,
-  /cura garantida/i,
-  /voc[eê] vai (enriquecer|casar|morrer|adoecer|engravidar)/i,
-  /com certeza voc[eê]/i,
-  /destino (fixo|inevit[aá]vel|selado)/i,
-  /prometo que/i,
-  /resultado financeiro garantido/i,
+const FORBIDDEN_PATTERNS: Array<{ id: string; pattern: RegExp }> = [
+  { id: "diagnostico_afirmado", pattern: /voc[eê] (tem|teve|sofre de|recebeu) .{0,60}diagn[oó]stic/i },
+  { id: "trauma_doenca", pattern: /voc[eê] (tem|teve|sofre de) (um |uma )?(trauma|doen[cç]a|depress[aã]o|ansiedade)/i },
+  { id: "vida_passada_concreta", pattern: /sua vida passada|nas vidas passadas voc[eê]|em outra encarna[cç][aã]o voc[eê]/i },
+  { id: "cura_garantida", pattern: /cura garantida/i },
+  { id: "previsao_absoluta", pattern: /voc[eê] vai (enriquecer|casar|morrer|adoecer|engravidar)/i },
+  { id: "certeza_absoluta", pattern: /com certeza voc[eê]/i },
+  { id: "destino_selado", pattern: /seu destino (é|esta[á]|fica|permanece) (fixo|inevit[aá]vel|selado)/i },
+  { id: "promessa", pattern: /prometo que/i },
+  { id: "resultado_financeiro", pattern: /resultado financeiro garantido/i },
 ];
 
 export function findForbiddenClaims(text: string): string[] {
-  return FORBIDDEN_PATTERNS.filter((pattern) => pattern.test(text)).map((pattern) => pattern.source);
+  return FORBIDDEN_PATTERNS.filter((item) => item.pattern.test(text)).map((item) => item.id);
+}
+
+export function summarizeZodError(error: z.ZodError): string {
+  return error.issues
+    .slice(0, 8)
+    .map((issue) => `${issue.path.join(".") || "root"}:${issue.code}`)
+    .join("; ");
 }
 
 export function sameIdSet(actual: string[], expected: string[]) {
@@ -91,6 +98,8 @@ export function validateAgainstEvidence(input: {
 
   const blob = JSON.stringify(input.result);
   const forbidden = findForbiddenClaims(blob);
-  if (forbidden.length > 0) errors.push("A leitura contém formulação proibida pela política editorial.");
+  if (forbidden.length > 0) {
+    errors.push(`A leitura contém formulação proibida pela política editorial (${forbidden.join(", ")}).`);
+  }
   return errors;
 }

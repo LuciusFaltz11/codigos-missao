@@ -1,9 +1,12 @@
+import { after } from "next/server";
 import { consumeMemoryLimit, rateLimitKey } from "@/server/security/rate-limit";
+import { runDueJobs } from "@/server/jobs/runner";
 import { loadChartByToken } from "@/server/services/charts";
 import { loadReadingProgress } from "@/server/services/reading-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function GET(request: Request, context: { params: Promise<{ token: string }> }) {
   const { token } = await context.params;
@@ -17,6 +20,11 @@ export async function GET(request: Request, context: { params: Promise<{ token: 
     chartId: loaded.chartId,
     entitlementId: loaded.entitlementId,
   });
+  if (progress.delivery.poll) {
+    after(async () => {
+      await runDueJobs(1);
+    });
+  }
   return Response.json({
     ok: true,
     ...progress.delivery,

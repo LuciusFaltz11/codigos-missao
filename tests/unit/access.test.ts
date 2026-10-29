@@ -194,18 +194,18 @@ describe("pagamento", () => {
 });
 
 describe("validador da leitura", () => {
+  const validReading = {
+    activation_id: "ac-sol",
+    headline: "Um título válido",
+    interpretation: "x".repeat(60),
+    light_expression: "uma expressão de luz suficiente",
+    shadow_expression: "uma expressão de sombra suficiente",
+    reflective_question: "O que você observa?",
+  };
+
   it("rejeita ativação inventada e padrão sem evidência", () => {
     const result: InterpretationResult = {
-      individual_readings: [
-        {
-          activation_id: "ac-inventada",
-          headline: "Um título válido",
-          interpretation: "x".repeat(60),
-          light_expression: "uma expressão de luz suficiente",
-          shadow_expression: "uma expressão de sombra suficiente",
-          reflective_question: "O que você observa?",
-        },
-      ],
+      individual_readings: [{ ...validReading, activation_id: "ac-inventada" }],
       patterns: [],
       overall_synthesis: "y".repeat(420),
       closing_reflection: "z".repeat(90),
@@ -213,6 +213,25 @@ describe("validador da leitura", () => {
     };
     const errors = validateAgainstEvidence({ result, activationIds: ["ac-sol"], verifiedPatternIds: [] });
     expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it("aceita disclaimer editorial e rejeita afirmação clínica sobre a pessoa", () => {
+    const disclaimer: InterpretationResult = {
+      individual_readings: [validReading],
+      patterns: [],
+      overall_synthesis: `${"y".repeat(400)} Esta leitura não é um diagnóstico e não descreve um destino fixo.`,
+      closing_reflection: `${"z".repeat(80)} Sem vidas passadas concretas nesta narrativa.`,
+      reflective_questions: ["O que permanece em observação nesta leitura?"],
+    };
+    expect(validateAgainstEvidence({ result: disclaimer, activationIds: ["ac-sol"], verifiedPatternIds: [] })).toEqual([]);
+
+    const claimed: InterpretationResult = {
+      ...disclaimer,
+      overall_synthesis: `${"y".repeat(400)} Você tem um trauma e você vai casar neste ano.`,
+    };
+    expect(validateAgainstEvidence({ result: claimed, activationIds: ["ac-sol"], verifiedPatternIds: [] }).join(" ")).toMatch(
+      /trauma_doenca|previsao_absoluta/,
+    );
   });
 });
 

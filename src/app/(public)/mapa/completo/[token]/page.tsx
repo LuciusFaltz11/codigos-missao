@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { notFound, redirect } from "next/navigation";
 import { ChartReadingExperience, type ChartReadingPoint } from "@/components/chart/chart-reading";
 import { ReadingDeliveryPanel } from "@/components/chart/reading-delivery";
@@ -7,6 +8,7 @@ import { DISCLAIMER, pointLabel, signBySlug } from "@/lib/constants/astrology";
 import { formatDegree } from "@/features/astrology/longitude";
 import { buildNatalChart, longitudeFromAngle, parseCusps, parseWheelPositions } from "@/features/astrology/wheel";
 import { cardArtDisplayUrl } from "@/features/missions/card-art";
+import { runDueJobs } from "@/server/jobs/runner";
 import { loadChartByToken } from "@/server/services/charts";
 import { loadReadingProgress } from "@/server/services/reading-access";
 
@@ -22,6 +24,11 @@ export default async function CompleteReadingPage({ params }: { params: Promise<
     chartId: loaded.chartId,
     entitlementId: loaded.entitlementId,
   });
+  if (progress.delivery.poll) {
+    after(async () => {
+      await runDueJobs(1);
+    });
+  }
   const interpretation = progress.interpretation;
   const houses = Object.fromEntries(loaded.activations.map((item) => [item.natalPointId, item.houseNumber]));
   const chart = buildNatalChart({
