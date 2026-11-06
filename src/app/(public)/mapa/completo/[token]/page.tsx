@@ -24,7 +24,7 @@ export default async function CompleteReadingPage({ params }: { params: Promise<
     chartId: loaded.chartId,
     entitlementId: loaded.entitlementId,
   });
-  if (progress.delivery.poll) {
+  if (progress.delivery.poll || progress.delivery.deliveryReady) {
     after(async () => {
       await runDueJobs(1);
     });

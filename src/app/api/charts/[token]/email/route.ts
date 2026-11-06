@@ -16,7 +16,7 @@ export async function POST(request: Request, context: { params: Promise<{ token:
     kind: "email",
     idempotency_key: `email-resend:${report.data.id}:${Date.now()}`,
     status: "queued",
-    payload: { reportId: report.data.id, chartId: loaded.chartId },
+    payload: { reportId: report.data.id, chartId: loaded.chartId, resend: true },
     next_run_at: new Date().toISOString(),
   });
   redirect(`/mapa/completo/${token}?email=queued`);

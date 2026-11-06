@@ -6,6 +6,8 @@ export interface EmailMessage {
   to: string;
   subject: string;
   html: string;
+  text?: string;
+  idempotencyKey?: string;
   attachment?: { filename: string; content: Buffer };
 }
 
@@ -30,15 +32,19 @@ export class ResendEmailProvider implements EmailProvider {
 
   async send(message: EmailMessage) {
     const resend = new Resend(this.apiKey);
-    const response = await resend.emails.send({
-      from: this.from,
-      to: message.to,
-      subject: message.subject,
-      html: message.html,
-      attachments: message.attachment
-        ? [{ filename: message.attachment.filename, content: message.attachment.content }]
-        : undefined,
-    });
+    const response = await resend.emails.send(
+      {
+        from: this.from,
+        to: message.to,
+        subject: message.subject,
+        html: message.html,
+        text: message.text,
+        attachments: message.attachment
+          ? [{ filename: message.attachment.filename, content: message.attachment.content, contentType: "application/pdf" }]
+          : undefined,
+      },
+      message.idempotencyKey ? { idempotencyKey: message.idempotencyKey } : undefined,
+    );
     if (response.error || !response.data?.id) {
       const failure = response.error as { message?: string; statusCode?: number } | null;
       const status = failure?.statusCode ?? "unknown";

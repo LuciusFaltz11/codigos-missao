@@ -142,7 +142,7 @@ export async function generateInterpretation(entitlementId: string) {
       readings.push(...parsed.data.individual_readings);
     }
 
-    const synthesisUser = `Escreva uma síntese autoral e integrada a partir de:\n- interpretation_context validado;\n- leituras individuais revisadas;\n- verified_patterns pré-calculados.\n\nRetorne APENAS JSON com os IDs e evidências existentes. Se não houver repetição literal, não afirme que há. Use somente pattern_id presentes em verified_patterns.\n\n<INPUT_JSON>\n${JSON.stringify({ context: built.context, individual_readings: readings })}\n</INPUT_JSON>`;
+    const synthesisUser = `Escreva a síntese a partir do contexto validado, das leituras individuais aprovadas e de verified_patterns.\n\nDevolva somente JSON. patterns contém um item para cada pattern_id recebido e nenhum outro. Afinidade simbólica, se houver, fica em overall_synthesis e não entra em patterns. Se verified_patterns vier vazio, patterns é [] e o texto não afirma repetição.\n\n<INPUT_JSON>\n${JSON.stringify({ context: built.context, individual_readings: readings })}\n</INPUT_JSON>`;
     let synthesis = await provider.completeJson({ system: prompts.synthesis, user: synthesisUser });
     inputTokens += synthesis.usage?.inputTokens ?? 0;
     outputTokens += synthesis.usage?.outputTokens ?? 0;

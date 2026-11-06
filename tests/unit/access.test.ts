@@ -362,11 +362,15 @@ describe("ativações novas", () => {
 
 describe("prompt híbrido", () => {
   it("sobe a versão e pede narrativa única sem blocos extras de Luz e Sombra", () => {
-    expect(PROMPT_VERSION).toBe("1.1.0");
-    expect(INDIVIDUAL_SYSTEM_PROMPT).toMatch(/2–3 parágrafos/);
-    expect(INDIVIDUAL_SYSTEM_PROMPT).toMatch(/ecos mínimos/);
+    expect(PROMPT_VERSION).toBe("1.3.0");
+    expect(INDIVIDUAL_SYSTEM_PROMPT).toMatch(/2 a 3 parágrafos/);
+    expect(INDIVIDUAL_SYSTEM_PROMPT).toMatch(/matriz oficial/);
+    expect(INDIVIDUAL_SYSTEM_PROMPT).toMatch(/afirmação poética/);
     expect(INDIVIDUAL_SYSTEM_PROMPT).not.toMatch(/light_expression \(40–80/);
-    expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/relações/);
+    expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/code_repeated/);
+    expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/house_concentration/);
+    expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/node_axis/);
+    expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/Afinidade interpretativa/);
     expect(SYNTHESIS_SYSTEM_PROMPT).toMatch(/frase de impacto/);
     expect(IndividualReadingSchema.shape.interpretation).toBeDefined();
     expect(IndividualReadingSchema.shape.light_expression).toBeDefined();

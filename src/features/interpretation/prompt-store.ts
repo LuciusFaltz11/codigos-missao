@@ -16,15 +16,31 @@ export type LiveInterpretationPrompts = {
   version: string;
 };
 
+function versionParts(version: string) {
+  return version.split(".").map((part) => Number.parseInt(part, 10) || 0);
+}
+
+export function promptVersionIsCurrent(version: string) {
+  const stored = versionParts(version);
+  const current = versionParts(PROMPT_VERSION);
+  const length = Math.max(stored.length, current.length);
+  for (let index = 0; index < length; index += 1) {
+    const left = stored[index] ?? 0;
+    const right = current[index] ?? 0;
+    if (left !== right) return left > right;
+  }
+  return true;
+}
+
 export function pickLivePrompts(rows: InterpretationPromptRow[]): LiveInterpretationPrompts {
   const published = rows
     .filter((row) => row.status === "published" && row.body.trim())
     .sort((left, right) => String(right.created_at ?? "").localeCompare(String(left.created_at ?? "")));
-  const individual = published.find((row) => row.kind === "individual");
-  const synthesis = published.find((row) => row.kind === "synthesis");
+  const individual = published.find((row) => row.kind === "individual" && promptVersionIsCurrent(row.version));
+  const synthesis = published.find((row) => row.kind === "synthesis" && promptVersionIsCurrent(row.version));
   return {
     individual: individual?.body.trim() || INDIVIDUAL_SYSTEM_PROMPT,
     synthesis: synthesis?.body.trim() || SYNTHESIS_SYSTEM_PROMPT,
-    version: individual?.version || synthesis?.version || PROMPT_VERSION,
+    version: individual ? individual.version : PROMPT_VERSION,
   };
 }

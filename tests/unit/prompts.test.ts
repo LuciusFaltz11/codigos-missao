@@ -33,8 +33,30 @@ describe("prompts da leitura", () => {
       },
       {
         kind: "individual",
-        version: "1.1.0",
+        version: PROMPT_VERSION,
         body: "prompt individual vigente ".repeat(8),
+        status: "published",
+        created_at: "2026-10-01T00:00:00.000Z",
+      },
+      {
+        kind: "synthesis",
+        version: PROMPT_VERSION,
+        body: "prompt de sintese vigente ".repeat(8),
+        status: "published",
+        created_at: "2026-10-01T00:00:00.000Z",
+      },
+    ]);
+    expect(live.individual).toContain("prompt individual vigente");
+    expect(live.synthesis).toContain("prompt de sintese vigente");
+    expect(live.version).toBe(PROMPT_VERSION);
+  });
+
+  it("substitui o prompt individual publicado de uma versão anterior pelo texto do código", () => {
+    const live = pickLivePrompts([
+      {
+        kind: "individual",
+        version: "1.1.0",
+        body: "prompt individual antigo ".repeat(8),
         status: "published",
         created_at: "2026-10-01T00:00:00.000Z",
       },
@@ -46,9 +68,45 @@ describe("prompts da leitura", () => {
         created_at: "2026-10-01T00:00:00.000Z",
       },
     ]);
+    expect(live.individual).toBe(INDIVIDUAL_SYSTEM_PROMPT);
+    expect(live.synthesis).toBe(SYNTHESIS_SYSTEM_PROMPT);
+    expect(live.version).toBe(PROMPT_VERSION);
+  });
+
+  it("ignora uma versão antiga mesmo que tenha sido gravada por último", () => {
+    const live = pickLivePrompts([
+      {
+        kind: "individual",
+        version: "1.1.0",
+        body: "edição antiga republicada ".repeat(6),
+        status: "published",
+        created_at: "2026-11-01T00:00:00.000Z",
+      },
+      {
+        kind: "individual",
+        version: PROMPT_VERSION,
+        body: "prompt individual vigente ".repeat(8),
+        status: "published",
+        created_at: "2026-10-01T00:00:00.000Z",
+      },
+      {
+        kind: "synthesis",
+        version: "1.2.0",
+        body: "sintese antiga republicada ".repeat(6),
+        status: "published",
+        created_at: "2026-11-01T00:00:00.000Z",
+      },
+      {
+        kind: "synthesis",
+        version: PROMPT_VERSION,
+        body: "prompt de sintese vigente ".repeat(8),
+        status: "published",
+        created_at: "2026-10-01T00:00:00.000Z",
+      },
+    ]);
     expect(live.individual).toContain("prompt individual vigente");
     expect(live.synthesis).toContain("prompt de sintese vigente");
-    expect(live.version).toBe("1.1.0");
+    expect(live.version).toBe(PROMPT_VERSION);
   });
 
   it("recusa prompt curto demais no formulário", () => {

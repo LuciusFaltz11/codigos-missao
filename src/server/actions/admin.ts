@@ -141,32 +141,16 @@ export async function saveInterpretationPrompt(formData: FormData) {
     body: formData.get("body"),
   });
   if (!parsed.success) redirect("/admin/prompts?erro=1");
-  const current = await service
-    .from("interpretation_prompts")
-    .select("id,version")
-    .eq("kind", parsed.data.kind)
-    .eq("status", "published")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (current.data?.id) {
-    const updated = await service
-      .from("interpretation_prompts")
-      .update({ body: parsed.data.body })
-      .eq("id", current.data.id);
-    if (updated.error) redirect("/admin/prompts?erro=salvar");
-  } else {
-    const inserted = await service.from("interpretation_prompts").upsert(
-      {
-        kind: parsed.data.kind,
-        version: PROMPT_VERSION,
-        body: parsed.data.body,
-        status: "published",
-      },
-      { onConflict: "kind,version" },
-    );
-    if (inserted.error) redirect("/admin/prompts?erro=salvar");
-  }
+  const saved = await service.from("interpretation_prompts").upsert(
+    {
+      kind: parsed.data.kind,
+      version: PROMPT_VERSION,
+      body: parsed.data.body,
+      status: "published",
+    },
+    { onConflict: "kind,version" },
+  );
+  if (saved.error) redirect("/admin/prompts?erro=salvar");
   await audit(auth.admin.userId, "interpretation_prompt_updated", "interpretation_prompts", parsed.data.kind);
   redirect("/admin/prompts?salvo=1");
 }

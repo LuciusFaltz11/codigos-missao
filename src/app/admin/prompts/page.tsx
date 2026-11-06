@@ -59,7 +59,7 @@ export default async function InterpretationPromptsPage({
           <input type="hidden" name="kind" value="individual" />
           <h2 className="font-display text-2xl">Prompt das ativações</h2>
           <p className="text-sm text-muted">
-            Enviado para cada lote de pontos. Precisa pedir JSON com headline, interpretation, light_expression, shadow_expression e reflective_question.
+            Enviado para cada lote de pontos. Precisa pedir JSON com headline, interpretation, light_expression, shadow_expression e reflective_question. O fechamento pode ser uma pergunta ou uma frase poética. Luz e Sombra internas não vão para a página nem para o PDF.
           </p>
           <TextArea
             name="body"
@@ -75,7 +75,7 @@ export default async function InterpretationPromptsPage({
           <input type="hidden" name="kind" value="synthesis" />
           <h2 className="font-display text-2xl">Prompt da síntese</h2>
           <p className="text-sm text-muted">
-            Enviado depois das leituras individuais. Precisa pedir JSON com patterns, overall_synthesis, closing_reflection e reflective_questions.
+            Enviado depois das leituras individuais. Precisa pedir JSON com patterns, overall_synthesis, closing_reflection e reflective_questions. patterns só repete o que o backend calculou. Afinidade simbólica fica na síntese, não num padrão novo.
           </p>
           <TextArea
             name="body"

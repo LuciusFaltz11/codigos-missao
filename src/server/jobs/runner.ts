@@ -3,6 +3,7 @@ import { buildNatalChart, longitudeFromAngle, parseCusps, parseWheelPositions } 
 import { jobRetryDelayMs } from "@/features/interpretation/llm-request";
 import { InterpretationResultSchema } from "@/features/interpretation/validate";
 import { sortByNatalPoint } from "@/lib/constants/astrology";
+import { READING_EMAIL_ATTACHMENT_LIMIT, readingEmailContent, readingEmailIdempotencyKey } from "@/features/reading/delivery-email";
 import { tryServiceClient } from "@/server/db/clients";
 import { getServerEnv } from "@/server/env";
 import { logEvent } from "@/server/logging";
@@ -17,7 +18,7 @@ type JobRow = {
   kind: "interpretation" | "pdf" | "email";
   status: string;
   attempts: number;
-  payload: { entitlementId?: string; chartId?: string; readingId?: string; reportId?: string };
+  payload: { entitlementId?: string; chartId?: string; readingId?: string; reportId?: string; resend?: boolean };
 };
 
 async function claimJob() {
@@ -182,13 +183,40 @@ async function runPdf(job: JobRow) {
       .neq("status", "ready");
     if (ready.error) return finish(job, "retryable_failed", "report_finalize_failed");
   }
-  await service.from("jobs").insert({
-    kind: "email",
-    idempotency_key: `email:${report.data.id}`,
-    status: "queued",
-    payload: { reportId: report.data.id, chartId: job.payload.chartId },
-    next_run_at: new Date().toISOString(),
-  });
+  const emailKey = `email:${report.data.id}`;
+  const queued = await service
+    .from("jobs")
+    .insert({
+      kind: "email",
+      idempotency_key: emailKey,
+      status: "queued",
+      payload: { reportId: report.data.id, chartId: job.payload.chartId },
+      next_run_at: new Date().toISOString(),
+    })
+    .select("id,kind,status,attempts,payload")
+    .maybeSingle();
+  if (queued.error && queued.error.code !== "23505") return finish(job, "retryable_failed", "email_enqueue_failed");
+  const existing = queued.data
+    ? null
+    : await service.from("jobs").select("id,kind,status,attempts,payload").eq("idempotency_key", emailKey).maybeSingle();
+  const emailJob = (queued.data ?? existing?.data) as JobRow | null;
+  if (emailJob && (emailJob.status === "queued" || emailJob.status === "retryable_failed")) {
+    const claimed = await service
+      .from("jobs")
+      .update({ status: "processing", attempts: Number(emailJob.attempts) + 1, updated_at: new Date().toISOString() })
+      .eq("id", emailJob.id)
+      .eq("status", emailJob.status)
+      .select("id,kind,status,attempts,payload")
+      .maybeSingle();
+    if (claimed.data) {
+      try {
+        await runEmail(claimed.data as JobRow);
+      } catch (error) {
+        const code = error instanceof Error ? error.message : "email_failed";
+        await finish(claimed.data as JobRow, "retryable_failed", code.slice(0, 400));
+      }
+    }
+  }
   return finish(job, "completed");
 }
 
@@ -214,19 +242,40 @@ async function runEmail(job: JobRow) {
   }
   const token = openToken(String(sealed));
   const url = `${getServerEnv().appUrl.replace(/\/$/, "")}/mapa/completo/${token}`;
+  const resend = job.payload.resend === true;
+  if (!resend) {
+    const prior = await service
+      .from("email_deliveries")
+      .select("id")
+      .eq("report_id", job.payload.reportId)
+      .eq("status", "sent")
+      .limit(1);
+    if (prior.data?.length) return finish(job, "completed");
+  }
   const file = await service.storage.from("reports").download(String(storagePath));
   const buffer = file.data ? Buffer.from(await file.data.arrayBuffer()) : null;
+  const attachment = buffer && buffer.length > 0 && buffer.length <= READING_EMAIL_ATTACHMENT_LIMIT
+    ? { filename: "codigos-da-missao.pdf", content: buffer }
+    : undefined;
+  const content = readingEmailContent({
+    name: String(lead?.data?.name ?? ""),
+    url,
+    attached: Boolean(attachment),
+  });
   const sent = await email.send({
     to: String(leadEmail),
-    subject: "Sua leitura Códigos da Missão",
-    html: `<p>Olá,</p><p>Sua leitura está disponível em um link seguro. O pagamento confirmado não expira o acesso por este endereço.</p><p><a href="${url}">Abrir leitura</a></p><p>A leitura é simbólica e não descreve um destino fixo.</p>`,
-    attachment: buffer && buffer.length < 4_000_000 ? { filename: "codigos-da-missao.pdf", content: buffer } : undefined,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    idempotencyKey: readingEmailIdempotencyKey(job.payload.reportId, job.id, resend),
+    attachment,
   });
   await service.from("email_deliveries").insert({
     report_id: job.payload.reportId,
     status: "sent",
     provider_id: sent.id,
   });
+  logEvent("info", "email_sent", { attached: Boolean(attachment) });
   await service.from("analytics_events").insert({ name: "report_delivered", chart_id: job.payload.chartId, properties: {} });
   return finish(job, "completed");
 }
