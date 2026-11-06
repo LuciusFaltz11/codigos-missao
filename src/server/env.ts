@@ -8,11 +8,17 @@ export type IntegrationName =
 
 export type IntegrationState = "configured" | "not_configured" | "license_unconfirmed";
 
-function read(name: string): string | undefined {
-  const value = process.env[name];
+export function normalizeEnvValue(value: string | undefined) {
   if (!value) return undefined;
-  const trimmed = value.trim();
+  let trimmed = value.trim();
+  const quoted =
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"));
+  if (quoted) trimmed = trimmed.slice(1, -1).trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function read(name: string): string | undefined {
+  return normalizeEnvValue(process.env[name]);
 }
 
 export function getServerEnv() {

@@ -242,8 +242,9 @@ export async function runDueJobs(limit = 3) {
       else if (job.kind === "pdf") await runPdf(job);
       else await runEmail(job);
     } catch (error) {
-      logEvent("error", "job_failed", { code: error instanceof Error ? error.message : "job_failed" });
-      await finish(job, "retryable_failed", "job_exception");
+      const code = error instanceof Error ? error.message : "job_failed";
+      logEvent("error", "job_failed", { code });
+      await finish(job, "retryable_failed", code.slice(0, 400));
     }
   }
   return ran;

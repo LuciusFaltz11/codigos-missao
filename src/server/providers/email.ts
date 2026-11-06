@@ -39,7 +39,12 @@ export class ResendEmailProvider implements EmailProvider {
         ? [{ filename: message.attachment.filename, content: message.attachment.content }]
         : undefined,
     });
-    if (response.error || !response.data?.id) throw new Error("email_send_failed");
+    if (response.error || !response.data?.id) {
+      const failure = response.error as { message?: string; statusCode?: number } | null;
+      const status = failure?.statusCode ?? "unknown";
+      const reason = failure?.message ?? "sem resposta do provedor";
+      throw new Error(`email_send_failed ${status}: ${reason}`.slice(0, 400));
+    }
     return { id: response.data.id };
   }
 }
