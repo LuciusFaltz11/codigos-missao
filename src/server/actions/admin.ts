@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { DEFAULT_ACTIVATION_POINTS, PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
 import { adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, interpretationPromptSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
@@ -15,6 +16,11 @@ import { inspectCatalog } from "@/features/missions/integrity";
 import { activatePositions } from "@/features/missions/activate";
 import type { MethodologySnapshot } from "@/features/interpretation/context";
 import { adoptPublishedSnapshot } from "@/features/methodology/snapshot";
+import { runDueJobs } from "@/server/jobs/runner";
+
+function withQuery(path: string, query: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}${query}`;
+}
 
 function loginRedirect(code: string, email?: string): never {
   const params = new URLSearchParams({ erro: code });
@@ -502,21 +508,32 @@ export async function completeFirstAccess(formData: FormData) {
 }
 
 export async function reprocessReading(formData: FormData) {
+  const orderId = String(formData.get("orderId") ?? "").trim();
+  const back = orderId ? `/admin/pedidos?ver=${encodeURIComponent(orderId)}` : "/admin/relatorios";
   const auth = await requirePermission("orders.reprocess");
-  if (!auth.ok) redirect("/admin/relatorios?erro=permissao");
+  if (!auth.ok) redirect(auth.status === 401 ? "/admin/login" : withQuery(back, "erro=permissao"));
   const service = tryServiceClient();
-  if (!service) redirect("/admin/relatorios?erro=config");
-  const entitlementId = String(formData.get("entitlementId") ?? "");
-  const chartId = String(formData.get("chartId") ?? "");
-  await service.from("jobs").insert({
+  if (!service) redirect(withQuery(back, "erro=config"));
+  const entitlementId = String(formData.get("entitlementId") ?? "").trim();
+  const chartId = String(formData.get("chartId") ?? "").trim();
+  if (!entitlementId || !chartId) redirect(withQuery(back, "erro=1"));
+  await service
+    .from("readings")
+    .update({ status: "queued", last_error: null })
+    .eq("entitlement_id", entitlementId);
+  const queued = await service.from("jobs").insert({
     kind: "interpretation",
     idempotency_key: `interpretation-retry:${entitlementId}:${Date.now()}`,
     status: "queued",
     payload: { entitlementId, chartId },
     next_run_at: new Date().toISOString(),
   });
+  if (queued.error) redirect(withQuery(back, "erro=1"));
   await audit(auth.admin.userId, "reading_reprocess", "entitlements", entitlementId);
-  redirect("/admin/relatorios?salvo=1");
+  after(async () => {
+    await runDueJobs(1);
+  });
+  redirect(withQuery(back, "salvo=1"));
 }
 
 export async function simulateManual(formData: FormData) {

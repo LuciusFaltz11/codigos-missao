@@ -1,6 +1,8 @@
 import "server-only";
+import { buildNatalChart, longitudeFromAngle, parseCusps, parseWheelPositions } from "@/features/astrology/wheel";
 import { jobRetryDelayMs } from "@/features/interpretation/llm-request";
 import { InterpretationResultSchema } from "@/features/interpretation/validate";
+import { sortByNatalPoint } from "@/lib/constants/astrology";
 import { tryServiceClient } from "@/server/db/clients";
 import { getServerEnv } from "@/server/env";
 import { logEvent } from "@/server/logging";
@@ -83,7 +85,11 @@ async function runPdf(job: JobRow) {
   const reading = await service.from("readings").select("id,result,chart_id,status").eq("id", job.payload.readingId).maybeSingle();
   const parsed = InterpretationResultSchema.safeParse(reading.data?.result);
   if (!parsed.success || reading.data?.status !== "completed") return finish(job, "retryable_failed", "reading_not_ready");
-  const chart = await service.from("natal_charts").select("access_token_id,methodology_snapshot,calculation_version,birth_record_id").eq("id", job.payload.chartId).maybeSingle();
+  const chart = await service
+    .from("natal_charts")
+    .select("access_token_id,methodology_snapshot,calculation_version,birth_record_id,positions,cusps,ascendant,midheaven")
+    .eq("id", job.payload.chartId)
+    .maybeSingle();
   const birth = chart.data
     ? await service.from("birth_records").select("city_label,birth_date,birth_time,iana_timezone,lead_id").eq("id", chart.data.birth_record_id).maybeSingle()
     : null;
@@ -92,21 +98,33 @@ async function runPdf(job: JobRow) {
   const birthRow = birth?.data;
   const leadRow = lead?.data;
   if (!chart.data || !birthRow || !leadRow) return finish(job, "permanent_failed", "chart_missing");
-  const snapshot = chart.data.methodology_snapshot as { versionLabel: string; notice: string };
-  const mappedActivations = (activations.data ?? []).map((row) => ({
-    id: `ac-${row.point_id}`,
-    natalPointId: String(row.point_id),
-    signSlug: String(row.sign_slug),
-    signName: String((row.code_snapshot as { signName: string }).signName),
-    degreeWithinSign: Number(row.degree_within_sign),
-    houseNumber: Number(row.house_number),
-    missionCodeId: String(row.mission_code_id),
-    methodologyVersion: String(row.methodology_version),
-    longitude: Number(row.longitude),
-    retrograde: (row.retrograde as boolean | null) ?? null,
-    code: row.code_snapshot as never,
-    trail: (row.trail as string[]) ?? [],
-  }));
+  const snapshot = chart.data.methodology_snapshot as { versionLabel: string; notice: string; fortunaRule?: string };
+  const mappedActivations = sortByNatalPoint(
+    (activations.data ?? []).map((row) => ({
+      id: `ac-${row.point_id}`,
+      natalPointId: String(row.point_id),
+      signSlug: String(row.sign_slug),
+      signName: String((row.code_snapshot as { signName: string }).signName),
+      degreeWithinSign: Number(row.degree_within_sign),
+      houseNumber: Number(row.house_number),
+      missionCodeId: String(row.mission_code_id),
+      methodologyVersion: String(row.methodology_version),
+      longitude: Number(row.longitude),
+      retrograde: (row.retrograde as boolean | null) ?? null,
+      code: row.code_snapshot as never,
+      trail: (row.trail as string[]) ?? [],
+    })),
+    (item) => item.natalPointId,
+  );
+  const houses = Object.fromEntries(mappedActivations.map((item) => [item.natalPointId, item.houseNumber]));
+  const natalChart = buildNatalChart({
+    ascendantLongitude: longitudeFromAngle(chart.data.ascendant),
+    midheavenLongitude: longitudeFromAngle(chart.data.midheaven),
+    cusps: parseCusps(chart.data.cusps),
+    positions: parseWheelPositions(chart.data.positions),
+    houses,
+    omitFortune: snapshot.fortunaRule === "pending_approval",
+  });
   const cardImages = await loadCardArtDataUris(
     service,
     mappedActivations.map((activation) => activation.missionCodeId),
@@ -123,6 +141,7 @@ async function runPdf(job: JobRow) {
     activations: mappedActivations,
     reading: parsed.data,
     cardImages,
+    chart: natalChart,
   });
   const existingReport = await service
     .from("reports")

@@ -1,6 +1,6 @@
 import { houseNumberForLongitude } from "@/features/astrology/houses";
-import { formatDegree, normalizeLongitude, signFromLongitude } from "@/features/astrology/longitude";
-import { NATAL_POINTS, SIGNS, pointLabel } from "@/lib/constants/astrology";
+import { formatDegree, formatDegreeDecimal, normalizeLongitude, signFromLongitude } from "@/features/astrology/longitude";
+import { NATAL_POINTS, SIGNS, natalPointRank, pointLabel } from "@/lib/constants/astrology";
 
 export type WheelPosition = {
   pointId: string;
@@ -14,7 +14,9 @@ export type NatalChartBody = {
   glyph: string;
   longitude: number;
   signName: string;
+  signGlyph: string;
   degreeLabel: string;
+  listingDegree: string;
   houseNumber: number | null;
   retrograde: boolean | null;
 };
@@ -25,7 +27,7 @@ export type NatalChartView = {
   bodies: NatalChartBody[];
 };
 
-const GLYPHS: Record<string, string> = {
+export const POINT_GLYPHS: Record<string, string> = {
   sun: "☉",
   moon: "☽",
   mercury: "☿",
@@ -132,19 +134,21 @@ export function buildNatalChart(input: {
     positions.push({ pointId: "midheaven", longitude: input.midheavenLongitude, retrograde: null });
   }
 
-  const order = new Map(NATAL_POINTS.map((point, index) => [point.id, index]));
+  const knownIds = new Set(NATAL_POINTS.map((point) => point.id));
   const bodies = positions
-    .filter((item) => order.has(item.pointId as (typeof NATAL_POINTS)[number]["id"]))
-    .sort((a, b) => (order.get(a.pointId as (typeof NATAL_POINTS)[number]["id"]) ?? 99) - (order.get(b.pointId as (typeof NATAL_POINTS)[number]["id"]) ?? 99))
+    .filter((item) => knownIds.has(item.pointId as (typeof NATAL_POINTS)[number]["id"]))
+    .sort((a, b) => natalPointRank(a.pointId) - natalPointRank(b.pointId))
     .map((item) => {
       const sign = signFromLongitude(item.longitude);
       return {
         pointId: item.pointId,
         label: pointLabel(item.pointId),
-        glyph: GLYPHS[item.pointId] ?? item.pointId.slice(0, 2),
+        glyph: POINT_GLYPHS[item.pointId] ?? item.pointId.slice(0, 2),
         longitude: normalizeLongitude(item.longitude),
         signName: sign.signName,
+        signGlyph: SIGN_GLYPHS[sign.signIndex],
         degreeLabel: formatDegree(sign.degreeWithinSign),
+        listingDegree: formatDegreeDecimal(sign.degreeWithinSign),
         houseNumber: houseFor(item.pointId, item.longitude, input.houses, input.cusps),
         retrograde: item.retrograde,
       };

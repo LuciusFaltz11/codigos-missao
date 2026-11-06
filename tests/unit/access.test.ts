@@ -10,7 +10,14 @@ import {
 } from "@/features/methodology/snapshot";
 import { toFreePreview, type PreparedChart } from "@/features/preview/redact";
 import { IndividualReadingSchema, validateAgainstEvidence, type InterpretationResult } from "@/features/interpretation/validate";
-import { orderStatusLabel, paymentProviderLabel } from "@/features/admin/orders";
+import {
+  adminReadingNeedsRetry,
+  adminReportDownloadable,
+  adminReportFilename,
+  orderStatusLabel,
+  paymentProviderLabel,
+  readingStatusLabel,
+} from "@/features/admin/orders";
 import { roleHas } from "@/server/auth/rbac";
 import { officialCatalog } from "@/features/missions/catalog";
 import type { MissionActivation } from "@/features/missions/activate";
@@ -255,6 +262,26 @@ describe("RBAC", () => {
     expect(paymentProviderLabel("coupon")).toBe("Cupom");
     expect(paymentProviderLabel("infinitepay")).toBe("InfinitePay");
   });
+
+  it("só libera o PDF do pedido quando o arquivo está pronto", () => {
+    expect(adminReportDownloadable(null)).toBe(false);
+    expect(
+      adminReportDownloadable({ id: "r1", status: "processing", storagePath: "a.pdf", createdAt: "2026-10-29" }),
+    ).toBe(false);
+    expect(
+      adminReportDownloadable({ id: "r1", status: "ready", storagePath: "a.pdf", createdAt: "2026-10-29" }),
+    ).toBe(true);
+    expect(adminReportFilename("a50df50a-d467-4770-9b2d-0b0f2463cd1c")).toBe("codigos-da-missao-a50df50a.pdf");
+  });
+
+  it("oferece nova geração só quando a leitura falhou ou ainda não existe", () => {
+    expect(adminReadingNeedsRetry({ hasEntitlement: false, readingStatus: null })).toBe(false);
+    expect(adminReadingNeedsRetry({ hasEntitlement: true, readingStatus: null })).toBe(true);
+    expect(adminReadingNeedsRetry({ hasEntitlement: true, readingStatus: "completed" })).toBe(false);
+    expect(adminReadingNeedsRetry({ hasEntitlement: true, readingStatus: "processing" })).toBe(false);
+    expect(adminReadingNeedsRetry({ hasEntitlement: true, readingStatus: "failed_validation" })).toBe(true);
+    expect(readingStatusLabel("failed_validation")).toBe("Falhou na validação");
+  });
 });
 
 describe("usuários do painel", () => {
@@ -309,6 +336,27 @@ describe("ativações novas", () => {
       "sun",
     ]);
     expect(resolvedActivationPoints({ activationPoints: ["sun"], activateAscendant: true })).toEqual(["sun", "ascendant"]);
+    expect(DEFAULT_ACTIVATION_POINTS).toEqual([
+      "sun",
+      "moon",
+      "ascendant",
+      "mercury",
+      "venus",
+      "mars",
+      "jupiter",
+      "saturn",
+      "uranus",
+      "neptune",
+      "pluto",
+      "chiron",
+      "south_node",
+      "north_node",
+      "part_of_fortune",
+    ]);
+    expect(resolvedActivationPoints({
+      activationPoints: ["sun", "moon", "mercury", "part_of_fortune", "south_node", "north_node"],
+      activateAscendant: true,
+    })).toEqual(["sun", "moon", "ascendant", "mercury", "south_node", "north_node", "part_of_fortune"]);
   });
 });
 

@@ -19,6 +19,7 @@ export type ElementId = (typeof SIGNS)[number]["element"];
 export const NATAL_POINTS = [
   { id: "sun", label: "Sol" },
   { id: "moon", label: "Lua" },
+  { id: "ascendant", label: "Ascendente" },
   { id: "mercury", label: "Mercúrio" },
   { id: "venus", label: "Vênus" },
   { id: "mars", label: "Marte" },
@@ -28,33 +29,28 @@ export const NATAL_POINTS = [
   { id: "neptune", label: "Netuno" },
   { id: "pluto", label: "Plutão" },
   { id: "chiron", label: "Quíron" },
-  { id: "part_of_fortune", label: "Roda da Fortuna" },
   { id: "south_node", label: "Nodo Sul" },
   { id: "north_node", label: "Nodo Norte" },
-  { id: "ascendant", label: "Ascendente" },
+  { id: "part_of_fortune", label: "Roda da Fortuna" },
   { id: "midheaven", label: "Meio do Céu" },
 ] as const;
 
 export type NatalPointId = (typeof NATAL_POINTS)[number]["id"];
 
+const NATAL_POINT_ORDER = new Map(NATAL_POINTS.map((point, index) => [point.id, index]));
+
+export function natalPointRank(pointId: string) {
+  return NATAL_POINT_ORDER.get(pointId as NatalPointId) ?? Number.MAX_SAFE_INTEGER;
+}
+
+export function sortByNatalPoint<T>(items: readonly T[], pointId: (item: T) => string) {
+  return [...items].sort((left, right) => natalPointRank(pointId(left)) - natalPointRank(pointId(right)));
+}
+
 /** Posições que geram ativação. O Ascendente entra nas novas versões; a Fortuna só se a fórmula estiver homologada. */
-export const DEFAULT_ACTIVATION_POINTS: NatalPointId[] = [
-  "sun",
-  "moon",
-  "mercury",
-  "venus",
-  "mars",
-  "jupiter",
-  "saturn",
-  "uranus",
-  "neptune",
-  "pluto",
-  "chiron",
-  "part_of_fortune",
-  "south_node",
-  "north_node",
-  "ascendant",
-];
+export const DEFAULT_ACTIVATION_POINTS: NatalPointId[] = NATAL_POINTS.map((point) => point.id).filter(
+  (id) => id !== "midheaven",
+);
 
 export function resolvedActivationPoints(input: {
   activationPoints: readonly string[];
@@ -62,7 +58,7 @@ export function resolvedActivationPoints(input: {
 }) {
   const points = input.activationPoints.filter((id) => id !== "ascendant");
   if (input.activateAscendant) points.push("ascendant");
-  return points;
+  return sortByNatalPoint(points, (id) => id);
 }
 
 export const FIRE_SIGN_SLUGS = ["aries", "leao", "sagitario"] as const;

@@ -95,7 +95,12 @@ export function ReadingDeliveryPanel({
       </div>
       {state.deliveryReady ? (
         <div className="flex flex-wrap gap-3">
-          <a className="ui-button rounded-xl bg-wine px-4 py-2 font-semibold text-white" href={`/api/charts/${token}/report`}>
+          <a
+            className="ui-button rounded-xl bg-wine px-4 py-2 font-semibold text-white"
+            href={`/api/charts/${token}/report`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Baixar PDF
           </a>
           <form action={`/api/charts/${token}/email`} method="post">

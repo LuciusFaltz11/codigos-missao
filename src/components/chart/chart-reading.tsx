@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { NatalWheel } from "@/components/chart/natal-wheel";
 import { MissionCard } from "@/components/mission-cards/mission-card";
 import type { NatalChartView } from "@/features/astrology/wheel";
+import { sortByNatalPoint } from "@/lib/constants/astrology";
 
 export type ChartReadingCode = {
   archetype: string;
@@ -136,24 +137,25 @@ export function ChartReadingExperience({
   lockedAction?: ReactNode;
   narrativePending?: boolean;
 }) {
-  const fallbackId = points.find((item) => item.unlocked)?.pointId ?? points[0]?.pointId ?? null;
+  const orderedPoints = useMemo(() => sortByNatalPoint(points, (item) => item.pointId), [points]);
+  const fallbackId = orderedPoints.find((item) => item.unlocked)?.pointId ?? orderedPoints[0]?.pointId ?? null;
   const [selectedPointId, setSelectedPointId] = useState<string | null>(initialPointId ?? fallbackId);
-  const selected = points.find((item) => item.pointId === selectedPointId) ?? null;
+  const selected = orderedPoints.find((item) => item.pointId === selectedPointId) ?? null;
   const selectedBody = chart.bodies.find((body) => body.pointId === selectedPointId) ?? null;
-  const markedPointIds = points.filter((item) => item.unlocked && item.code).map((item) => item.pointId);
+  const markedPointIds = orderedPoints.filter((item) => item.unlocked && item.code).map((item) => item.pointId);
   const markerImages = useMemo(() => {
     const images: Record<string, string> = {};
-    for (const item of points) {
+    for (const item of orderedPoints) {
       if (item.unlocked && item.code?.imageUrl) images[item.pointId] = item.code.imageUrl;
     }
     return images;
-  }, [points]);
-  const unlocked = points.filter((item) => item.unlocked && item.code);
+  }, [orderedPoints]);
+  const unlocked = orderedPoints.filter((item) => item.unlocked && item.code);
 
   return (
     <section className="grid gap-8">
-      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.15fr)_320px]">
-        <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_320px]">
+        <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6 lg:sticky lg:top-8 lg:z-10 lg:self-start">
           <NatalWheel
             chart={chart}
             heading={heading}
@@ -227,7 +229,7 @@ export function ChartReadingExperience({
                 >
                   <p className="font-medium">{body.label}</p>
                   <p>
-                    {body.signName} {body.degreeLabel} · casa {body.houseNumber ?? "—"}
+                    {`${body.signGlyph}\uFE0E`} {body.listingDegree}
                   </p>
                   <p className="mt-1 text-xs text-muted">
                     {activation?.unlocked && activation.code

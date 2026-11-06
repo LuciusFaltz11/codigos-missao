@@ -1,37 +1,62 @@
 import React from "react";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import { DISCLAIMER, elementLabel, pointLabel, signBySlug } from "@/lib/constants/astrology";
-import { formatDegree } from "@/features/astrology/longitude";
+import { pointLabel } from "@/lib/constants/astrology";
+import { formatDegreeDecimal } from "@/features/astrology/longitude";
+import type { NatalChartView } from "@/features/astrology/wheel";
 import type { InterpretationResult } from "@/features/interpretation/validate";
 import type { MissionActivation } from "@/features/missions/activate";
+import {
+  BEFORE_TITLE,
+  CARTOGRAPHY_CLOSING,
+  COVER_BRAND,
+  COVER_KICKER,
+  COVER_RIGHTS,
+  COVER_TAGLINE,
+  COVER_WELCOME,
+  DECK_TITLE,
+  INSPIRATION_IMPACT,
+  INSPIRATION_INTRO,
+  INSPIRATION_INVITE,
+  INSPIRATION_NOTES,
+  INSPIRATION_QUOTE,
+  INSPIRATION_RIGHTS,
+  INSPIRATION_SIGNATURE,
+  INSPIRATION_TITLE,
+  OVERVIEW_TITLE,
+  OVERVIEW_TRANSITION,
+  SYNTHESIS_TITLE,
+  beforeStartingCopy,
+} from "@/features/reading/pdf-copy";
+import { activationLead, codeNumber, formatCodeNumber, groupedActivations, orderedActivations, uniqueCodes } from "@/features/reading/pdf-structure";
+import { sanitizePdfText } from "@/features/reading/pdf-text";
+import { PdfNatalWheel } from "@/server/services/pdf-wheel";
 
 Font.registerHyphenationCallback((word) => [word]);
 
 const ink = "#241D22";
 const muted = "#5E5664";
 const wine = "#482931";
-const wineDeep = "#2B1924";
 const gold = "#B99B62";
 const goldSoft = "#E8DCC6";
 const ivory = "#F8F6F1";
-const border = "#E7E2DA";
-const surface = "#FFFFFF";
 
 const styles = StyleSheet.create({
   cover: {
-    backgroundColor: wineDeep,
-    color: ivory,
-    paddingTop: 64,
+    backgroundColor: ivory,
+    color: ink,
+    paddingTop: 56,
     paddingHorizontal: 56,
     paddingBottom: 48,
     fontFamily: "Times-Roman",
   },
-  coverRule: { height: 1, backgroundColor: gold, width: 72, marginBottom: 28 },
-  coverBrand: { fontFamily: "Helvetica", fontSize: 10, letterSpacing: 3, color: gold, marginBottom: 18 },
-  coverTitle: { fontSize: 36, lineHeight: 1.15, marginBottom: 14 },
-  coverName: { fontSize: 20, color: goldSoft, marginBottom: 28 },
-  coverMeta: { fontFamily: "Helvetica", fontSize: 11, lineHeight: 1.5, color: ivory },
-  coverFoot: { position: "absolute", left: 56, right: 56, bottom: 48 },
+  coverBrand: { fontFamily: "Helvetica", fontSize: 10, letterSpacing: 3.2, color: gold, marginBottom: 18 },
+  coverTagline: { fontSize: 13, color: muted, marginBottom: 28, lineHeight: 1.4 },
+  coverKicker: { fontFamily: "Helvetica", fontSize: 9, letterSpacing: 1.8, color: wine, textTransform: "uppercase", marginBottom: 8 },
+  coverName: { fontSize: 32, color: wine, marginBottom: 28, lineHeight: 1.15 },
+  coverCardWrap: { alignItems: "center", marginBottom: 28 },
+  coverWelcome: { fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.6, color: ink, marginBottom: 10 },
+  coverRights: { position: "absolute", left: 56, right: 56, bottom: 40, fontFamily: "Helvetica", fontSize: 8, letterSpacing: 0.4, color: muted },
+  coverRule: { height: 1, backgroundColor: gold, width: 64, marginBottom: 20 },
   page: {
     backgroundColor: ivory,
     color: ink,
@@ -54,75 +79,59 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   footerText: { fontFamily: "Helvetica", fontSize: 8, letterSpacing: 0.4, color: muted },
-  kicker: { fontFamily: "Helvetica", fontSize: 9, letterSpacing: 1.8, color: gold, marginBottom: 8, textTransform: "uppercase" },
-  heading: { fontSize: 22, color: wine, marginBottom: 10, marginTop: 4 },
-  subheading: { fontSize: 14, color: wine, marginBottom: 8, marginTop: 14 },
-  body: { fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.55, color: ink, marginBottom: 8 },
-  meta: { fontFamily: "Helvetica", fontSize: 9, color: muted, lineHeight: 1.45, marginBottom: 4 },
-  quote: {
-    backgroundColor: surface,
-    borderLeftWidth: 2,
-    borderLeftColor: gold,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginVertical: 10,
-  },
-  quoteText: { fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.5, color: muted },
-  rule: { height: 1, backgroundColor: border, marginVertical: 14 },
-  indexRow: {
+  heading: { fontSize: 22, color: wine, marginBottom: 16, marginTop: 2 },
+  body: { fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.6, color: ink, marginBottom: 9 },
+  meta: { fontFamily: "Helvetica", fontSize: 8.5, color: muted, lineHeight: 1.45 },
+  groupLabel: { fontFamily: "Helvetica", fontSize: 8, letterSpacing: 1.4, color: gold, textTransform: "uppercase", marginBottom: 6, marginTop: 12 },
+  groupRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 4 },
+  groupItem: { fontFamily: "Helvetica", fontSize: 11, color: ink, marginRight: 16, marginBottom: 6 },
+  overviewSplit: { flexDirection: "row", alignItems: "flex-start", marginBottom: 16 },
+  overviewWheel: { width: 280, marginRight: 18 },
+  overviewCards: { flex: 1, flexDirection: "row", flexWrap: "wrap" },
+  legendRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
-    paddingVertical: 7,
+    paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: goldSoft,
   },
-  indexPoint: { width: 108, fontFamily: "Helvetica", fontSize: 9, color: muted },
-  indexCode: { flex: 1, fontSize: 12, color: wine },
-  indexMeta: { width: 150, textAlign: "right", fontFamily: "Helvetica", fontSize: 8, color: muted },
-  hero: { flexDirection: "row", marginBottom: 16 },
+  legendPoint: { width: 92, fontFamily: "Helvetica", fontSize: 9, color: muted },
+  legendNumber: { width: 22, fontFamily: "Helvetica", fontSize: 9, color: gold },
+  legendCode: { flex: 1, fontSize: 11, color: wine, paddingRight: 8 },
+  legendMeta: { width: 168, textAlign: "right", fontFamily: "Helvetica", fontSize: 8, color: muted },
+  transition: { fontFamily: "Times-Italic", fontSize: 11, lineHeight: 1.5, color: wine, marginTop: 16 },
+  deck: { flexDirection: "row", flexWrap: "wrap" },
+  deckItem: { width: "25%", paddingRight: 10, paddingBottom: 14 },
+  deckName: { fontSize: 10, color: wine, marginTop: 6, lineHeight: 1.2 },
+  deckVerb: { fontFamily: "Helvetica", fontSize: 8, letterSpacing: 1, color: gold, textTransform: "uppercase", marginTop: 3 },
+  deckPoints: { fontFamily: "Helvetica", fontSize: 8, color: muted, marginTop: 3 },
+  hero: { flexDirection: "row", marginBottom: 18 },
+  heroCopy: { flex: 1, justifyContent: "center", paddingLeft: 4 },
+  pointName: { fontFamily: "Helvetica", fontSize: 9, letterSpacing: 1.8, color: gold, textTransform: "uppercase", marginBottom: 8 },
+  archetype: { fontSize: 24, color: wine, marginBottom: 6, lineHeight: 1.2 },
+  keyword: { fontFamily: "Helvetica", fontSize: 10, letterSpacing: 1.2, color: gold, textTransform: "uppercase", marginBottom: 10 },
+  lead: { fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.5, color: muted, marginBottom: 4 },
+  narrative: { fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.65, color: ink, marginBottom: 16 },
+  pause: { fontFamily: "Times-Italic", fontSize: 12, lineHeight: 1.5, color: wine, marginTop: 8 },
+  pattern: { marginBottom: 12 },
+  patternTheme: { fontSize: 13, color: wine, marginBottom: 4 },
+  cartography: { fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.65, color: ink, marginTop: 8 },
+  inspireTitle: { fontFamily: "Helvetica", fontSize: 10, letterSpacing: 2, color: gold, textTransform: "uppercase", marginBottom: 14 },
+  inspireIntro: { fontFamily: "Helvetica", fontSize: 10.5, color: muted, marginBottom: 16 },
+  inspireNote: { fontFamily: "Helvetica", fontSize: 10.5, lineHeight: 1.55, color: ink, marginBottom: 8, paddingLeft: 4 },
+  inspireImpact: { fontSize: 16, color: wine, marginTop: 22, marginBottom: 14, lineHeight: 1.3 },
+  inspireQuote: { fontFamily: "Times-Italic", fontSize: 13, lineHeight: 1.5, color: wine, marginTop: 10, marginBottom: 28 },
+  inspireSign: { fontFamily: "Helvetica", fontSize: 9, color: muted, marginBottom: 6 },
   cardFrame: {
-    width: 132,
-    height: 198,
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     borderColor: gold,
     backgroundColor: goldSoft,
     overflow: "hidden",
-    marginRight: 18,
   },
   cardImage: { width: "100%", height: "100%", objectFit: "cover" },
-  placeholder: { flex: 1, justifyContent: "center", alignItems: "center", padding: 12 },
-  placeholderKicker: { fontFamily: "Helvetica", fontSize: 8, letterSpacing: 1.4, color: muted, marginBottom: 8 },
-  placeholderTitle: { fontSize: 14, color: wine, textAlign: "center" },
-  heroCopy: { flex: 1, justifyContent: "center" },
-  archetype: { fontSize: 24, color: wine, marginBottom: 6, lineHeight: 1.2 },
-  keyword: { fontFamily: "Helvetica", fontSize: 10, letterSpacing: 1.2, color: gold, textTransform: "uppercase", marginBottom: 10 },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 8 },
-  chip: {
-    fontFamily: "Helvetica",
-    fontSize: 8,
-    letterSpacing: 0.4,
-    color: wine,
-    backgroundColor: goldSoft,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  pair: { marginBottom: 10 },
-  pairLabel: { fontFamily: "Helvetica", fontSize: 8, letterSpacing: 1.4, color: gold, marginBottom: 3, textTransform: "uppercase" },
-  pairBody: { fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.5, color: ink },
-  question: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: surface,
-    borderWidth: 1,
-    borderColor: goldSoft,
-  },
-  questionLabel: { fontFamily: "Helvetica", fontSize: 8, letterSpacing: 1.4, color: gold, marginBottom: 4, textTransform: "uppercase" },
-  questionText: { fontFamily: "Times-Italic", fontSize: 12, lineHeight: 1.45, color: wine },
-  pattern: { marginBottom: 14, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: goldSoft },
-  patternTheme: { fontSize: 13, color: wine, marginBottom: 4 },
+  placeholder: { flex: 1, justifyContent: "center", alignItems: "center", padding: 8 },
+  placeholderTitle: { fontSize: 10, color: wine, textAlign: "center" },
 });
 
 export type ReportDocumentInput = {
@@ -137,6 +146,7 @@ export type ReportDocumentInput = {
   activations: MissionActivation[];
   reading: InterpretationResult;
   cardImages?: Record<string, string>;
+  chart?: NatalChartView | null;
 };
 
 function formatPdfDate(iso: string) {
@@ -145,23 +155,35 @@ function formatPdfDate(iso: string) {
   return `${day}/${month}/${year}`;
 }
 
-function PageFooter({ name }: { name: string }) {
+function PageFooter({ name, extra }: { name: string; extra?: string }) {
   return (
     <View style={styles.footer} fixed>
-      <Text style={styles.footerText}>Códigos da Missão · {name}</Text>
+      <Text style={styles.footerText}>
+        Códigos da Missão · {name}
+        {extra ? ` · ${extra}` : ""}
+      </Text>
       <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   );
 }
 
-function CardPortrait({ src, archetype }: { src?: string; archetype: string }) {
+function CardPortrait({
+  src,
+  archetype,
+  width,
+  height,
+}: {
+  src?: string;
+  archetype: string;
+  width: number;
+  height: number;
+}) {
   return (
-    <View style={styles.cardFrame}>
+    <View style={[styles.cardFrame, { width, height }]}>
       {src ? (
         <Image src={src} style={styles.cardImage} />
       ) : (
         <View style={styles.placeholder}>
-          <Text style={styles.placeholderKicker}>Carta</Text>
           <Text style={styles.placeholderTitle}>{archetype}</Text>
         </View>
       )}
@@ -171,125 +193,162 @@ function CardPortrait({ src, archetype }: { src?: string; archetype: string }) {
 
 function ReportDocument(input: ReportDocumentInput) {
   const images = input.cardImages ?? {};
+  const activations = orderedActivations(input.activations);
+  const codes = uniqueCodes(activations);
+  const groups = groupedActivations(activations);
+  const readingsById = new Map(input.reading.individual_readings.map((item) => [item.activation_id, item]));
+  const featured = activations.find((item) => item.natalPointId === "sun") ?? activations[0] ?? null;
+  const birthLine = `${formatPdfDate(input.localDate)} · ${input.localTime} · ${input.cityLabel}`;
+  const markedPointIds = activations.map((item) => item.natalPointId);
+
   return (
     <Document
-      title={`Códigos da Missão — ${input.name}`}
+      title={`Códigos da Missão, ${input.name}`}
       author="Códigos da Missão"
       subject={`Metodologia ${input.methodologyVersion}`}
     >
       <Page size="A4" style={styles.cover}>
         <View style={styles.coverRule} />
-        <Text style={styles.coverBrand}>CÓDIGOS DA MISSÃO</Text>
-        <Text style={styles.coverTitle}>Leitura integrada</Text>
+        <Text style={styles.coverBrand}>{COVER_BRAND}</Text>
+        <Text style={styles.coverTagline}>{COVER_TAGLINE}</Text>
+        <Text style={styles.coverKicker}>{COVER_KICKER}</Text>
         <Text style={styles.coverName}>{input.name}</Text>
-        <Text style={styles.coverMeta}>
-          {formatPdfDate(input.localDate)} · {input.localTime} · {input.cityLabel}
-        </Text>
-        <Text style={styles.coverMeta}>{input.timezone}</Text>
-        <View style={styles.coverFoot}>
-          <View style={styles.coverRule} />
-          <Text style={{ fontFamily: "Helvetica", fontSize: 9, color: goldSoft, marginTop: 10 }}>
-            Metodologia {input.methodologyVersion}
+        {featured ? (
+          <View style={styles.coverCardWrap}>
+            <CardPortrait src={images[featured.code.id]} archetype={featured.code.archetype} width={148} height={222} />
+            <Text style={{ fontFamily: "Helvetica", fontSize: 9, color: wine, marginTop: 8 }}>
+              {formatCodeNumber(codeNumber(featured))} {featured.code.archetype}
+            </Text>
+          </View>
+        ) : null}
+        {COVER_WELCOME.map((paragraph) => (
+          <Text key={paragraph.slice(0, 24)} style={styles.coverWelcome}>
+            {paragraph}
           </Text>
-        </View>
+        ))}
+        <Text style={styles.coverRights}>{COVER_RIGHTS}</Text>
       </Page>
 
       <Page size="A4" style={styles.page}>
-        <PageFooter name={input.name} />
-        <Text style={styles.kicker}>Antes de ler</Text>
-        <Text style={styles.heading}>Sobre esta leitura</Text>
-        <View style={styles.quote}>
-          <Text style={styles.quoteText}>{DISCLAIMER}</Text>
-        </View>
-        {input.notice ? <Text style={styles.body}>{input.notice}</Text> : null}
-        <View style={styles.rule} />
-        <Text style={styles.subheading}>Os Códigos deste mapa</Text>
-        {input.activations.map((activation) => (
-          <View key={activation.id} style={styles.indexRow} wrap={false}>
-            <Text style={styles.indexPoint}>{pointLabel(activation.natalPointId)}</Text>
-            <Text style={styles.indexCode}>{activation.code.archetype}</Text>
-            <Text style={styles.indexMeta}>
-              {activation.signName} {formatDegree(activation.degreeWithinSign)} · casa {activation.houseNumber}
-            </Text>
+        <PageFooter name={input.name} extra={birthLine} />
+        <Text style={styles.heading}>{BEFORE_TITLE}</Text>
+        {beforeStartingCopy(activations).map((paragraph) => (
+          <Text key={paragraph.slice(0, 32)} style={styles.body}>
+            {paragraph}
+          </Text>
+        ))}
+        {groups.map((group) => (
+          <View key={group.id}>
+            <Text style={styles.groupLabel}>{group.label}</Text>
+            <View style={styles.groupRow}>
+              {group.activations.map((activation) => (
+                <Text key={activation.id} style={styles.groupItem}>
+                  {pointLabel(activation.natalPointId)}
+                </Text>
+              ))}
+            </View>
           </View>
         ))}
       </Page>
 
-      {input.reading.individual_readings.map((reading) => {
-        const activation = input.activations.find((item) => item.id === reading.activation_id);
-        const code = activation?.code;
-        const element = activation ? signBySlug(activation.signSlug)?.element : null;
+      <Page size="A4" style={styles.page}>
+        <PageFooter name={input.name} />
+        <Text style={styles.heading}>{OVERVIEW_TITLE}</Text>
+        <View style={styles.overviewSplit}>
+          {input.chart ? (
+            <View style={styles.overviewWheel}>
+              <PdfNatalWheel chart={input.chart} markedPointIds={markedPointIds} />
+            </View>
+          ) : null}
+          <View style={styles.overviewCards}>
+            {codes.map((code) => (
+              <View key={code.missionCodeId} style={{ width: 52, marginRight: 8, marginBottom: 10 }}>
+                <CardPortrait src={images[code.missionCodeId]} archetype={code.archetype} width={52} height={78} />
+                <Text style={styles.deckPoints}>{formatCodeNumber(code.number)}</Text>
+                {code.activations.length > 1 ? (
+                  <Text style={styles.deckPoints}>{code.activations.map((item) => pointLabel(item.natalPointId)).join(", ")}</Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        </View>
+        {activations.map((activation) => (
+          <View key={activation.id} style={styles.legendRow} wrap={false}>
+            <Text style={styles.legendPoint}>{pointLabel(activation.natalPointId)}</Text>
+            <Text style={styles.legendNumber}>{formatCodeNumber(codeNumber(activation))}</Text>
+            <Text style={styles.legendCode}>{activation.code.archetype}</Text>
+            <Text style={styles.legendMeta}>
+              {activation.signName} {formatDegreeDecimal(activation.degreeWithinSign)}, casa {activation.houseNumber}
+            </Text>
+          </View>
+        ))}
+        <Text style={styles.transition}>{OVERVIEW_TRANSITION}</Text>
+      </Page>
+
+      <Page size="A4" style={styles.page}>
+        <PageFooter name={input.name} />
+        <Text style={styles.heading}>{DECK_TITLE}</Text>
+        <View style={styles.deck}>
+          {codes.map((code) => (
+            <View key={code.missionCodeId} style={styles.deckItem} wrap={false}>
+              <CardPortrait src={images[code.missionCodeId]} archetype={code.archetype} width={112} height={168} />
+              <Text style={styles.deckName}>{formatCodeNumber(code.number)} {code.archetype}</Text>
+              <Text style={styles.deckVerb}>{code.keyword}</Text>
+              {code.activations.length > 1 ? (
+                <Text style={styles.deckPoints}>{code.activations.map((item) => pointLabel(item.natalPointId)).join(", ")}</Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      </Page>
+
+      {activations.map((activation) => {
+        const reading = readingsById.get(activation.id);
+        if (!reading) return null;
         return (
-          <Page key={reading.activation_id} size="A4" style={styles.page}>
+          <Page key={activation.id} size="A4" style={styles.page}>
             <PageFooter name={input.name} />
             <View style={styles.hero} wrap={false}>
-              <CardPortrait src={code ? images[code.id] : undefined} archetype={code?.archetype ?? reading.headline} />
+              <CardPortrait src={images[activation.code.id]} archetype={activation.code.archetype} width={148} height={222} />
               <View style={styles.heroCopy}>
-                <Text style={styles.kicker}>{activation ? pointLabel(activation.natalPointId) : "Código"}</Text>
-                <Text style={styles.archetype}>{code?.archetype ?? reading.headline}</Text>
-                <Text style={styles.keyword}>{code?.keyword ?? ""}</Text>
-                <View style={styles.chipRow}>
-                  {element ? <Text style={styles.chip}>{elementLabel(element)}</Text> : null}
-                  {activation ? (
-                    <Text style={styles.chip}>
-                      {activation.signName} {formatDegree(activation.degreeWithinSign)}
-                    </Text>
-                  ) : null}
-                  {activation ? <Text style={styles.chip}>Casa {activation.houseNumber}</Text> : null}
-                  {code ? <Text style={styles.chip}>Decanato {code.decan} · {code.decanRuler}</Text> : null}
-                </View>
+                <Text style={styles.pointName}>{pointLabel(activation.natalPointId)}</Text>
+                <Text style={styles.archetype}>{formatCodeNumber(codeNumber(activation))} {activation.code.archetype}</Text>
+                <Text style={styles.keyword}>{activation.code.keyword}</Text>
+                <Text style={styles.lead}>{activationLead(activation)}</Text>
               </View>
             </View>
-            {code ? (
-              <View>
-                <View style={styles.pair}>
-                  <Text style={styles.pairLabel}>Luz</Text>
-                  <Text style={styles.pairBody}>{code.light}</Text>
-                </View>
-                <View style={styles.pair}>
-                  <Text style={styles.pairLabel}>Sombra</Text>
-                  <Text style={styles.pairBody}>{code.shadow}</Text>
-                </View>
-              </View>
-            ) : null}
-            <Text style={styles.subheading}>Leitura</Text>
-            <Text style={styles.body}>{reading.interpretation}</Text>
-            <View style={styles.question} wrap={false}>
-              <Text style={styles.questionLabel}>Pergunta para observar</Text>
-              <Text style={styles.questionText}>{reading.reflective_question}</Text>
-            </View>
+            <Text style={styles.narrative}>{sanitizePdfText(reading.interpretation)}</Text>
+            <Text style={styles.pause}>{sanitizePdfText(reading.reflective_question)}</Text>
           </Page>
         );
       })}
 
       <Page size="A4" style={styles.page}>
         <PageFooter name={input.name} />
-        <Text style={styles.kicker}>Integração</Text>
-        <Text style={styles.heading}>Padrões e síntese</Text>
-        {input.reading.patterns.length > 0 ? (
-          <View>
-            {input.reading.patterns.map((pattern) => (
-              <View key={pattern.pattern_id} style={styles.pattern} wrap={false}>
-                <Text style={styles.patternTheme}>{pattern.theme}</Text>
-                <Text style={styles.body}>{pattern.insight}</Text>
-                <Text style={styles.meta}>{pattern.evidence}</Text>
-              </View>
-            ))}
-            <View style={styles.rule} />
+        <Text style={styles.heading}>{SYNTHESIS_TITLE}</Text>
+        {input.reading.patterns.map((pattern) => (
+          <View key={pattern.pattern_id} style={styles.pattern} wrap={false}>
+            <Text style={styles.patternTheme}>{sanitizePdfText(pattern.theme)}</Text>
+            <Text style={styles.body}>{sanitizePdfText(pattern.insight)}</Text>
           </View>
-        ) : null}
-        <Text style={styles.body}>{input.reading.overall_synthesis}</Text>
-        <View style={styles.quote}>
-          <Text style={styles.quoteText}>{input.reading.closing_reflection}</Text>
-        </View>
-        <Text style={styles.subheading}>Perguntas finais</Text>
-        {input.reading.reflective_questions.map((question) => (
-          <Text key={question} style={styles.body}>
-            — {question}
+        ))}
+        <Text style={styles.cartography}>{CARTOGRAPHY_CLOSING}</Text>
+      </Page>
+
+      <Page size="A4" style={styles.page}>
+        <PageFooter name={input.name} />
+        <Text style={styles.inspireTitle}>{INSPIRATION_TITLE}</Text>
+        <Text style={styles.inspireIntro}>{INSPIRATION_INTRO}</Text>
+        {INSPIRATION_NOTES.map((note) => (
+          <Text key={note} style={styles.inspireNote}>
+            • {note}
           </Text>
         ))}
-        <View style={styles.rule} />
-        <Text style={styles.meta}>Cálculo: {input.calculationVersion}</Text>
+        <Text style={styles.inspireImpact}>{INSPIRATION_IMPACT}</Text>
+        <Text style={styles.body}>{INSPIRATION_INVITE}</Text>
+        <Text style={styles.inspireQuote}>{INSPIRATION_QUOTE}</Text>
+        <Text style={styles.inspireSign}>{INSPIRATION_SIGNATURE}</Text>
+        <Text style={styles.inspireSign}>{INSPIRATION_RIGHTS}</Text>
       </Page>
     </Document>
   );

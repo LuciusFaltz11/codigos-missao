@@ -3,13 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Eye, X } from "lucide-react";
+import { Download, Eye, X } from "lucide-react";
 import {
+  adminReadingNeedsRetry,
+  adminReportDownloadable,
   orderStatusLabel,
   paymentProviderLabel,
+  readingStatusLabel,
   type AdminOrder,
 } from "@/features/admin/orders";
 import { formatBrl, formatDateTimePt } from "@/lib/formatters";
+import { reprocessReading } from "@/server/actions/admin";
 
 const STATUS_TONE: Record<string, string> = {
   approved: "bg-gold-soft text-wine",
@@ -52,7 +56,17 @@ function originLabel(order: AdminOrder) {
   return "—";
 }
 
-export function OrdersPanel({ rows, initialId }: { rows: AdminOrder[]; initialId?: string }) {
+export function OrdersPanel({
+  rows,
+  initialId,
+  canDownloadReport = false,
+  canReprocess = false,
+}: {
+  rows: AdminOrder[];
+  initialId?: string;
+  canDownloadReport?: boolean;
+  canReprocess?: boolean;
+}) {
   const [openId, setOpenId] = useState(initialId ?? null);
   const selected = rows.find((row) => row.id === openId) ?? null;
 
@@ -271,25 +285,77 @@ export function OrdersPanel({ rows, initialId }: { rows: AdminOrder[]; initialId
                     {selected.entitlement?.refundPendingPolicy ? "Sim" : "Não"}
                   </Field>
                   <Field label="ID do entitlement">{selected.entitlement?.id ?? "—"}</Field>
-                </Section>
-
-                <Section title="Leitura">
-                  <Field label="Status">{selected.reading ? selected.reading.status : "Não gerada"}</Field>
-                  <Field label="Modelo">{selected.reading?.model ?? "—"}</Field>
-                  <Field label="Versão do prompt">{selected.reading?.promptVersion ?? "—"}</Field>
-                  <Field label="Erro">{selected.reading?.lastError ?? "—"}</Field>
-                  <Field label="Criada em">
-                    {selected.reading ? formatDateTimePt(selected.reading.createdAt) : "—"}
+                  <Field label="Resultado da análise">
+                    {selected.readingUrl ? (
+                      <a className="font-semibold text-wine" href={selected.readingUrl} target="_blank" rel="noreferrer">
+                        Abrir leitura completa
+                      </a>
+                    ) : (
+                      "Indisponível"
+                    )}
                   </Field>
                 </Section>
+                {selected.readingUrl ? (
+                  <p className="rounded-2xl border border-border bg-gold-soft/40 px-4 py-3 text-xs break-all text-muted">
+                    {selected.readingUrl}
+                  </p>
+                ) : null}
 
-                <Section title="PDF">
-                  <Field label="Status">{selected.report ? selected.report.status : "Não gerado"}</Field>
-                  <Field label="Arquivo">{selected.report?.storagePath ?? "—"}</Field>
-                  <Field label="Criado em">
-                    {selected.report ? formatDateTimePt(selected.report.createdAt) : "—"}
-                  </Field>
-                </Section>
+                <section className="grid gap-3">
+                  <h3 className="text-sm font-semibold tracking-wide text-wine uppercase">Leitura</h3>
+                  <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                    <Field label="Status">
+                      {selected.reading ? readingStatusLabel(selected.reading.status) : "Não gerada"}
+                    </Field>
+                    <Field label="Modelo">{selected.reading?.model ?? "—"}</Field>
+                    <Field label="Versão do prompt">{selected.reading?.promptVersion ?? "—"}</Field>
+                    <Field label="Erro">{selected.reading?.lastError ?? "—"}</Field>
+                    <Field label="Criada em">
+                      {selected.reading ? formatDateTimePt(selected.reading.createdAt) : "—"}
+                    </Field>
+                  </dl>
+                  {canReprocess &&
+                  adminReadingNeedsRetry({
+                    hasEntitlement: Boolean(selected.entitlement),
+                    readingStatus: selected.reading?.status ?? null,
+                  }) ? (
+                    <form action={reprocessReading}>
+                      <input type="hidden" name="entitlementId" value={selected.entitlement?.id ?? ""} />
+                      <input type="hidden" name="chartId" value={selected.chartId} />
+                      <input type="hidden" name="orderId" value={selected.id} />
+                      <button
+                        className="inline-flex w-fit items-center rounded-xl bg-wine px-4 py-2 text-sm font-semibold text-white"
+                        type="submit"
+                      >
+                        Gerar leitura novamente
+                      </button>
+                    </form>
+                  ) : null}
+                </section>
+
+                <section className="grid gap-3">
+                  <h3 className="text-sm font-semibold tracking-wide text-wine uppercase">PDF</h3>
+                  <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                    <Field label="Status">{selected.report ? selected.report.status : "Não gerado"}</Field>
+                    <Field label="Arquivo">{selected.report?.storagePath ?? "—"}</Field>
+                    <Field label="Criado em">
+                      {selected.report ? formatDateTimePt(selected.report.createdAt) : "—"}
+                    </Field>
+                  </dl>
+                  {canDownloadReport && adminReportDownloadable(selected.report) ? (
+                    <a
+                      className="inline-flex w-fit items-center gap-2 rounded-xl bg-wine px-4 py-2 text-sm font-semibold text-white"
+                      href={`/api/admin/orders/${selected.id}/report`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Download className="size-4" strokeWidth={1.75} aria-hidden="true" />
+                      Baixar PDF
+                    </a>
+                  ) : (
+                    <p className="text-sm text-muted">O PDF fica disponível para download quando a leitura estiver pronta.</p>
+                  )}
+                </section>
 
                 <section className="grid gap-3">
                   <h3 className="text-sm font-semibold tracking-wide text-wine uppercase">E-mails</h3>

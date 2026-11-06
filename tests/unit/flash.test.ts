@@ -56,6 +56,13 @@ describe("avisos em toast", () => {
     expect(resolveFlash("/admin/cupons", params("editar=1&novo=1"))).toBeNull();
   });
 
+  it("confirma a leitura reenfileirada no pedido", () => {
+    expect(resolveFlash("/admin/pedidos", params("salvo=1"))).toEqual({
+      kind: "success",
+      message: "A leitura foi enfileirada de novo e já está sendo gerada.",
+    });
+  });
+
   it("confirma o prompt da leitura salvo no banco", () => {
     expect(resolveFlash("/admin/prompts", params("salvo=1"))).toEqual({
       kind: "success",

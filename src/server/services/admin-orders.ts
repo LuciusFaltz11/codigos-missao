@@ -1,6 +1,8 @@
 import "server-only";
 import type { AdminOrder, AdminOrderEmail, AdminOrderPayment } from "@/features/admin/orders";
 import { tryServiceClient } from "@/server/db/clients";
+import { getServerEnv } from "@/server/env";
+import { openToken } from "@/server/security/tokens";
 
 function unique(values: Array<string | null | undefined>) {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
@@ -21,8 +23,9 @@ export async function loadAdminOrders(): Promise<AdminOrder[]> {
   const leadIds = unique(rows.map((row) => text(row.lead_id)));
   const productIds = unique(rows.map((row) => text(row.product_id)));
   const couponIds = unique(rows.map((row) => text(row.coupon_id)));
+  const chartIds = unique(rows.map((row) => text(row.chart_id)));
 
-  const [leads, products, coupons, payments, entitlements] = await Promise.all([
+  const [leads, products, coupons, payments, entitlements, charts] = await Promise.all([
     leadIds.length ? service.from("leads").select("id,name,email").in("id", leadIds) : { data: [] },
     productIds.length ? service.from("products").select("id,name,price_cents").in("id", productIds) : { data: [] },
     couponIds.length
@@ -36,7 +39,24 @@ export async function loadAdminOrders(): Promise<AdminOrder[]> {
       .from("entitlements")
       .select("id,order_id,granted_at,revoked_at,refund_pending_policy")
       .in("order_id", orderIds),
+    chartIds.length ? service.from("natal_charts").select("id,access_token_id").in("id", chartIds) : { data: [] },
   ]);
+  const tokenIds = unique((charts.data ?? []).map((row) => text(row.access_token_id)));
+  const tokens = tokenIds.length
+    ? await service.from("access_tokens").select("id,token_sealed").in("id", tokenIds)
+    : { data: [] };
+  const appUrl = getServerEnv().appUrl.replace(/\/$/, "");
+  const readingUrlByChart = new Map<string, string>();
+  const tokenById = new Map((tokens.data ?? []).map((row) => [String(row.id), text(row.token_sealed)]));
+  for (const chart of charts.data ?? []) {
+    const sealed = tokenById.get(String(chart.access_token_id));
+    if (!sealed) continue;
+    try {
+      readingUrlByChart.set(String(chart.id), `${appUrl}/mapa/completo/${openToken(sealed)}`);
+    } catch {
+      // Sem token válido o drawer mostra o mapa como indisponível.
+    }
+  }
 
   const entitlementRows = entitlements.data ?? [];
   const entitlementIds = entitlementRows.map((row) => String(row.id));
@@ -166,6 +186,7 @@ export async function loadAdminOrders(): Promise<AdminOrder[]> {
           }
         : null,
       emails: report ? (emailsByReport.get(String(report.id)) ?? []) : [],
+      readingUrl: readingUrlByChart.get(String(row.chart_id)) ?? null,
     };
   });
 }

@@ -105,6 +105,13 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
       if (erro === "config") return errorFlash("O banco ainda não está configurado.");
       return null;
     },
+    "/admin/pedidos": () => {
+      if (salvo === "1") return successFlash("A leitura foi enfileirada de novo e já está sendo gerada.");
+      if (erro === "permissao") return errorFlash("Seu papel não reprocessa leituras.");
+      if (erro === "config") return errorFlash("O banco ainda não está configurado.");
+      if (erro === "1") return errorFlash("Não foi possível gerar esta leitura novamente.");
+      return null;
+    },
     "/admin/simulador": () => {
       if (erro === "1") return errorFlash("Informe uma longitude válida e uma casa entre 1 e 12.");
       return null;

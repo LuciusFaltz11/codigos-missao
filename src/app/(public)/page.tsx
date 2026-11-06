@@ -8,10 +8,9 @@ import { tryServiceClient } from "@/server/db/clients";
 
 export const dynamic = "force-dynamic";
 
-const HOME_SAMPLE_IDS = ["aries-1", "touro-2", "peixes-3"];
-
 type HomeSample = {
   id: string;
+  number: number;
   archetype: string;
   keyword: string;
   signSlug: string;
@@ -20,13 +19,21 @@ type HomeSample = {
   imageSrc: string | null;
 };
 
+function shuffle<T>(items: readonly T[]) {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    const current = copy[index];
+    copy[index] = copy[swap] as T;
+    copy[swap] = current as T;
+  }
+  return copy;
+}
+
 function pickHomeSampleIds(rows: { id: string; image_url: string | null }[]) {
-  const withArt = new Set(rows.filter((row) => row.image_url).map((row) => String(row.id)));
-  const preferred = HOME_SAMPLE_IDS.filter((id) => withArt.has(id));
-  if (preferred.length === HOME_SAMPLE_IDS.length) return preferred;
-  const rest = rows.map((row) => String(row.id)).filter((id) => withArt.has(id) && !preferred.includes(id));
-  const picked = [...preferred, ...rest].slice(0, 3);
-  return picked.length > 0 ? picked : HOME_SAMPLE_IDS;
+  const withArt = rows.filter((row) => row.image_url).map((row) => String(row.id));
+  const pool = withArt.length > 0 ? withArt : officialCatalog.map((code) => code.id);
+  return shuffle(pool).slice(0, 3);
 }
 
 async function loadHomeSamples(): Promise<HomeSample[]> {
@@ -45,6 +52,7 @@ async function loadHomeSamples(): Promise<HomeSample[]> {
       const storedUrl = typeof row?.image_url === "string" ? row.image_url : null;
       return {
         id: code.id,
+        number: code.number,
         archetype: code.archetype,
         keyword: code.keyword,
         signSlug: code.signSlug,
@@ -75,17 +83,35 @@ export default async function HomePage() {
           </div>
           <div className="grid min-w-0 grid-cols-3 gap-3">
             {samples.map((code) => (
-              <div key={code.id} className="min-w-0 overflow-hidden rounded-2xl bg-gold-soft text-ink">
+              <div key={code.id} tabIndex={0} className="group relative min-w-0 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-gold-soft">
+                <div className="overflow-hidden rounded-2xl bg-gold-soft text-ink">
+                  {code.imageSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={code.imageSrc}
+                      alt={`Carta ${code.archetype}`}
+                      className="aspect-2/3 h-full w-full object-cover transition duration-500 group-hover:scale-105 group-focus-visible:scale-105"
+                    />
+                  ) : (
+                    <div className="flex aspect-2/3 flex-col justify-end p-3">
+                      <p className="text-[10px] tracking-widest text-muted uppercase">{elementLabel(signBySlug(code.signSlug)?.element ?? "")}</p>
+                      <p className="mt-6 font-display text-lg leading-tight wrap-break-word">{code.archetype}</p>
+                      <p className="mt-2 text-xs uppercase">{code.keyword}</p>
+                    </div>
+                  )}
+                </div>
                 {code.imageSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={code.imageSrc} alt={`Carta ${code.archetype}`} className="aspect-2/3 h-full w-full object-cover" />
-                ) : (
-                  <div className="flex aspect-2/3 flex-col justify-end p-3">
-                    <p className="text-[10px] tracking-widest text-muted uppercase">{elementLabel(signBySlug(code.signSlug)?.element ?? "")}</p>
-                    <p className="mt-6 font-display text-lg leading-tight wrap-break-word">{code.archetype}</p>
-                    <p className="mt-2 text-xs uppercase">{code.keyword}</p>
+                  <div className="pointer-events-none absolute inset-x-1.5 bottom-2 z-10 translate-y-1 opacity-100 transition duration-200 [@media(hover:hover)]:translate-y-2 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-visible:translate-y-0 [@media(hover:hover)]:group-focus-visible:opacity-100">
+                    <div className="rounded-xl bg-white/95 px-2.5 py-2 text-ink shadow-[0_10px_24px_rgba(36,29,34,0.28)]">
+                      <p className="text-[10px] font-semibold tracking-[0.14em] text-gold uppercase">Código {String(code.number).padStart(2, "0")}</p>
+                      <p className="mt-1 line-clamp-2 font-display text-sm leading-tight text-wine">{code.archetype}</p>
+                      <p className="mt-1 text-[10px] font-semibold tracking-wide text-wine uppercase">{code.keyword}</p>
+                      <p className="mt-1 text-[10px] leading-snug text-muted">
+                        {code.signName} · {code.decan}º decanato
+                      </p>
+                    </div>
                   </div>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

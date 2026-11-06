@@ -42,6 +42,16 @@ export function formatDegree(degreeWithinSign: number): string {
   return `${degrees}°${String(minutes).padStart(2, "0")}′${String(seconds).padStart(2, "0")}″`;
 }
 
+/** Só para exibição na listagem. A classificação do código continua no grau sem arredondar. */
+export function formatDegreeDecimal(degreeWithinSign: number): string {
+  if (!Number.isFinite(degreeWithinSign) || degreeWithinSign < 0 || degreeWithinSign >= 30) {
+    throw new Error("Grau fora do signo.");
+  }
+  const rounded = Math.round(degreeWithinSign * 100) / 100;
+  const value = rounded >= 30 ? 29.99 : rounded;
+  return `${value.toFixed(2).replace(".", ",")}°`;
+}
+
 export function assertKnownSign(slug: string): SignSlug {
   const sign = signBySlug(slug);
   if (!sign) throw new Error(`Signo desconhecido: ${slug}`);

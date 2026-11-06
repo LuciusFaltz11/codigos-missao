@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { everyPointHasHint, pointHint } from "@/features/astrology/point-hints";
+import { formatDegreeDecimal } from "@/features/astrology/longitude";
 import { buildNatalChart, chartPoint } from "@/features/astrology/wheel";
 import { NATAL_POINTS } from "@/lib/constants/astrology";
 import { toFreePreview, type PreparedChart } from "@/features/preview/redact";
@@ -37,10 +38,12 @@ describe("roda do mapa", () => {
       ],
       houses: { sun: 1 },
     });
-    expect(chart?.bodies.map((body) => body.pointId)).toEqual(["sun", "south_node", "north_node", "ascendant", "midheaven"]);
+    expect(chart?.bodies.map((body) => body.pointId)).toEqual(["sun", "ascendant", "south_node", "north_node", "midheaven"]);
     expect(chart?.bodies.find((body) => body.pointId === "south_node")?.longitude).toBe(220);
     expect(chart?.bodies.find((body) => body.pointId === "sun")).toMatchObject({
       signName: "Áries",
+      signGlyph: "♈",
+      listingDegree: "10,00°",
       houseNumber: 1,
     });
     expect(JSON.stringify(chart)).not.toMatch(/archetype|luz|sombra|mission/);
@@ -103,5 +106,30 @@ describe("roda do mapa", () => {
       },
     ]);
     expect(preview.chart?.bodies[0]?.signName).toBe("Áries");
+  });
+
+  it("lista os pontos na ordem editorial e o grau da listagem com duas casas", () => {
+    expect(NATAL_POINTS.map((point) => point.id)).toEqual([
+      "sun",
+      "moon",
+      "ascendant",
+      "mercury",
+      "venus",
+      "mars",
+      "jupiter",
+      "saturn",
+      "uranus",
+      "neptune",
+      "pluto",
+      "chiron",
+      "south_node",
+      "north_node",
+      "part_of_fortune",
+      "midheaven",
+    ]);
+    expect(formatDegreeDecimal(0)).toBe("0,00°");
+    expect(formatDegreeDecimal(0.64888)).toBe("0,65°");
+    expect(formatDegreeDecimal(14)).toBe("14,00°");
+    expect(formatDegreeDecimal(29.996)).toBe("29,99°");
   });
 });
