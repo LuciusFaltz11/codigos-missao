@@ -1,7 +1,3 @@
-import { pointLabel } from "@/lib/constants/astrology";
-import type { MissionActivation } from "@/features/missions/activate";
-import { joinPt, orderedActivations } from "@/features/reading/pdf-structure";
-
 export const COVER_BRAND = "CÓDIGOS DA MISSÃO";
 export const COVER_TAGLINE = "Uma jornada de autoconhecimento através dos seus arquétipos";
 export const COVER_KICKER = "Sua leitura pessoal";
@@ -12,7 +8,14 @@ export const COVER_WELCOME = [
   "Cada Código abre uma possibilidade de olhar para si. O sentido mais profundo nasce do encontro entre eles, e daquilo que você reconhece nessa jornada.",
 ];
 
-export const BEFORE_TITLE = "Um mapa, muitos caminhos de descoberta";
+export const OPENING_COPY = [
+  "O Códigos da Missão é um convite a atravessar as camadas mais profundas do autoconhecimento, utilizando a linguagem simbólica da Astrologia para acessar e revelar diferentes expressões da alma.",
+  "Mais do que interpretar posições astrológicas, esta metodologia autoral traduz as forças presentes no mapa natal por meio de 36 arquétipos, relacionados aos 12 signos do zodíaco e aos seus três decanatos. Cada arquétipo carrega um verbo central e duas expressões complementares: a Luz, que revela potenciais, talentos e forças essenciais; e a Sombra, que ilumina padrões, desafios e aspectos que pedem reconhecimento e integração.",
+  "A partir de 15 pontos ativados no seu mapa natal, são identificados os Códigos que compõem esta leitura: Sol, Lua, Ascendente, planetas, Quíron, Nodos Lunares e Roda da Fortuna. Cada posicionamento revela uma perspectiva singular da sua experiência, e cada Código abre uma nova possibilidade de reconhecimento.",
+  "Ao percorrer essas ativações, você encontrará diferentes expressões da sua essência. Algumas podem ressoar com aquilo que você já reconhece em si; outras podem revelar dimensões ainda pouco exploradas, provocar novas percepções ou convidar a olhar para aspectos que permaneceram à sombra. É no encontro entre esses arquétipos que conexões, recorrências e contrastes começam a ganhar significado, compondo uma visão mais ampla e integrada da sua jornada.",
+  "Esta não é uma leitura astrológica convencional, nem uma definição sobre quem você é ou sobre quem deveria se tornar. É um mergulho simbólico e terapêutico nas forças que habitam sua história, um processo contínuo de descoberta, consciência e integração. Afinal, a essência não se revela de uma só vez: cada camada reconhecida abre espaço para um olhar mais profundo sobre si.",
+  "Você não precisa se tornar alguém diferente. Pode começar reconhecendo, acolhendo e integrando quem já existe em você.",
+];
 
 export const OVERVIEW_TITLE = "Os Códigos que se revelam no seu mapa";
 export const OVERVIEW_TRANSITION =
@@ -41,17 +44,3 @@ export const INSPIRATION_INVITE =
 export const INSPIRATION_QUOTE = "Não há despertar da luz sem a coragem de enxergar a própria sombra.";
 export const INSPIRATION_SIGNATURE = "Códigos da Missão — Val Wilges";
 export const INSPIRATION_RIGHTS = "Direitos reservados.";
-
-export function beforeStartingCopy(activations: readonly MissionActivation[]) {
-  const ordered = orderedActivations(activations);
-  const count = ordered.length;
-  const list = joinPt(ordered.map((item) => pointLabel(item.natalPointId)));
-  return [
-    "Os Códigos da Missão são um sistema autoral formado por 36 arquétipos, relacionados aos 12 signos zodiacais e aos seus três decanatos. Cada Código traz um verbo central e duas possibilidades simbólicas de expressão: a Luz, que revela sua potência, e a Sombra, que convida a reconhecer seus possíveis excessos ou limitações.",
-    `No seu mapa astral, determinados pontos ativam esses Códigos. Nesta leitura, vamos percorrer ${count} ${count === 1 ? "ativação" : "ativações"}: ${list}.`,
-    "Cada ativação oferece uma perspectiva diferente. O Sol fala simbolicamente da identidade; a Lua, da experiência emocional; o Ascendente, da maneira de entrar em contato com a vida. Os planetas, Quíron e os pontos matemáticos acrescentam outras dimensões à leitura, conforme suas funções simbólicas.",
-    "O signo e o grau da posição identificam o Código ativado. A casa astrológica ajuda a compreender em qual campo da vida essa dinâmica pode encontrar expressão.",
-    "Ao longo das páginas, você conhecerá cada ativação e poderá observar sua potência, suas tensões e suas possibilidades de consciência. Ao final, as leituras serão aproximadas para revelar conexões, recorrências e contrastes que talvez não fossem tão visíveis quando observados separadamente.",
-    "Esta não é uma sentença sobre quem você é, nem uma previsão do que acontecerá. É uma leitura simbólica para ampliar perguntas, reconhecer possibilidades e construir uma relação mais consciente consigo mesma.",
-  ];
-}

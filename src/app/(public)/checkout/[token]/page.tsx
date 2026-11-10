@@ -58,7 +58,7 @@ export default async function CheckoutPage({
           </p>
         </header>
 
-        <section className="grid gap-6 rounded-3xl border border-border bg-surface p-6">
+        <section className="grid gap-6 border-t border-gold bg-surface p-6">
           {chargeCents !== null && loaded.priceCents != null ? (
             <div>
               {applied ? (
@@ -73,7 +73,7 @@ export default async function CheckoutPage({
                   </p>
                   <p className="mt-1 font-display text-5xl leading-none">{formatBrl(chargeCents)}</p>
                   <p className="mt-3">
-                    <span className="inline-flex rounded-full bg-gold-soft px-3 py-1 text-sm font-semibold text-wine">
+                    <span className="inline-flex rounded bg-gold-soft px-3 py-1 text-sm font-semibold text-wine">
                       {couponOfferLabel(applied.coupon)}
                     </span>
                   </p>
@@ -93,7 +93,7 @@ export default async function CheckoutPage({
           ) : null}
 
           {blockers.length > 0 ? (
-            <div className="grid gap-3 rounded-2xl bg-gold-soft p-4 text-sm">
+            <div className="grid gap-3 border-l-2 border-gold bg-canvas p-4 text-sm">
               <ul className="grid gap-2">
                 {blockers.map((item) => (
                   <li key={item}>{item}</li>

@@ -80,7 +80,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
   const completeHref = preview.entitlement === "active" ? `/mapa/completo/${token}` : `/checkout/${token}`;
   const completeLabel = preview.entitlement === "active" ? "Abrir leitura completa" : "Continuar para a leitura completa";
   const lockedAction = (
-    <Link href={completeHref} className="ui-button inline-flex rounded-xl bg-wine px-4 py-3 font-semibold text-white">
+    <Link href={completeHref} className="ui-button inline-flex rounded bg-wine px-4 py-3 font-semibold text-white hover:bg-wine-deep">
       {completeLabel}
     </Link>
   );
@@ -92,11 +92,11 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
           <p className="text-sm text-muted">Resultado</p>
           {free ? (
             <>
-              <p className="text-sm font-semibold tracking-wide text-wine uppercase">
+              <p className="text-sm font-semibold text-wine">
                 {free.pointLabel} encontra {free.archetype}
               </p>
               <h1 className="font-display text-4xl">{free.archetype}</h1>
-              <p className="text-lg font-semibold tracking-wide text-wine uppercase">{free.keyword}</p>
+              <p className="text-lg font-semibold text-wine">{free.keyword}</p>
               <p>
                 {free.pointLabel} · {free.signName} {free.degreeLabel} · decanato {free.decan} · casa {free.houseNumber}
               </p>
@@ -114,14 +114,14 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
             {(preview.errorCode && errorCopy[preview.errorCode]) || statusCopy[preview.status] || statusCopy.pending}
           </p>
         </header>
-        {preview.notice ? <p className="rounded-2xl bg-gold-soft px-4 py-3 text-sm">{preview.notice}</p> : null}
+        {preview.notice ? <p className="border-l-2 border-gold bg-canvas px-4 py-3 text-sm">{preview.notice}</p> : null}
         {preview.interpretationSummary ? (
-          <section className="grid gap-4 rounded-3xl border border-gold bg-surface px-6 py-6">
-            <p className="text-sm font-semibold tracking-wide text-wine uppercase">Primeira leitura</p>
+          <section className="grid gap-4 border-t border-gold bg-surface px-0 py-6">
+            <p className="text-sm font-semibold text-wine">Primeira leitura</p>
             <h2 className="font-display text-3xl">{preview.interpretationSummary.kicker}</h2>
             <p className="max-w-3xl text-lg leading-8">{preview.interpretationSummary.body}</p>
             <p className="max-w-3xl leading-7 text-muted">{preview.interpretationSummary.invitation}</p>
-            <Link href={completeHref} className="ui-button mt-1 inline-flex w-fit rounded-xl bg-wine px-4 py-3 font-semibold text-white">
+            <Link href={completeHref} className="ui-button mt-1 inline-flex w-fit rounded bg-wine px-4 py-3 font-semibold text-white hover:bg-wine-deep">
               {completeLabel}
             </Link>
           </section>
@@ -155,17 +155,17 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
             </div>
           </div>
         ) : (
-          <p className="rounded-2xl border border-border bg-surface p-6">Ainda não há um mapa calculado para mostrar.</p>
+          <p className="border border-border bg-surface p-6">Ainda não há um mapa calculado para mostrar.</p>
         )}
-        <section className="rounded-3xl bg-wine p-6 text-white">
+        <section className="border-t border-gold bg-wine px-6 py-8 text-white">
           <h2 className="font-display text-3xl">A leitura completa integra este mapa</h2>
-          <p className="mt-3 max-w-2xl text-gold-soft">
+          <p className="mt-3 max-w-2xl text-white/80">
             {totalCodes > 1
               ? `Além deste encontro, há ${lockedCount} ${lockedCount === 1 ? "outro Código" : "outros Códigos"} neste mapa. A leitura completa reúne cerca de ${totalCodes} Códigos, a Luz e a Sombra no contexto de cada ponto e uma síntese.`
               : "A leitura completa reúne os Códigos deste mapa, a Luz e a Sombra no contexto de cada ponto e uma síntese."}
           </p>
           <p className="mt-4 text-lg">{preview.price ? formatBrl(preview.price.cents) : "Preço ainda não publicado"}</p>
-          <Link href={completeHref} className="ui-button mt-4 inline-flex rounded-xl bg-white px-4 py-3 font-semibold text-wine">
+          <Link href={completeHref} className="ui-button mt-4 inline-flex rounded bg-white px-4 py-3 font-semibold text-wine hover:bg-canvas">
             {completeLabel}
           </Link>
         </section>

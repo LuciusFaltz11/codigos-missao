@@ -80,15 +80,15 @@ export function ReadingDeliveryPanel({
 
   return (
     <section className="grid gap-4" aria-live="polite">
-      <div className="grid gap-3 rounded-3xl border border-gold bg-gold-soft px-6 py-5">
-        <p className="text-xs font-semibold tracking-wide text-wine uppercase">
+      <div className="grid gap-3 border-t border-gold bg-canvas px-6 py-5">
+        <p className="text-xs font-semibold text-wine">
           {state.deliveryReady ? "Entrega pronta" : "Leitura em preparação"} · {state.progress}%
         </p>
         <h2 className="font-display text-3xl">{copy.title}</h2>
         <p className="max-w-3xl leading-7">{copy.body}</p>
         {state.poll ? (
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/70" aria-hidden>
-            <div className="h-full rounded-full bg-wine transition-[width] duration-500" style={{ width: `${state.progress}%` }} />
+          <div className="h-1.5 overflow-hidden rounded bg-white" aria-hidden>
+            <div className="h-full rounded bg-wine transition-[width] duration-200" style={{ width: `${state.progress}%` }} />
           </div>
         ) : null}
         {state.phase === "failed" && lastError ? <p className="text-sm text-muted">Motivo técnico: {lastError}.</p> : null}
@@ -96,7 +96,7 @@ export function ReadingDeliveryPanel({
       {state.deliveryReady ? (
         <div className="flex flex-wrap gap-3">
           <a
-            className="ui-button rounded-xl bg-wine px-4 py-2 font-semibold text-white"
+            className="ui-button rounded bg-wine px-4 py-2 font-semibold text-white hover:bg-wine-deep"
             href={`/api/charts/${token}/report`}
             target="_blank"
             rel="noopener noreferrer"
@@ -104,7 +104,7 @@ export function ReadingDeliveryPanel({
             Baixar PDF
           </a>
           <form action={`/api/charts/${token}/email`} method="post">
-            <button className="rounded-xl border border-border px-4 py-2" type="submit">
+            <button className="rounded border border-line px-4 py-2" type="submit">
               Reenviar e-mail
             </button>
           </form>

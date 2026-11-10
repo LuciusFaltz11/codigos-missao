@@ -80,7 +80,7 @@ export default async function CompleteReadingPage({ params }: { params: Promise<
             narrativePending={!progress.delivery.interpretationReady}
           />
         ) : (
-          <p className="rounded-2xl border border-border bg-surface p-6">O mapa desta leitura ainda não tem posições para exibir.</p>
+          <p className="border border-border bg-surface p-6">O mapa desta leitura ainda não tem posições para exibir.</p>
         )}
         {interpretation ? (
           <section id="sintese" className="grid gap-4 border-t border-border pt-8">

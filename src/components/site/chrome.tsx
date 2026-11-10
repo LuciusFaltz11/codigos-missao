@@ -9,9 +9,9 @@ const links = [
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-border bg-background/90">
+    <header className="border-b border-border bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
-        <Link href="/" className="shrink-0 font-display text-xl text-wine">
+        <Link href="/" className="shrink-0 font-display text-xl text-ink">
           Códigos da Missão
         </Link>
         <nav className="hidden items-center gap-5 text-sm text-muted lg:flex" aria-label="Principal">
@@ -23,7 +23,7 @@ export function SiteHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <SiteMenu />
-          <Link href="/mapa" className="ui-button rounded-xl bg-wine px-4 py-2 text-sm font-semibold text-white">
+          <Link href="/mapa" className="ui-button rounded bg-wine px-4 py-2 text-sm font-semibold text-white hover:bg-wine-deep">
             Começar
           </Link>
         </div>
@@ -34,7 +34,7 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto bg-wine-deep text-gold-soft">
+    <footer className="mt-auto border-t border-gold bg-wine-deep text-white/80">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 text-sm md:grid-cols-3">
         <div>
           <p className="font-display text-2xl text-white">Códigos da Missão</p>

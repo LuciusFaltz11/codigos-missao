@@ -33,7 +33,7 @@ export default async function FirstAccessPage({
           <input type="hidden" name="type" value={type} />
           <PasswordField name="password" placeholder="Nova senha" autoComplete="new-password" minLength={8} />
           <PasswordField name="confirm" placeholder="Confirmar senha" autoComplete="new-password" minLength={8} />
-          <button className="min-h-11 rounded-xl bg-wine text-white" type="submit">
+          <button className="min-h-11 rounded bg-wine text-white" type="submit">
             Criar senha e entrar
           </button>
         </form>

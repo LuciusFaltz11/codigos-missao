@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { InputShell } from "@/components/ui/input";
 
@@ -18,22 +18,40 @@ export function CheckoutCouponForm({
   const router = useRouter();
   const [code, setCode] = useState(defaultCode);
   const [editing, setEditing] = useState(!applied);
+  const [applying, setApplying] = useState(false);
+  const [pending, startApply] = useTransition();
+  const busy = applying || pending;
 
   useEffect(() => {
     setCode(defaultCode);
     setEditing(!applied);
   }, [applied, defaultCode]);
 
+  useEffect(() => {
+    if (!pending) setApplying(false);
+  }, [pending, applied, defaultCode]);
+
   function apply(next = code) {
+    if (busy) return;
     const params = new URLSearchParams();
     if (next.trim()) params.set("cupom", next.trim());
-    router.push(params.size ? `/checkout/${token}?${params}` : `/checkout/${token}`);
+    setApplying(true);
+    startApply(() => {
+      router.push(params.size ? `/checkout/${token}?${params}` : `/checkout/${token}`);
+    });
   }
 
   const locked = applied && !editing;
 
   return (
-    <form className="grid gap-5" action={`/api/checkout/${token}`} method="post">
+    <form
+      className="grid gap-5"
+      action={`/api/checkout/${token}`}
+      method="post"
+      onSubmit={(event) => {
+        if (busy) event.preventDefault();
+      }}
+    >
       <div className="grid gap-2">
         <label htmlFor="checkout-coupon" className="text-sm font-medium text-ink">
           Código de desconto
@@ -45,7 +63,7 @@ export function CheckoutCouponForm({
               className="input-shell-field"
               name="cupom"
               value={code}
-              readOnly={locked}
+              readOnly={locked || busy}
               onChange={(event) => setCode(event.target.value)}
               autoComplete="off"
               spellCheck={false}
@@ -60,7 +78,7 @@ export function CheckoutCouponForm({
           </InputShell>
           {locked ? (
             <button
-              className="min-h-11 shrink-0 rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-ink"
+              className="min-h-11 shrink-0 rounded border border-line bg-surface px-4 text-sm font-semibold text-ink"
               type="button"
               onClick={() => setEditing(true)}
             >
@@ -68,17 +86,23 @@ export function CheckoutCouponForm({
             </button>
           ) : (
             <button
-              className="min-h-11 shrink-0 rounded-xl border border-wine px-4 text-sm font-semibold text-wine"
+              className="min-h-11 shrink-0 rounded border border-wine px-4 text-sm font-semibold text-wine disabled:opacity-50"
               type="button"
               onClick={() => apply()}
+              disabled={busy}
+              aria-busy={busy}
             >
-              Aplicar
+              {busy ? "Aplicando…" : "Aplicar"}
             </button>
           )}
         </span>
       </div>
       {canPay ? (
-        <button className="min-h-12 w-full rounded-xl bg-wine px-5 font-semibold text-white" type="submit">
+        <button
+          className="min-h-12 w-full rounded bg-wine px-5 font-semibold text-white hover:bg-wine-deep disabled:opacity-50"
+          type="submit"
+          disabled={busy}
+        >
           Liberar a leitura completa
         </button>
       ) : null}

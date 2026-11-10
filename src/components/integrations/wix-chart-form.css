@@ -10,7 +10,7 @@
   padding: 28px 24px 32px;
   background: #f3f3f3;
   color: var(--wix-ink);
-  font-family: var(--font-manrope), sans-serif;
+  font-family: var(--font-montserrat), var(--font-manrope), sans-serif;
 }
 
 .wix-embed-form *,

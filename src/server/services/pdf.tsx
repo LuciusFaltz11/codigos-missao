@@ -6,7 +6,6 @@ import type { NatalChartView } from "@/features/astrology/wheel";
 import type { InterpretationResult } from "@/features/interpretation/validate";
 import type { MissionActivation } from "@/features/missions/activate";
 import {
-  BEFORE_TITLE,
   CARTOGRAPHY_CLOSING,
   COVER_BRAND,
   COVER_KICKER,
@@ -22,10 +21,10 @@ import {
   INSPIRATION_RIGHTS,
   INSPIRATION_SIGNATURE,
   INSPIRATION_TITLE,
+  OPENING_COPY,
   OVERVIEW_TITLE,
   OVERVIEW_TRANSITION,
   SYNTHESIS_TITLE,
-  beforeStartingCopy,
 } from "@/features/reading/pdf-copy";
 import { activationLead, codeNumber, formatCodeNumber, groupedActivations, orderedActivations, uniqueCodes } from "@/features/reading/pdf-structure";
 import { sanitizePdfText } from "@/features/reading/pdf-text";
@@ -33,12 +32,12 @@ import { PdfNatalWheel } from "@/server/services/pdf-wheel";
 
 Font.registerHyphenationCallback((word) => [word]);
 
-const ink = "#241D22";
-const muted = "#5E5664";
-const wine = "#482931";
-const gold = "#B99B62";
-const goldSoft = "#E8DCC6";
-const ivory = "#F8F6F1";
+const ink = "#0B0A09";
+const muted = "#60605F";
+const wine = "#1E332D";
+const gold = "#C7A96B";
+const goldSoft = "#F6F1E6";
+const ivory = "#F3F3F3";
 
 const styles = StyleSheet.create({
   cover: {
@@ -87,7 +86,6 @@ const styles = StyleSheet.create({
   groupItem: { fontFamily: "Helvetica", fontSize: 11, color: ink, marginRight: 16, marginBottom: 6 },
   overviewSplit: { flexDirection: "row", alignItems: "flex-start", marginBottom: 16 },
   overviewWheel: { width: 280, marginRight: 18 },
-  overviewCards: { flex: 1, flexDirection: "row", flexWrap: "wrap" },
   legendRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -108,7 +106,6 @@ const styles = StyleSheet.create({
   deckPoints: { fontFamily: "Helvetica", fontSize: 8, color: muted, marginTop: 3 },
   hero: { flexDirection: "row", marginBottom: 18 },
   heroCopy: { flex: 1, justifyContent: "center", paddingLeft: 4 },
-  pointName: { fontFamily: "Helvetica", fontSize: 9, letterSpacing: 1.8, color: gold, textTransform: "uppercase", marginBottom: 8 },
   archetype: { fontSize: 24, color: wine, marginBottom: 6, lineHeight: 1.2 },
   keyword: { fontFamily: "Helvetica", fontSize: 10, letterSpacing: 1.2, color: gold, textTransform: "uppercase", marginBottom: 10 },
   lead: { fontFamily: "Helvetica", fontSize: 10, lineHeight: 1.5, color: muted, marginBottom: 4 },
@@ -231,12 +228,12 @@ function ReportDocument(input: ReportDocumentInput) {
 
       <Page size="A4" style={styles.page}>
         <PageFooter name={input.name} extra={birthLine} />
-        <Text style={styles.heading}>{BEFORE_TITLE}</Text>
-        {beforeStartingCopy(activations).map((paragraph) => (
+        {OPENING_COPY.map((paragraph) => (
           <Text key={paragraph.slice(0, 32)} style={styles.body}>
             {paragraph}
           </Text>
         ))}
+        <Text style={styles.inspireImpact}>{INSPIRATION_IMPACT}</Text>
         {groups.map((group) => (
           <View key={group.id}>
             <Text style={styles.groupLabel}>{group.label}</Text>
@@ -254,24 +251,13 @@ function ReportDocument(input: ReportDocumentInput) {
       <Page size="A4" style={styles.page}>
         <PageFooter name={input.name} />
         <Text style={styles.heading}>{OVERVIEW_TITLE}</Text>
-        <View style={styles.overviewSplit}>
-          {input.chart ? (
+        {input.chart ? (
+          <View style={styles.overviewSplit}>
             <View style={styles.overviewWheel}>
               <PdfNatalWheel chart={input.chart} markedPointIds={markedPointIds} />
             </View>
-          ) : null}
-          <View style={styles.overviewCards}>
-            {codes.map((code) => (
-              <View key={code.missionCodeId} style={{ width: 52, marginRight: 8, marginBottom: 10 }}>
-                <CardPortrait src={images[code.missionCodeId]} archetype={code.archetype} width={52} height={78} />
-                <Text style={styles.deckPoints}>{formatCodeNumber(code.number)}</Text>
-                {code.activations.length > 1 ? (
-                  <Text style={styles.deckPoints}>{code.activations.map((item) => pointLabel(item.natalPointId)).join(", ")}</Text>
-                ) : null}
-              </View>
-            ))}
           </View>
-        </View>
+        ) : null}
         {activations.map((activation) => (
           <View key={activation.id} style={styles.legendRow} wrap={false}>
             <Text style={styles.legendPoint}>{pointLabel(activation.natalPointId)}</Text>
@@ -294,9 +280,7 @@ function ReportDocument(input: ReportDocumentInput) {
               <CardPortrait src={images[code.missionCodeId]} archetype={code.archetype} width={112} height={168} />
               <Text style={styles.deckName}>{formatCodeNumber(code.number)} {code.archetype}</Text>
               <Text style={styles.deckVerb}>{code.keyword}</Text>
-              {code.activations.length > 1 ? (
-                <Text style={styles.deckPoints}>{code.activations.map((item) => pointLabel(item.natalPointId)).join(", ")}</Text>
-              ) : null}
+              <Text style={styles.deckPoints}>{code.activations.map((item) => pointLabel(item.natalPointId)).join(", ")}</Text>
             </View>
           ))}
         </View>
@@ -311,7 +295,6 @@ function ReportDocument(input: ReportDocumentInput) {
             <View style={styles.hero} wrap={false}>
               <CardPortrait src={images[activation.code.id]} archetype={activation.code.archetype} width={148} height={222} />
               <View style={styles.heroCopy}>
-                <Text style={styles.pointName}>{pointLabel(activation.natalPointId)}</Text>
                 <Text style={styles.archetype}>{formatCodeNumber(codeNumber(activation))} {activation.code.archetype}</Text>
                 <Text style={styles.keyword}>{activation.code.keyword}</Text>
                 <Text style={styles.lead}>{activationLead(activation)}</Text>

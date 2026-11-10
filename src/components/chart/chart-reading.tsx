@@ -62,14 +62,14 @@ function ReadingPanel({
   if (!point) {
     if (bodyLabel) {
       return (
-        <aside className="rounded-3xl border border-border bg-surface p-6">
-          <p className="text-xs font-semibold tracking-wide text-wine uppercase">{bodyLabel}</p>
+        <aside className="border border-border bg-surface p-6">
+          <p className="text-xs font-semibold text-wine">{bodyLabel}</p>
           <p className="mt-3 text-sm text-muted">Este ponto aparece no mapa e não ativa um Código.</p>
         </aside>
       );
     }
     return (
-      <aside className="rounded-3xl border border-border bg-surface p-6">
+      <aside className="border border-border bg-surface p-6">
         <p className="text-sm text-muted">Selecione um ponto no mapa para ver o encontro com o Código.</p>
       </aside>
     );
@@ -77,8 +77,8 @@ function ReadingPanel({
 
   if (!point.unlocked || !point.code) {
     return (
-      <aside className="rounded-3xl border border-border bg-surface p-6">
-        <p className="text-xs font-semibold tracking-wide text-wine uppercase">{point.pointLabel}</p>
+      <aside className="border border-border bg-surface p-6">
+        <p className="text-xs font-semibold text-wine">{point.pointLabel}</p>
         <h3 className="mt-2 font-display text-3xl">Este ponto também ativa um Código</h3>
         <p className="mt-3 text-sm">
           {point.signName} {point.degreeLabel} · casa {point.houseNumber}
@@ -93,7 +93,7 @@ function ReadingPanel({
 
   return (
     <aside className="grid gap-5">
-      <p className="text-sm font-semibold tracking-wide text-wine uppercase">Código liberado</p>
+      <p className="text-sm font-semibold text-wine">Código liberado</p>
       <MissionCard
         archetype={point.code.archetype}
         keyword={point.code.keyword}
@@ -155,7 +155,7 @@ export function ChartReadingExperience({
   return (
     <section className="grid gap-8">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_320px]">
-        <div className="rounded-3xl border border-border bg-surface p-4 sm:p-6 lg:sticky lg:top-8 lg:z-10 lg:self-start">
+        <div className="border border-border bg-surface p-4 sm:p-6 lg:sticky lg:top-8 lg:z-10 lg:self-start">
           <NatalWheel
             chart={chart}
             heading={heading}
@@ -168,14 +168,14 @@ export function ChartReadingExperience({
         </div>
         <div className="grid gap-5">
           <div className="grid gap-3">
-            <p className="text-sm font-semibold tracking-wide text-wine uppercase">Legenda</p>
+            <p className="text-sm font-semibold text-wine">Legenda</p>
             {unlocked.length > 0 ? (
               <ul className="grid gap-3">
                 {unlocked.map((item) => (
                   <li key={item.pointId}>
                     <button
                       type="button"
-                      className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left ${
+                      className={`flex w-full items-center gap-3 rounded border px-3 py-2 text-left ${
                         item.pointId === selectedPointId ? "border-gold bg-gold-soft" : "border-border bg-surface"
                       }`}
                       onClick={() => setSelectedPointId(item.pointId)}
@@ -190,7 +190,7 @@ export function ChartReadingExperience({
                       )}
                       <span>
                         <span className="block font-medium">{item.code?.archetype}</span>
-                        <span className="block text-sm text-wine uppercase">{item.code?.keyword}</span>
+                        <span className="block text-sm text-wine">{item.code?.keyword}</span>
                       </span>
                     </button>
                   </li>
@@ -214,7 +214,7 @@ export function ChartReadingExperience({
         </div>
       </div>
       <nav aria-label="Pontos do mapa" className="grid gap-2">
-        <p className="text-sm font-semibold tracking-wide text-wine uppercase">Pontos</p>
+        <p className="text-sm font-semibold text-wine">Pontos</p>
         <ul className="grid gap-2 sm:grid-cols-2">
           {chart.bodies.map((body) => {
             const activation = points.find((item) => item.pointId === body.pointId) ?? null;
@@ -224,7 +224,7 @@ export function ChartReadingExperience({
                 <button
                   type="button"
                   aria-pressed={isSelected}
-                  className={`w-full rounded-2xl px-4 py-3 text-left text-sm ${isSelected ? "bg-gold-soft" : "bg-surface"}`}
+                  className={`w-full rounded border border-border px-4 py-3 text-left text-sm ${isSelected ? "border-gold bg-gold-soft" : "bg-surface"}`}
                   onClick={() => setSelectedPointId(body.pointId)}
                 >
                   <p className="font-medium">{body.label}</p>

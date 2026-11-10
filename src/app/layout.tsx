@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import { Toaster } from "sonner";
 import { getServerEnv } from "@/server/env";
 import "./globals.css";
 
-const sans = Manrope({
+const sans = Montserrat({
   subsets: ["latin"],
-  variable: "--font-manrope",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-montserrat",
 });
 
-const display = Fraunces({
+const display = Cormorant_Garamond({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  weight: "600",
+  variable: "--font-cormorant",
 });
 
 const appUrl = getServerEnv().appUrl;

@@ -98,7 +98,7 @@ export function BirthWizard() {
 
   return (
     <form
-      className="grid gap-5 rounded-3xl border border-border bg-surface p-5 sm:p-6"
+      className="grid gap-5 border border-border bg-surface p-5 sm:p-6"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -178,7 +178,7 @@ export function BirthWizard() {
         />
         <span className="font-normal text-muted">Ou a metrópole mais próxima. Escolha uma sugestão para confirmar a coordenada.</span>
         {cityMessage ? (
-          <p role="alert" className="rounded-xl bg-gold-soft px-3 py-3 font-normal">
+          <p role="alert" className="border-l-2 border-gold bg-canvas px-3 py-3 font-normal">
             {cityMessage}
           </p>
         ) : null}
@@ -224,7 +224,7 @@ export function BirthWizard() {
       </div>
 
       {message ? (
-        <p role="alert" className="rounded-xl bg-gold-soft px-3 py-3 text-sm">
+        <p role="alert" className="border-l-2 border-gold bg-canvas px-3 py-3 text-sm">
           {message}
         </p>
       ) : null}

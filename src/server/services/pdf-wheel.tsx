@@ -4,19 +4,19 @@ import { chartPoint, forwardMidpoint, SIGN_GLYPHS, signElement, type NatalChartV
 
 const SIZE = 280;
 const CENTER = SIZE / 2;
-const GOLD = "#B99B62";
-const WINE = "#482931";
-const INK = "#241D22";
-const MUTED = "#5E5664";
-const IVORY = "#F8F6F1";
-const BORDER = "#E7E2DA";
-const GOLD_SOFT = "#E8DCC6";
+const GOLD = "#C7A96B";
+const WINE = "#1E332D";
+const INK = "#0B0A09";
+const MUTED = "#60605F";
+const IVORY = "#F3F3F3";
+const BORDER = "#D9D9D9";
+const GOLD_SOFT = "#F6F1E6";
 
 const ELEMENT_COLOR = {
-  fogo: "#b96a42",
-  terra: "#687b59",
-  ar: "#7283b1",
-  agua: "#4e8390",
+  fogo: "#C58E8D",
+  terra: "#1E332D",
+  ar: "#5679BC",
+  agua: "#60605F",
 } as const;
 
 function at(longitude: number, ascendant: number, radius: number) {

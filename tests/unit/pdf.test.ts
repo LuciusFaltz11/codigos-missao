@@ -1,9 +1,8 @@
 import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { buildNatalChart } from "@/features/astrology/wheel";
-import { DEFAULT_ACTIVATION_POINTS } from "@/lib/constants/astrology";
 import { officialCatalog } from "@/features/missions/catalog";
-import { beforeStartingCopy, CARTOGRAPHY_CLOSING, INSPIRATION_TITLE } from "@/features/reading/pdf-copy";
+import { CARTOGRAPHY_CLOSING, INSPIRATION_IMPACT, INSPIRATION_TITLE, OPENING_COPY } from "@/features/reading/pdf-copy";
 import { pdfImageDataUri, isPdfEmbeddableImage, guessImageContentType } from "@/features/reading/pdf-images";
 import { activationLead, orderedActivations, uniqueCodes } from "@/features/reading/pdf-structure";
 import { sanitizePdfText, withoutEmDash } from "@/features/reading/pdf-text";
@@ -120,12 +119,12 @@ describe("estrutura editorial do PDF", () => {
     expect(activationLead(sun)).not.toMatch(/casa|decanato|°/i);
   });
 
-  it("interpola as 15 ativações, inclusive Júpiter", () => {
-    const activations = DEFAULT_ACTIVATION_POINTS.map((pointId) => activation(pointId));
-    const copy = beforeStartingCopy(activations).join(" ");
-    expect(copy).toMatch(/15 ativações/);
-    expect(copy).toMatch(/Júpiter/);
+  it("abre com o convite oficial dos Códigos da Missão", () => {
+    const copy = OPENING_COPY.join(" ");
+    expect(copy).toMatch(/36 arquétipos/);
+    expect(copy).toMatch(/15 pontos ativados/);
     expect(copy).toMatch(/Sol, Lua, Ascendente/);
+    expect(INSPIRATION_IMPACT).toBe("A MAIOR MISSÃO É RELEMBRAR QUEM SOMOS.");
   });
 
   it("remove travessão e IDs técnicos", () => {
@@ -169,7 +168,8 @@ describe("documento da leitura", () => {
     expect(Buffer.from(pdf).subarray(0, 4).toString()).toBe("%PDF");
     expect(pdf.byteLength).toBeGreaterThan(2000);
     const text = pdfText(pdf);
-    expect(text).toContain("Um mapa, muitos caminhos de descoberta");
+    expect(text).toContain("36 arquétipos");
+    expect(text).toContain(INSPIRATION_IMPACT);
     expect(text).toContain(INSPIRATION_TITLE);
     expect(text).toMatch(/cartografia simb/);
     expect(text).toContain("Seu Sol");

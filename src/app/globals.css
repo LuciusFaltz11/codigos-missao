@@ -1,30 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f6f1;
+  --background: #ffffff;
   --surface: #ffffff;
-  --ink: #241d22;
-  --muted: #5e5664;
-  --border: #e7e2da;
-  --wine: #482931;
-  --wine-deep: #2b1924;
-  --gold: #b99b62;
-  --gold-soft: #e8dcc6;
-  --fire: #b96a42;
-  --earth: #687b59;
-  --air: #7283b1;
-  --water: #4e8390;
+  --canvas: #f3f3f3;
+  --ink: #0b0a09;
+  --muted: #60605f;
+  --border: #d9d9d9;
+  --line: #c2c2c2;
+  --wine: #1e332d;
+  --wine-deep: color-mix(in srgb, #1e332d 72%, #0b0a09);
+  --gold: #c7a96b;
+  --gold-soft: color-mix(in srgb, #c7a96b 16%, white);
+  --fire: #c58e8d;
+  --earth: #1e332d;
+  --air: #5679bc;
+  --water: color-mix(in srgb, #5679bc 58%, #60605f);
   --danger: #8c3a3a;
   --success: #2f5d50;
+  --radius: 4px;
+  --radius-sm: 2px;
+  --font-manrope: var(--font-montserrat);
+  --font-fraunces: var(--font-cormorant);
   color-scheme: light;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-canvas: var(--canvas);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-line: var(--line);
   --color-wine: var(--wine);
   --color-wine-deep: var(--wine-deep);
   --color-gold: var(--gold);
@@ -35,8 +43,14 @@
   --color-water: var(--water);
   --color-danger: var(--danger);
   --color-success: var(--success);
-  --font-sans: var(--font-manrope);
-  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-montserrat);
+  --font-display: var(--font-cormorant);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
 }
 
 * {
@@ -52,7 +66,26 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--ink);
-  font-family: var(--font-manrope), sans-serif;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: pretty;
+}
+
+.text-lead {
+  font-size: 1.25rem;
+  line-height: 1.7;
+}
+
+.hairline {
+  height: 1px;
+  width: 3.5rem;
+  background: var(--gold);
 }
 
 button,
@@ -63,19 +96,17 @@ button,
 .ui-button {
   cursor: pointer;
   transition:
-    filter 180ms ease,
-    background-color 180ms ease,
-    color 180ms ease,
-    box-shadow 180ms ease;
+    background-color 160ms ease-out,
+    color 160ms ease-out,
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out;
 }
 
-button:hover:not(:disabled),
-[type="button"]:hover:not(:disabled),
-[type="submit"]:hover:not(:disabled),
-[type="reset"]:hover:not(:disabled),
-[role="button"]:hover,
-.ui-button:hover {
-  filter: brightness(0.86);
+button.bg-wine:hover:not(:disabled),
+[type="submit"].bg-wine:hover:not(:disabled),
+a.bg-wine:hover,
+.ui-button.bg-wine:hover {
+  background-color: var(--wine-deep);
 }
 
 button:disabled,
@@ -83,7 +114,6 @@ button:disabled,
 [type="submit"]:disabled,
 [type="reset"]:disabled {
   cursor: not-allowed;
-  filter: none;
 }
 
 summary {
@@ -91,8 +121,8 @@ summary {
 }
 
 :focus-visible {
-  outline: 2px solid var(--wine);
-  outline-offset: 3px;
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .input-shell {
@@ -100,20 +130,19 @@ summary {
   align-items: center;
   width: 100%;
   min-height: 2.75rem;
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   background: var(--surface);
   outline: 2px solid transparent;
-  outline-offset: 3px;
+  outline-offset: 2px;
   transition:
-    border-color 180ms ease,
-    outline-color 180ms ease,
-    box-shadow 180ms ease;
+    border-color 160ms ease-out,
+    outline-color 160ms ease-out;
 }
 
 .input-shell:focus-within {
   border-color: var(--wine);
-  outline-color: var(--wine);
+  outline-color: var(--gold);
 }
 
 .input-shell :focus-visible {
@@ -170,20 +199,20 @@ textarea.input-shell-field {
 
 @keyframes admin-drawer-in {
   from {
-    transform: translateX(100%);
+    opacity: 0;
   }
   to {
-    transform: translateX(0);
+    opacity: 1;
   }
 }
 
 .admin-drawer {
-  animation: admin-drawer-in 280ms ease-out;
+  animation: admin-drawer-in 180ms ease-out;
 }
 
 [data-sonner-toaster] {
   z-index: 100000 !important;
-  font-family: var(--font-manrope), sans-serif;
+  font-family: var(--font-montserrat), sans-serif;
 }
 
 [data-sonner-toast].app-toast {
@@ -192,8 +221,8 @@ textarea.input-shell-field {
   gap: 0.75rem;
   width: min(28rem, calc(100vw - 2rem));
   padding: 0.9rem 1rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 12px 32px rgba(36, 29, 34, 0.12);
+  border-radius: var(--radius);
+  box-shadow: none;
   font-size: 0.875rem;
   line-height: 1.45;
 }
@@ -230,6 +259,11 @@ textarea.input-shell-field {
   border-color: currentColor;
   background: white;
   color: inherit;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gold) 28%, white);
+  color: var(--ink);
 }
 
 @media (prefers-reduced-motion: reduce) {

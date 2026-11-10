@@ -6,9 +6,10 @@ export const metadata = { title: "Metodologia" };
 export default function MethodologyPage() {
   return (
     <PageShell>
-      <article className="mx-auto grid max-w-3xl gap-5 px-4 py-12 leading-8">
+      <article className="mx-auto grid max-w-2xl gap-5 px-4 py-12 leading-8">
         <h1 className="font-display text-4xl">Sobre a metodologia</h1>
-        <p>
+        <div className="hairline" />
+        <p className="text-lead text-muted">
           Os Códigos da Missão reúnem 36 arquétipos, três decanatos para cada um dos 12 signos. As faixas são [0°, 10°), [10°, 20°) e [20°, 30°). A palavra-chave pode se repetir; a identidade do código é o par signo e decanato.
         </p>
         <p>
@@ -17,7 +18,7 @@ export default function MethodologyPage() {
         <p>
           Luz e sombra são modos possíveis da mesma força. Nenhum símbolo é tratado como defeito, diagnóstico ou destino.
         </p>
-        <p className="rounded-2xl bg-gold-soft px-4 py-3 text-sm">{PROVISIONAL_ASTROLOGY_NOTICE}</p>
+        <p className="border-l-2 border-gold bg-canvas px-4 py-3 text-sm">{PROVISIONAL_ASTROLOGY_NOTICE}</p>
         <p>
           Novos mapas incluem o Ascendente entre as ativações quando a metodologia publicada o ativa. A Roda da Fortuna só entra quando a fórmula estiver homologada. O Meio do Céu continua no mapa e não gera Código.
         </p>

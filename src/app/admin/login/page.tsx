@@ -26,7 +26,7 @@ export default async function LoginPage({
           autoComplete="username"
         />
         <PasswordField name="password" placeholder="Senha" autoComplete="current-password" />
-        <button className="min-h-11 rounded-xl bg-wine text-white" type="submit" disabled={!configured}>
+        <button className="min-h-11 rounded bg-wine text-white" type="submit" disabled={!configured}>
           Entrar
         </button>
       </form>

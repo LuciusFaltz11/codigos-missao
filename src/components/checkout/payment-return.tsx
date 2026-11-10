@@ -46,7 +46,7 @@ export function PaymentReturn({ reference, outcome }: { reference: string | null
 
   return (
     <div className="grid gap-4">
-      <p className="rounded-2xl bg-gold-soft px-4 py-3 text-sm">{outcome ? hints[outcome] ?? hints.success : "Aguardando a referência do pedido."}</p>
+      <p className="border-l-2 border-gold bg-canvas px-4 py-3 text-sm">{outcome ? hints[outcome] ?? hints.success : "Aguardando a referência do pedido."}</p>
       <h1 className="font-display text-4xl">{label}</h1>
       <p className="text-sm text-muted">Estado no servidor: {status}</p>
       <Link href="/" className="text-sm font-semibold text-wine">

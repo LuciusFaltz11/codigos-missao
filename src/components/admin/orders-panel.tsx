@@ -25,7 +25,7 @@ const STATUS_TONE: Record<string, string> = {
 
 function StatusPill({ status }: { status: string }) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_TONE[status] ?? "bg-gold-soft text-ink"}`}>
+    <span className={`inline-flex rounded px-2.5 py-1 text-xs font-semibold ${STATUS_TONE[status] ?? "bg-gold-soft text-ink"}`}>
       {orderStatusLabel(status)}
     </span>
   );

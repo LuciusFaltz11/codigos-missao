@@ -31,7 +31,7 @@ function StatusPill({ state }: { state: IntegrationState }) {
       : state === "license_unconfirmed"
         ? "bg-gold-soft text-ink"
         : "bg-danger/10 text-danger";
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>{STATUS_LABEL[state]}</span>;
+  return <span className={`inline-flex rounded px-2.5 py-1 text-xs font-semibold ${tone}`}>{STATUS_LABEL[state]}</span>;
 }
 
 export default async function SettingsPage() {

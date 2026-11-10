@@ -13,10 +13,11 @@ export const metadata = { title: "Perguntas frequentes" };
 export default function FaqPage() {
   return (
     <PageShell>
-      <div className="mx-auto grid max-w-3xl gap-4 px-4 py-12">
+      <div className="mx-auto grid max-w-2xl gap-0 px-4 py-12">
         <h1 className="font-display text-4xl">Perguntas frequentes</h1>
+        <div className="hairline mt-4 mb-8" />
         {faqs.map(([question, answer]) => (
-          <details key={question} className="rounded-2xl border border-border bg-surface p-4" open>
+          <details key={question} className="border-b border-line py-4" open>
             <summary className="cursor-pointer font-semibold">{question}</summary>
             <p className="mt-2 text-muted">{answer}</p>
           </details>

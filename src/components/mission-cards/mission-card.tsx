@@ -24,14 +24,14 @@ export function MissionCard({
 }) {
   const tone = element === "fogo" || element === "terra" || element === "ar" || element === "agua" ? element : "neutral";
   return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-surface">
+    <article className="overflow-hidden border border-border bg-surface">
       <div className="relative aspect-[2/3] border-b border-gold bg-gold-soft">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt={`Carta ${archetype}`} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-            <p className="text-xs tracking-[0.2em] text-muted uppercase">Arte original pendente</p>
+            <p className="text-xs text-muted">Arte original pendente</p>
             <p className="mt-4 font-display text-3xl text-wine">{archetype}</p>
           </div>
         )}
@@ -47,7 +47,7 @@ export function MissionCard({
           ) : null}
         </div>
         <h3 className="font-display text-2xl">{archetype}</h3>
-        <p className="text-sm font-semibold tracking-wide text-wine uppercase">{keyword}</p>
+        <p className="text-sm font-semibold text-wine">{keyword}</p>
         {light ? <p className="text-sm leading-6">{light}</p> : null}
         {shadow ? (
           <details>

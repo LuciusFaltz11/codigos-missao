@@ -4,11 +4,19 @@ import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
 import { pointHint } from "@/features/astrology/point-hints";
 import { chartAngle, chartPoint, forwardMidpoint, SIGN_GLYPHS, signElement, type NatalChartBody, type NatalChartView } from "@/features/astrology/wheel";
 
+const INK = "#0B0A09";
+const MUTED = "#60605F";
+const WINE = "#1E332D";
+const GOLD = "#C7A96B";
+const GOLD_SOFT = "#F6F1E6";
+const LINE = "#C2C2C2";
+const CANVAS = "#F3F3F3";
+
 const ELEMENT_COLOR = {
-  fogo: "#b96a42",
-  terra: "#687b59",
-  ar: "#7283b1",
-  agua: "#4e8390",
+  fogo: "#C58E8D",
+  terra: "#1E332D",
+  ar: "#5679BC",
+  agua: "#60605F",
 } as const;
 
 const SIZE = 520;
@@ -134,7 +142,7 @@ function GlyphTip({
         if (event.pointerType !== "mouse") onShow();
       }}
     >
-      <circle cx={x} cy={y} r="16" fill="transparent" stroke={active || selected ? "#482931" : "none"} strokeWidth="1" />
+      <circle cx={x} cy={y} r="16" fill="transparent" stroke={active || selected ? WINE : "none"} strokeWidth="1" />
       {children}
     </g>
   );
@@ -153,7 +161,7 @@ function CodeMarker({
 }) {
   return (
     <>
-      <circle cx={x} cy={y} r="15" fill="none" stroke="#b99b62" strokeWidth="2" pointerEvents="none" />
+      <circle cx={x} cy={y} r="15" fill="none" stroke={GOLD} strokeWidth="2" pointerEvents="none" />
       {imageUrl ? (
         <>
           <clipPath id={clipId}>
@@ -168,7 +176,7 @@ function CodeMarker({
             clipPath={`url(#${clipId})`}
             pointerEvents="none"
           />
-          <circle cx={x + 14} cy={y - 12} r="8" fill="none" stroke="#b99b62" strokeWidth="1" pointerEvents="none" />
+          <circle cx={x + 14} cy={y - 12} r="8" fill="none" stroke={GOLD} strokeWidth="1" pointerEvents="none" />
         </>
       ) : null}
     </>
@@ -221,7 +229,7 @@ export function NatalWheel({
         <desc id={descId}>
           Roda com os doze signos, as casas e as posições calculadas. A lista seguinte traz signo, grau e casa de cada ponto.
         </desc>
-        <circle cx={CENTER} cy={CENTER} r="248" fill="#fff" stroke="#e7e2da" />
+        <circle cx={CENTER} cy={CENTER} r="248" fill="#fff" stroke={LINE} />
         {Array.from({ length: 12 }, (_, index) => {
           const start = index * 30;
           const element = signElement(index);
@@ -235,9 +243,9 @@ export function NatalWheel({
             />
           );
         })}
-        <circle cx={CENTER} cy={CENTER} r="198" fill="none" stroke="#b99b62" />
-        <circle cx={CENTER} cy={CENTER} r="132" fill="none" stroke="#e7e2da" />
-        <circle cx={CENTER} cy={CENTER} r="78" fill="#f8f6f1" stroke="#e7e2da" />
+        <circle cx={CENTER} cy={CENTER} r="198" fill="none" stroke={GOLD} />
+        <circle cx={CENTER} cy={CENTER} r="132" fill="none" stroke={LINE} />
+        <circle cx={CENTER} cy={CENTER} r="78" fill={CANVAS} stroke={LINE} />
         {Array.from({ length: 36 }, (_, index) => {
           const longitude = index * 10;
           const outer = at(longitude, ascendant, index % 3 === 0 ? 198 : 192);
@@ -249,7 +257,7 @@ export function NatalWheel({
               y1={inner.y}
               x2={outer.x}
               y2={outer.y}
-              stroke="#5e5664"
+              stroke={MUTED}
               strokeWidth={index % 3 === 0 ? 1.2 : 0.6}
             />
           );
@@ -257,7 +265,7 @@ export function NatalWheel({
         {SIGN_GLYPHS.map((glyph, index) => {
           const position = at(index * 30 + 15, ascendant, 222);
           return (
-            <text key={glyph} x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="18" fill="#241d22">
+            <text key={glyph} x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="18" fill={INK}>
               {textGlyph(glyph)}
             </text>
           );
@@ -273,7 +281,7 @@ export function NatalWheel({
               y1={inner.y}
               x2={outer.x}
               y2={outer.y}
-              stroke={axis ? "#482931" : "#b99b62"}
+              stroke={axis ? WINE : GOLD}
               strokeWidth={axis ? 1.6 : 0.8}
             />
           );
@@ -283,7 +291,7 @@ export function NatalWheel({
           if (next === undefined) return null;
           const position = at(forwardMidpoint(cusp, next), ascendant, 104);
           return (
-            <text key={`casa-${index}`} x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="#5e5664">
+            <text key={`casa-${index}`} x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill={MUTED}>
               {index + 1}
             </text>
           );
@@ -305,7 +313,7 @@ export function NatalWheel({
               onShow={() => setActive({ pointId: body.pointId, x: position.x, y: position.y })}
               onHide={() => setActive((current) => (current?.pointId === body.pointId ? null : current))}
             >
-              {isSelected ? <circle cx={position.x} cy={position.y} r="13" fill="#e8dcc6" /> : null}
+              {isSelected ? <circle cx={position.x} cy={position.y} r="13" fill={GOLD_SOFT} /> : null}
               {isMarked ? (
                 <CodeMarker
                   clipId={`${markerId}-${body.pointId}`}
@@ -314,7 +322,7 @@ export function NatalWheel({
                   imageUrl={markerImages[body.pointId]}
                 />
               ) : null}
-              <text x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="16" fill={isSelected || isMarked ? "#482931" : "#241d22"} pointerEvents="none">
+              <text x={position.x} y={position.y} textAnchor="middle" dominantBaseline="middle" fontSize="16" fill={isSelected || isMarked ? WINE : INK} pointerEvents="none">
                 {textGlyph(body.glyph)}
               </text>
               {body.retrograde ? (
@@ -324,7 +332,7 @@ export function NatalWheel({
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize="8"
-                  fill="#482931"
+                  fill={WINE}
                   pointerEvents="none"
                 >
                   R
@@ -352,11 +360,11 @@ export function NatalWheel({
               onShow={() => setActive({ pointId: body.pointId, x, y })}
               onHide={() => setActive((current) => (current?.pointId === body.pointId ? null : current))}
             >
-              {isSelected ? <circle cx={x} cy={y} r="13" fill="#e8dcc6" /> : null}
+              {isSelected ? <circle cx={x} cy={y} r="13" fill={GOLD_SOFT} /> : null}
               {isMarked ? (
                 <CodeMarker clipId={`${markerId}-${body.pointId}`} x={x} y={y} imageUrl={markerImages[body.pointId]} />
               ) : null}
-              <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill="#482931" pointerEvents="none">
+              <text x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="11" fontWeight="700" fill={WINE} pointerEvents="none">
                 {body.glyph}
               </text>
             </GlyphTip>
@@ -364,7 +372,7 @@ export function NatalWheel({
         })}
       </svg>
       {active && activeBody ? (
-        <div role="tooltip" className="pointer-events-none absolute z-10 w-max max-w-56 rounded-xl border border-border bg-surface px-3 py-2 text-sm shadow-sm" style={tooltipStyle(active.x, active.y)}>
+        <div role="tooltip" className="pointer-events-none absolute z-10 w-max max-w-56 rounded border border-border bg-surface px-3 py-2 text-sm" style={tooltipStyle(active.x, active.y)}>
           <p className="font-medium">{activeBody.label}</p>
           <p className="mt-1 text-muted">{pointHint(activeBody.pointId)}</p>
           <p className="mt-1">{positionLine(activeBody)}</p>
@@ -381,7 +389,7 @@ export function NatalWheel({
                   <button
                     type="button"
                     aria-pressed={isSelected}
-                    className={`w-full rounded-xl px-3 py-2 text-left text-sm ${isSelected ? "bg-gold-soft" : ""}`}
+                    className={`w-full rounded px-3 py-2 text-left text-sm ${isSelected ? "bg-gold-soft" : ""}`}
                     onClick={() => onSelectPoint?.(body.pointId)}
                   >
                     <p className="font-medium">
