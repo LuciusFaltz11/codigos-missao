@@ -1,3 +1,5 @@
+import { parseOriginList } from "@/features/integrations/wix-origins";
+
 export type IntegrationName =
   | "supabase"
   | "infinitepay"
@@ -44,6 +46,9 @@ export function getServerEnv() {
     geocodingApiKey: read("GEOCODING_API_KEY"),
     cronSecret: read("CRON_SECRET"),
     policyVersion: read("POLICY_VERSION") ?? "0.1.0-minuta",
+    turnstileSiteKey: read("NEXT_PUBLIC_TURNSTILE_SITE_KEY"),
+    turnstileSecret: read("TURNSTILE_SECRET_KEY"),
+    wixEmbedOrigins: parseOriginList(read("WIX_EMBED_ORIGINS")),
   };
 }
 
