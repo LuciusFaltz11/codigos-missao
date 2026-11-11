@@ -333,6 +333,10 @@ describe("usuários do painel", () => {
     expect(adminUserStatus("2026-10-23T12:00:00.000Z", null, "2026-10-23T12:00:00.000Z")).toBe("blocked");
     expect(adminUserStatus(null, null, null)).toBe("pending");
     expect(adminUserStatus(null, null, "2026-10-23T12:00:00.000Z")).toBe("active");
+    const { adminSignInBlock } = await import("@/features/admin/users");
+    expect(adminSignInBlock(null)).toBeNull();
+    expect(adminSignInBlock("2026-10-23T12:00:00.000Z", Date.parse("2026-10-22T12:00:00.000Z"))).toBe("bloqueado");
+    expect(adminSignInBlock("2026-10-23T12:00:00.000Z", Date.parse("2026-10-24T12:00:00.000Z"))).toBeNull();
   });
 
   it("explica e-mail ausente, senha errada e primeiro acesso", async () => {

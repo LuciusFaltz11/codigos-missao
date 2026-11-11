@@ -11,7 +11,7 @@ import { createAdminUser, resendAdminAccess, updateAdminUser } from "@/server/ac
 
 const STATUS_LABEL: Record<AdminUserRow["status"], string> = {
   active: "Ativo",
-  pending: "Primeiro acesso",
+  pending: "Ainda não entrou",
   blocked: "Bloqueado",
 };
 

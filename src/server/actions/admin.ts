@@ -7,6 +7,7 @@ import { adminProfileNameSchema, adminUserCreateSchema, adminUserUpdateSchema, c
 import { PROMPT_VERSION } from "@/features/interpretation/prompts";
 import { normalizeCouponCode } from "@/features/checkout/coupons";
 import { datetimeLocalToIso } from "@/features/admin/coupons";
+import { adminSignInBlock } from "@/features/admin/users";
 import { isAdminRole } from "@/server/auth/rbac";
 import { getAdminSession, requirePermission } from "@/server/auth/session";
 import { tryServiceClient, trySessionClient } from "@/server/db/clients";
@@ -42,9 +43,8 @@ export async function signIn(formData: FormData) {
   const profile = await service.from("admin_profiles").select("id,role").eq("email", email).maybeSingle();
   if (!profile.data?.id || !isAdminRole(String(profile.data.role))) loginRedirect("nao_cadastrado", email);
   const authUser = await service.auth.admin.getUserById(String(profile.data.id));
-  const bannedUntil = authUser.data.user?.banned_until;
-  if (bannedUntil && Date.parse(String(bannedUntil)) > Date.now()) loginRedirect("bloqueado", email);
-  if (!authUser.data.user?.last_sign_in_at) loginRedirect("primeiro", email);
+  const banned = adminSignInBlock(authUser.data.user?.banned_until ? String(authUser.data.user.banned_until) : null);
+  if (banned) loginRedirect(banned, email);
   const { error, data } = await client.auth.signInWithPassword({ email, password });
   if (error || !data.user) loginRedirect("senha", email);
   redirect("/admin");

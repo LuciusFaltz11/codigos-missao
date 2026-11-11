@@ -31,10 +31,11 @@ export default async function LoginPage({
         </button>
       </form>
       <p className="text-sm text-muted">
+        Se a senha já foi definida no painel, entre com ela aqui. O{" "}
         <a className="underline" href="/admin/primeiro-acesso">
-          Primeiro acesso
-        </a>
-        : use o link do e-mail de convite para criar sua senha.
+          primeiro acesso
+        </a>{" "}
+        é só para quem recebeu o link de convite por e-mail.
       </p>
     </main>
   );

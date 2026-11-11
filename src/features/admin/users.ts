@@ -36,6 +36,11 @@ export function adminUserStatus(blockedAt: string | null, bannedUntil: string | 
   return "active";
 }
 
+export function adminSignInBlock(bannedUntil: string | null | undefined, now = Date.now()) {
+  if (bannedUntil && Date.parse(String(bannedUntil)) > now) return "bloqueado" as const;
+  return null;
+}
+
 export function loginErrorMessage(code: string | undefined) {
   switch (code) {
     case "nao_cadastrado":
