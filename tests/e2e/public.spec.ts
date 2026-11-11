@@ -20,9 +20,12 @@ test("o formulário reúne os dados numa tela", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Gerar mapa" })).toBeDisabled();
 });
 
-test("o retorno de pagamento não trata o navegador como confirmação", async ({ page }) => {
-  await page.goto("/pagamento/retorno?outcome=success");
-  await expect(page.getByText("ainda não confirma o pagamento")).toBeVisible();
+test("o retorno de pagamento agradece e não trata o navegador como confirmação", async ({ page }) => {
+  await page.goto("/pagamento/retorno?capture_method=pix");
+  await expect(page.getByRole("heading", { name: "Obrigada por fazer o pedido" })).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Pedido realizado");
+  await expect(page.getByText("Enquanto o pagamento é processado, os Códigos da Missão deste mapa estão sendo revelados.")).toBeVisible();
+  await expect(page.getByText("um PDF completo chega no e-mail cadastrado neste pedido")).toBeVisible();
 });
 
 test("a metodologia deixa as regras astronômicas como provisórias", async ({ page }) => {

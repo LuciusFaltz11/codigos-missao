@@ -513,12 +513,7 @@ export async function confirmInfinitePayReturn(formData: FormData) {
   });
   if (!result.ok) redirect(withQuery(back, result.note === "payment_check_failed" ? "erro=check" : "erro=1"));
   if (!result.approved) {
-    const code =
-      result.note === "ambiguous_pending_orders"
-        ? "ambiguo"
-        : result.note === "order_not_found"
-          ? "pedido"
-          : "check";
+    const code = result.note === "order_not_found" ? "pedido" : "check";
     redirect(withQuery(back, `erro=${code}`));
   }
   await audit(auth.admin.userId, "payment_recheck", "orders", orderId);

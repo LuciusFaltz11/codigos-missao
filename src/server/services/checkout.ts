@@ -8,7 +8,6 @@ import {
   isCheckoutSlug,
   isLocalOrderReference,
   pickOrderForProviderNotice,
-  pickUniquePendingOrder,
   readingUrlForPaidOrder,
 } from "@/features/checkout/return-status";
 import { createExternalReference, openToken } from "@/server/security/tokens";
@@ -75,19 +74,6 @@ export async function startCheckout(token: string, couponCode = ""): Promise<Sta
     .eq("chart_id", loaded.chartId)
     .eq("status", "pending")
     .not("init_point", "is", null);
-  const reusable = (pending.data ?? []).find(
-    (order) =>
-      Number(order.amount_cents) === amountCents &&
-      (order.coupon_code ?? null) === storedCode &&
-      order.init_point,
-  );
-  if (reusable?.init_point && !complimentary) {
-    return {
-      ok: true as const,
-      initPoint: String(reusable.init_point),
-      externalReference: String(reusable.external_reference),
-    };
-  }
   if (pending.data?.length) {
     await loaded.service
       .from("orders")
@@ -237,40 +223,35 @@ export async function findOrderForPaymentNotice(
   });
 }
 
-const PENDING_MATCH_WINDOW_MS = 48 * 60 * 60 * 1000;
-
-export async function findUniquePendingOrderByAmount(service: ServiceClient, amountCents: number) {
-  const since = new Date(Date.now() - PENDING_MATCH_WINDOW_MS).toISOString();
-  const pending = await service
-    .from("orders")
-    .select(PAYMENT_ORDER_COLUMNS)
-    .eq("status", "pending")
-    .eq("amount_cents", amountCents)
-    .gte("created_at", since)
-    .order("created_at", { ascending: false })
-    .limit(3);
-  const rows = Array.isArray(pending.data) ? (pending.data as PaymentOrderRow[]) : [];
-  const unique = pickUniquePendingOrder(rows);
-  return { order: unique ?? null, count: rows.length };
-}
-
 export async function orderStatusByReference(externalReference: string) {
   return loadOrderReturnView({ ref: externalReference });
+}
+
+export type OrderReturnView = {
+  configured: boolean;
+  status: string;
+  readingUrl: string | null;
+  amountCents: number | null;
+  email: string | null;
+};
+
+function emptyReturnView(status: string, configured = true): OrderReturnView {
+  return { configured, status, readingUrl: null, amountCents: null, email: null };
 }
 
 export async function loadOrderReturnView(input: {
   ref?: string | null;
   slug?: string | null;
   localRef?: string | null;
-}) {
+}): Promise<OrderReturnView> {
   const service = tryServiceClient();
-  if (!service) return { configured: false as const, status: "not_configured", readingUrl: null as string | null };
+  if (!service) return emptyReturnView("not_configured", false);
   const order = await findOrderForPaymentNotice(service, {
     orderNsu: input.ref,
     slug: input.slug,
     localRef: input.localRef,
   });
-  if (!order) return { configured: true as const, status: "unknown" as const, readingUrl: null as string | null };
+  if (!order) return emptyReturnView("unknown");
 
   const entitlement = await service
     .from("entitlements")
@@ -302,5 +283,16 @@ export async function loadOrderReturnView(input: {
     token,
     appUrl: getServerEnv().appUrl,
   });
-  return { configured: true as const, status: String(order.status), readingUrl };
+  const lead = order.lead_id
+    ? await service.from("leads").select("email").eq("id", order.lead_id).maybeSingle()
+    : { data: null };
+  const email =
+    lead.data && typeof lead.data.email === "string" && lead.data.email.trim() ? lead.data.email.trim() : null;
+  return {
+    configured: true,
+    status: String(order.status),
+    readingUrl,
+    amountCents: Number(order.amount_cents),
+    email,
+  };
 }

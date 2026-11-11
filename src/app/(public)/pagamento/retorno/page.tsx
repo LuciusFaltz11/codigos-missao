@@ -4,6 +4,7 @@ import { PageShell } from "@/components/site/chrome";
 import { PaymentReturn } from "@/components/checkout/payment-return";
 import { CHECKOUT_REF_COOKIE, pickLocalOrderReference } from "@/features/checkout/return-status";
 import { runDueJobs } from "@/server/jobs/runner";
+import { loadOrderReturnView } from "@/server/services/checkout";
 import { recordAndProcessPayment } from "@/server/services/webhook";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,7 @@ export default async function PaymentReturnPage({
       // A volta do navegador continua visível mesmo se a consulta ao provedor falhar.
     }
   }
+  const view = await loadOrderReturnView({ ref: orderNsu, slug, localRef });
   return (
     <PageShell>
       <div className="mx-auto max-w-2xl px-4 py-12">
@@ -55,7 +57,9 @@ export default async function PaymentReturnPage({
           transactionNsu={transactionNsu}
           captureMethod={params.capture_method ?? null}
           receiptUrl={params.receipt_url ?? null}
-          outcome={params.outcome ?? (transactionNsu ? "success" : null)}
+          initialStatus={view.status}
+          initialAmountCents={view.amountCents}
+          initialEmail={view.email}
         />
       </div>
     </PageShell>

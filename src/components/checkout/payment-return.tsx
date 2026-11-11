@@ -2,26 +2,27 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { isTerminalPaymentStatus } from "@/features/checkout/return-status";
+import { customerOrderFlag, isTerminalPaymentStatus } from "@/features/checkout/return-status";
 import { Button } from "@/components/ui/button";
+import { formatBrl } from "@/lib/formatters";
 
-const hints: Record<string, string> = {
-  success: "O navegador voltou do checkout da InfinitePay. Isso ainda não confirma o pagamento.",
-  pending: "A InfinitePay informou uma situação pendente. A confirmação continua no servidor.",
-  failure: "O retorno do checkout indica que o pagamento não foi aprovado. Nenhuma leitura foi liberada por esta tela.",
+type View = {
+  status: string;
+  readingUrl: string | null;
+  amountCents: number | null;
+  email: string | null;
+  note?: string | null;
 };
 
-const NOTES: Record<string, string> = {
-  order_not_found: "Ainda não achamos o pedido no banco. A reverificação consulta de novo pelo código do checkout.",
-  payment_check_failed: "A InfinitePay não confirmou o pagamento nesta tentativa. Tente reverificar.",
-  missing_slug: "Faltou o código do checkout para localizar o pedido.",
-  missing_reference: "Faltam dados da transação para reverificar.",
-  already_processed: "Esta transação já tinha sido processada.",
-  ambiguous_pending_orders:
-    "Há mais de um pedido pendente com este valor. No painel, abra o pedido e cole a URL de retorno da InfinitePay.",
-};
-
-type View = { status: string; readingUrl: string | null; note?: string | null };
+function mergeView(current: View, next: Partial<View>): View {
+  return {
+    status: next.status ?? current.status,
+    readingUrl: next.readingUrl ?? current.readingUrl,
+    amountCents: next.amountCents ?? current.amountCents,
+    email: next.email ?? current.email,
+    note: next.note,
+  };
+}
 
 export function PaymentReturn({
   orderNsu,
@@ -30,7 +31,9 @@ export function PaymentReturn({
   transactionNsu,
   captureMethod,
   receiptUrl,
-  outcome,
+  initialStatus,
+  initialAmountCents,
+  initialEmail,
 }: {
   orderNsu: string | null;
   localRef: string | null;
@@ -38,11 +41,18 @@ export function PaymentReturn({
   transactionNsu: string | null;
   captureMethod: string | null;
   receiptUrl: string | null;
-  outcome: string | null;
+  initialStatus: string;
+  initialAmountCents: number | null;
+  initialEmail: string | null;
 }) {
   const canQuery = Boolean(orderNsu || slug || localRef);
   const canRecheck = Boolean(transactionNsu && canQuery);
-  const [view, setView] = useState<View>({ status: canQuery ? "carregando" : "unknown", readingUrl: null });
+  const [view, setView] = useState<View>({
+    status: initialStatus,
+    readingUrl: null,
+    amountCents: initialAmountCents,
+    email: initialEmail,
+  });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -57,13 +67,7 @@ export function PaymentReturn({
     async function readStatus() {
       const response = await fetch(`/api/orders/status?${statusQuery.toString()}`, { cache: "no-store" });
       const body = (await response.json()) as View;
-      if (!stopped) {
-        setView({
-          status: body.status ?? "unknown",
-          readingUrl: body.readingUrl ?? null,
-          note: body.note,
-        });
-      }
+      if (!stopped) setView((current) => mergeView(current, body));
       return body.status ?? "unknown";
     }
 
@@ -80,13 +84,7 @@ export function PaymentReturn({
         }),
       });
       const body = (await response.json().catch(() => null)) as View | null;
-      if (!stopped && body) {
-        setView({
-          status: body.status ?? "unknown",
-          readingUrl: body.readingUrl ?? null,
-          note: body.note,
-        });
-      }
+      if (!stopped && body) setView((current) => mergeView(current, body));
       return body?.status ?? null;
     }
 
@@ -131,85 +129,91 @@ export function PaymentReturn({
         }),
       });
       const body = (await response.json().catch(() => null)) as View | null;
-      if (body) {
-        setView({
-          status: body.status ?? "unknown",
-          readingUrl: body.readingUrl ?? null,
-          note: body.note,
-        });
-      }
+      if (body) setView((current) => mergeView(current, body));
     } finally {
       setBusy(false);
     }
   }
 
   const status = view.status;
-  const label =
-    status === "approved"
-      ? "Pagamento aprovado. Sua leitura completa está liberada."
-      : status === "pending" || status === "carregando"
-        ? "Estamos confirmando o pagamento com a InfinitePay."
-        : status === "rejected" || status === "cancelled"
-          ? "Pagamento não aprovado."
-          : status === "refunded"
-            ? "Reembolso registrado. A política de acesso ainda depende de decisão editorial."
-            : status === "not_configured"
-              ? "O banco ainda não está configurado, então nenhum pagamento pode ser confirmado."
-              : "Ainda não localizamos este pedido. Reverifique o pagamento para consultar a InfinitePay de novo.";
+  const flag = customerOrderFlag(status);
+  const approved = status === "approved";
+  const failed = status === "rejected" || status === "cancelled";
+  const refunded = status === "refunded";
+  const methodLabel = captureMethod === "pix" ? "Pix" : captureMethod === "credit_card" ? "Cartão" : captureMethod;
 
-  const methodLabel = captureMethod === "pix" ? "Pix" : captureMethod;
-  const reference = localRef ?? orderNsu ?? slug;
-  const note = view.note ? NOTES[view.note] ?? null : null;
+  const story = approved
+    ? "Seus Códigos da Missão já estão liberados. O PDF completo também segue para o e-mail cadastrado neste pedido."
+    : failed
+      ? "Recebemos o pedido, mas este pagamento ainda não foi confirmado. Se o valor saiu da sua conta, o comprovante abaixo ajuda a conferir. Você também pode tentar de novo."
+      : refunded
+        ? "Este pagamento foi reembolsado. Se precisar da leitura, fale conosco com o comprovante em mãos."
+        : "Enquanto o pagamento é processado, os Códigos da Missão deste mapa estão sendo revelados.";
+
+  const emailNotice = approved
+    ? view.email
+      ? `O PDF completo já está a caminho de ${view.email}.`
+      : "O PDF completo já está a caminho do e-mail cadastrado neste pedido."
+    : failed || refunded
+      ? null
+      : view.email
+        ? `Assim que o pagamento for confirmado, um PDF completo chega em ${view.email}.`
+        : "Assim que o pagamento for confirmado, um PDF completo chega no e-mail cadastrado neste pedido.";
 
   return (
-    <div className="grid gap-5">
-      <p className="border-l-2 border-gold bg-canvas px-4 py-3 text-sm">
-        {outcome ? (hints[outcome] ?? hints.success) : "Aguardando a referência do pedido."}
-      </p>
-      <h1 className="font-display text-4xl">{label}</h1>
-      <dl className="grid gap-2 text-sm text-muted">
+    <div className="grid gap-8">
+      <header className="grid gap-4">
+        <p className="inline-flex w-fit rounded bg-gold-soft px-3 py-1 text-sm font-semibold text-wine" role="status">
+          {flag}
+        </p>
+        <h1 className="font-display text-4xl leading-tight text-ink md:text-5xl">Obrigada por fazer o pedido</h1>
+        <p className="max-w-xl text-lg leading-8 text-muted">{story}</p>
+      </header>
+
+      <section className="grid gap-6 border-t border-gold bg-surface p-6">
         <div>
-          <dt className="sr-only">Estado no servidor</dt>
-          <dd>Estado no servidor: {status}</dd>
+          <p className="text-sm text-muted">{approved ? "Valor pago" : "Valor deste pedido"}</p>
+          {view.amountCents != null ? (
+            <p className="mt-1 font-display text-5xl leading-none">{formatBrl(view.amountCents)}</p>
+          ) : (
+            <p className="mt-1 font-display text-3xl leading-none text-muted">A confirmar</p>
+          )}
+          {methodLabel ? <p className="mt-3 text-sm text-muted">{methodLabel}</p> : null}
         </div>
-        {methodLabel ? (
-          <div>
-            <dt className="inline font-medium text-ink">Método: </dt>
-            <dd className="inline">{methodLabel}</dd>
-          </div>
+
+        {emailNotice ? (
+          <p className="max-w-xl border-l-2 border-gold bg-canvas px-4 py-3 text-sm leading-6">
+            {emailNotice}
+          </p>
         ) : null}
-        {reference ? (
-          <div>
-            <dt className="inline font-medium text-ink">Referência: </dt>
-            <dd className="inline break-all">{reference}</dd>
-          </div>
+
+        {approved && view.readingUrl ? (
+          <Button asChild>
+            <a href={view.readingUrl}>Abrir leitura completa</a>
+          </Button>
         ) : null}
-        {slug && slug !== reference ? (
-          <div>
-            <dt className="inline font-medium text-ink">Checkout: </dt>
-            <dd className="inline">{slug}</dd>
-          </div>
+      </section>
+
+      <div className="grid gap-3 text-sm">
+        {receiptUrl ? (
+          <a href={receiptUrl} className="font-semibold text-wine" target="_blank" rel="noopener noreferrer">
+            Ver comprovante
+          </a>
         ) : null}
-      </dl>
-      {note ? <p className="text-sm text-muted">{note}</p> : null}
-      {status === "approved" && view.readingUrl ? (
-        <Button asChild>
-          <a href={view.readingUrl}>Abrir leitura completa</a>
-        </Button>
-      ) : null}
-      {canRecheck && status !== "approved" ? (
-        <Button type="button" variant="secondary" onClick={() => void recheck()} disabled={busy}>
-          {busy ? "Reverificando…" : "Reverificar pagamento"}
-        </Button>
-      ) : null}
-      {receiptUrl ? (
-        <a href={receiptUrl} className="text-sm font-semibold text-wine" target="_blank" rel="noopener noreferrer">
-          Ver recibo da InfinitePay
-        </a>
-      ) : null}
-      <Link href="/" className="text-sm font-semibold text-wine">
-        Voltar ao início
-      </Link>
+        {canRecheck && !approved ? (
+          <button
+            type="button"
+            onClick={() => void recheck()}
+            disabled={busy}
+            className="w-fit text-left font-semibold text-muted underline-offset-4 hover:text-ink hover:underline disabled:opacity-50"
+          >
+            {busy ? "Confirmando o pagamento…" : "Atualizar status do pagamento"}
+          </button>
+        ) : null}
+        <Link href="/" className="font-semibold text-wine">
+          Voltar ao início
+        </Link>
+      </div>
     </div>
   );
 }

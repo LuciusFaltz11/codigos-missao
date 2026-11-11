@@ -8,13 +8,13 @@ import {
   slugFromCheckoutUrl,
 } from "@/features/checkout/infinitepay";
 import {
+  customerOrderFlag,
   isCheckoutSlug,
   isLocalOrderReference,
   orderMatchesCheckoutSlug,
   parseInfinitePayReturnUrl,
   pickLocalOrderReference,
   pickOrderForProviderNotice,
-  pickUniquePendingOrder,
   readingUrlForPaidOrder,
   shouldPersistProviderNsu,
 } from "@/features/checkout/return-status";
@@ -68,7 +68,7 @@ describe("link da InfinitePay", () => {
       order_nsu: "ord_1",
       items: [{ quantity: 1, price: 3500, description: "Leitura completa" }],
       redirect_url: "https://codigosmissao.com/pagamento/retorno?ref=ord_1",
-      webhook_url: "https://codigosmissao.com/api/webhooks/infinitepay",
+      webhook_url: "https://codigosmissao.com/api/webhooks/infinitepay?ref=ord_1",
       customer: { name: "Maria Silva", email: "maria@example.com" },
     });
     expect(httpsPayload).not.toHaveProperty("options");
@@ -149,8 +149,6 @@ describe("webhook e payment_check", () => {
     expect(pickLocalOrderReference("cb70e553-1ff9-4a25-b8b4-3bad88e55d48", "ord_2c41d6fb8fd9001b0434e503069938e0")).toBe(
       "ord_2c41d6fb8fd9001b0434e503069938e0",
     );
-    expect(pickUniquePendingOrder([{ id: "only" }])?.id).toBe("only");
-    expect(pickUniquePendingOrder([{ id: "a" }, { id: "b" }])).toBeNull();
     expect(
       parseInfinitePayReturnUrl(
         "https://codigosdamissao.valwilges.com.br/pagamento/retorno?capture_method=pix&transaction_nsu=9cf86f3e-aee3-459d-b8c5-982d7c1d78b6&slug=Gi3NyoxCKs&order_nsu=cb70e553-1ff9-4a25-b8b4-3bad88e55d48",
@@ -206,5 +204,8 @@ describe("webhook e payment_check", () => {
         appUrl,
       }),
     ).toBeNull();
+    expect(customerOrderFlag("pending")).toBe("Pedido realizado");
+    expect(customerOrderFlag("unknown")).toBe("Pedido realizado");
+    expect(customerOrderFlag("approved")).toBe("Pagamento confirmado");
   });
 });

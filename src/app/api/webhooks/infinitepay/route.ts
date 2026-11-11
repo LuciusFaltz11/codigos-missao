@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { parseWebhookPayload } from "@/features/checkout/infinitepay";
+import { pickLocalOrderReference } from "@/features/checkout/return-status";
 import { getServerEnv } from "@/server/env";
 import { runDueJobs } from "@/server/jobs/runner";
 import { recordAndProcessPayment } from "@/server/services/webhook";
@@ -18,10 +19,12 @@ export async function POST(request: Request) {
   }
   const parsed = parseWebhookPayload(body);
   if (!parsed?.transactionNsu || (!parsed.orderNsu && !parsed.slug)) return new Response(null, { status: 200 });
+  const localRef = pickLocalOrderReference(new URL(request.url).searchParams.get("ref"));
   const result = await recordAndProcessPayment({
     orderNsu: parsed.orderNsu,
     transactionNsu: parsed.transactionNsu,
     slug: parsed.slug,
+    localRef,
     event: parsed.event,
   });
   if (!result.ok) return new Response(null, { status: 400 });

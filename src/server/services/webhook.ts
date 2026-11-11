@@ -4,7 +4,7 @@ import { decidePaymentTransition, type InfinitePayEvent, type PaymentStatus, typ
 import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { checkPayment } from "@/server/providers/infinitepay";
-import { findOrderForPaymentNotice, findUniquePendingOrderByAmount, type PaymentOrderRow } from "@/server/services/checkout";
+import { findOrderForPaymentNotice, type PaymentOrderRow } from "@/server/services/checkout";
 import { fulfillApprovedOrder } from "@/server/services/fulfillment";
 
 export type ProcessPaymentResult =
@@ -90,15 +90,6 @@ export async function recordAndProcessPayment(input: {
   } catch (error) {
     logEvent("error", "payment_check_failed", { code: error instanceof Error ? error.message : "payment_check_failed" });
     return { ok: false as const, httpStatus: 400, note: "payment_check_failed" };
-  }
-
-  if (!order && checked.paid && checked.amountCents != null) {
-    const matched = await findUniquePendingOrderByAmount(service, checked.amountCents);
-    if (matched.count > 1) {
-      await service.from("payment_webhook_events").update({ process_note: "ambiguous_pending_orders" }).eq("delivery_key", deliveryKey);
-      return { ok: true as const, duplicate: false, approved: false, status: null, note: "ambiguous_pending_orders" };
-    }
-    order = matched.order;
   }
 
   if (!order) {

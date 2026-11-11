@@ -55,10 +55,6 @@ export function shouldPersistProviderNsu(stored: string, incoming: string | null
   return true;
 }
 
-export function pickUniquePendingOrder<T>(orders: T[]) {
-  return orders.length === 1 ? orders[0] : null;
-}
-
 export function readingUrlForPaidOrder(input: {
   status: string;
   entitled: boolean;
@@ -71,4 +67,11 @@ export function readingUrlForPaidOrder(input: {
 
 export function isTerminalPaymentStatus(status: string) {
   return status === "approved" || status === "rejected" || status === "cancelled" || status === "refunded";
+}
+
+export function customerOrderFlag(status: string) {
+  if (status === "approved") return "Pagamento confirmado";
+  if (status === "rejected" || status === "cancelled") return "Pagamento não confirmado";
+  if (status === "refunded") return "Reembolso registrado";
+  return "Pedido realizado";
 }
