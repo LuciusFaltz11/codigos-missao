@@ -8,6 +8,8 @@ import {
   slugFromCheckoutUrl,
 } from "@/features/checkout/infinitepay";
 import {
+  isCheckoutSlug,
+  orderMatchesCheckoutSlug,
   pickOrderForProviderNotice,
   readingUrlForPaidOrder,
   shouldPersistProviderNsu,
@@ -131,7 +133,22 @@ describe("webhook e payment_check", () => {
       bySlug: stored,
     });
     expect(found).toEqual(stored);
+    expect(
+      pickOrderForProviderNotice({
+        byExternalReference: null,
+        bySlug: null,
+        byInitPoint: stored,
+      }),
+    ).toEqual(stored);
     expect(shouldPersistProviderNsu("ord_1", "7a3fb3af-3574-4a1c-8a8b-03b28a456990")).toBe(true);
+    expect(isCheckoutSlug("CIO2G5Dr1g")).toBe(true);
+    expect(
+      orderMatchesCheckoutSlug({
+        preferenceId: null,
+        initPoint: "https://checkout.infinitepay.io/loja/CIO2G5Dr1g",
+        slug: "CIO2G5Dr1g",
+      }),
+    ).toBe(true);
     expect(
       decidePaymentTransition(
         order,

@@ -11,7 +11,15 @@ const hints: Record<string, string> = {
   failure: "O retorno do checkout indica que o pagamento não foi aprovado. Nenhuma leitura foi liberada por esta tela.",
 };
 
-type View = { status: string; readingUrl: string | null };
+const NOTES: Record<string, string> = {
+  order_not_found: "Ainda não achamos o pedido no banco. A reverificação consulta de novo pelo código do checkout.",
+  payment_check_failed: "A InfinitePay não confirmou o pagamento nesta tentativa. Tente reverificar.",
+  missing_slug: "Faltou o código do checkout para localizar o pedido.",
+  missing_reference: "Faltam dados da transação para reverificar.",
+  already_processed: "Esta transação já tinha sido processada.",
+};
+
+type View = { status: string; readingUrl: string | null; note?: string | null };
 
 export function PaymentReturn({
   orderNsu,
@@ -29,7 +37,9 @@ export function PaymentReturn({
   outcome: string | null;
 }) {
   const canQuery = Boolean(orderNsu || slug);
+  const canRecheck = Boolean(transactionNsu && canQuery);
   const [view, setView] = useState<View>({ status: canQuery ? "carregando" : "unknown", readingUrl: null });
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!canQuery) return;
@@ -42,13 +52,19 @@ export function PaymentReturn({
     async function readStatus() {
       const response = await fetch(`/api/orders/status?${statusQuery.toString()}`, { cache: "no-store" });
       const body = (await response.json()) as View;
-      if (!stopped) setView({ status: body.status ?? "unknown", readingUrl: body.readingUrl ?? null });
+      if (!stopped) {
+        setView({
+          status: body.status ?? "unknown",
+          readingUrl: body.readingUrl ?? null,
+          note: body.note,
+        });
+      }
       return body.status ?? "unknown";
     }
 
     async function confirm() {
-      if (!transactionNsu) return;
-      await fetch("/api/pagamento/confirmar", {
+      if (!transactionNsu) return null;
+      const response = await fetch("/api/pagamento/confirmar", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -57,17 +73,27 @@ export function PaymentReturn({
           slug,
         }),
       });
+      const body = (await response.json().catch(() => null)) as View | null;
+      if (!stopped && body) {
+        setView({
+          status: body.status ?? "unknown",
+          readingUrl: body.readingUrl ?? null,
+          note: body.note,
+        });
+      }
+      return body?.status ?? null;
     }
 
     let statusTimer = 0;
     let confirmTimer = 0;
     async function tick(doConfirm: boolean) {
       if (stopped) return;
+      let status: string | null = null;
       if (doConfirm && transactionNsu && confirms < 15) {
         confirms += 1;
-        await confirm();
+        status = await confirm();
       }
-      const status = await readStatus();
+      status = status ?? (await readStatus());
       if (!isTerminalPaymentStatus(status)) return;
       confirms = 15;
       window.clearInterval(statusTimer);
@@ -84,6 +110,32 @@ export function PaymentReturn({
     };
   }, [canQuery, orderNsu, slug, transactionNsu]);
 
+  async function recheck() {
+    if (!canRecheck || busy) return;
+    setBusy(true);
+    try {
+      const response = await fetch("/api/pagamento/confirmar", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          order_nsu: orderNsu,
+          transaction_nsu: transactionNsu,
+          slug,
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as View | null;
+      if (body) {
+        setView({
+          status: body.status ?? "unknown",
+          readingUrl: body.readingUrl ?? null,
+          note: body.note,
+        });
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const status = view.status;
   const label =
     status === "approved"
@@ -96,10 +148,11 @@ export function PaymentReturn({
             ? "Reembolso registrado. A política de acesso ainda depende de decisão editorial."
             : status === "not_configured"
               ? "O banco ainda não está configurado, então nenhum pagamento pode ser confirmado."
-              : "Não encontramos este pedido ainda. Se você acabou de pagar, aguarde alguns segundos.";
+              : "Ainda não localizamos este pedido. Reverifique o pagamento para consultar a InfinitePay de novo.";
 
   const methodLabel = captureMethod === "pix" ? "Pix" : captureMethod;
   const reference = orderNsu ?? slug;
+  const note = view.note ? NOTES[view.note] ?? null : null;
 
   return (
     <div className="grid gap-5">
@@ -124,10 +177,22 @@ export function PaymentReturn({
             <dd className="inline break-all">{reference}</dd>
           </div>
         ) : null}
+        {slug && slug !== reference ? (
+          <div>
+            <dt className="inline font-medium text-ink">Checkout: </dt>
+            <dd className="inline">{slug}</dd>
+          </div>
+        ) : null}
       </dl>
+      {note ? <p className="text-sm text-muted">{note}</p> : null}
       {status === "approved" && view.readingUrl ? (
         <Button asChild>
           <a href={view.readingUrl}>Abrir leitura completa</a>
+        </Button>
+      ) : null}
+      {canRecheck && status !== "approved" ? (
+        <Button type="button" variant="secondary" onClick={() => void recheck()} disabled={busy}>
+          {busy ? "Reverificando…" : "Reverificar pagamento"}
         </Button>
       ) : null}
       {receiptUrl ? (

@@ -1,5 +1,24 @@
-export function pickOrderForProviderNotice<T>(input: { byExternalReference: T | null; bySlug: T | null }) {
-  return input.byExternalReference ?? input.bySlug ?? null;
+export function isCheckoutSlug(value: string | null | undefined): value is string {
+  return Boolean(value && /^[A-Za-z0-9_-]{4,64}$/.test(value));
+}
+
+export function orderMatchesCheckoutSlug(input: {
+  preferenceId?: string | null;
+  initPoint?: string | null;
+  slug: string;
+}) {
+  if (!isCheckoutSlug(input.slug)) return false;
+  if (input.preferenceId === input.slug) return true;
+  if (input.initPoint && input.initPoint.includes(input.slug)) return true;
+  return false;
+}
+
+export function pickOrderForProviderNotice<T>(input: {
+  byExternalReference: T | null;
+  bySlug: T | null;
+  byInitPoint?: T | null;
+}) {
+  return input.byExternalReference ?? input.bySlug ?? input.byInitPoint ?? null;
 }
 
 export function shouldPersistProviderNsu(stored: string, incoming: string | null | undefined) {

@@ -4,7 +4,10 @@ import { recordAndProcessPayment } from "@/server/services/webhook";
 import { loadOrderReturnView } from "@/server/services/checkout";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+const NO_STORE = { "Cache-Control": "no-store" };
 
 function text(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -16,7 +19,7 @@ export async function POST(request: Request) {
   const transactionNsu = text(body?.transaction_nsu);
   const slug = text(body?.slug);
   if (!transactionNsu || (!orderNsu && !slug)) {
-    return Response.json({ ok: false, status: "unknown", readingUrl: null }, { status: 400 });
+    return Response.json({ ok: false, status: "unknown", readingUrl: null, note: "missing_reference" }, { status: 400, headers: NO_STORE });
   }
   const result = await recordAndProcessPayment({
     orderNsu,
@@ -24,16 +27,20 @@ export async function POST(request: Request) {
     slug,
     event: "paid",
   });
-  if (!result.ok) return Response.json({ ok: false, status: "unknown", readingUrl: null }, { status: result.httpStatus });
-  if (result.approved) {
+  if (result.ok && result.approved) {
     after(async () => {
       await runDueJobs(3);
     });
   }
   const view = await loadOrderReturnView({ ref: orderNsu, slug });
-  return Response.json({
-    ok: true,
-    status: view.status,
-    readingUrl: view.readingUrl,
-  });
+  const status = view.status !== "unknown" ? view.status : result.status ?? "unknown";
+  return Response.json(
+    {
+      ok: result.ok,
+      status,
+      readingUrl: view.readingUrl,
+      note: result.note ?? (result.ok ? null : "payment_check_failed"),
+    },
+    { headers: NO_STORE },
+  );
 }

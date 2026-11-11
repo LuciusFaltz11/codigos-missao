@@ -1,10 +1,10 @@
 import "server-only";
 import { isComplimentaryAmount, normalizeCouponCode } from "@/features/checkout/coupons";
 import { checkoutBlockers } from "@/features/methodology/snapshot";
-import { tryServiceClient } from "@/server/db/clients";
+import { tryServiceClient, type ServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { createCheckoutLink } from "@/server/providers/infinitepay";
-import { readingUrlForPaidOrder } from "@/features/checkout/return-status";
+import { isCheckoutSlug, pickOrderForProviderNotice, readingUrlForPaidOrder } from "@/features/checkout/return-status";
 import { createExternalReference, openToken } from "@/server/security/tokens";
 import { getServerEnv } from "@/server/env";
 import { deliveryStatus, loadChartByToken } from "@/server/services/charts";
@@ -152,6 +152,63 @@ export async function startCheckout(token: string, couponCode = ""): Promise<Sta
   }
 }
 
+const PAYMENT_ORDER_COLUMNS = "id,external_reference,amount_cents,currency,status,chart_id,lead_id,preference_id,init_point";
+
+export type PaymentOrderRow = {
+  id: string;
+  external_reference: string;
+  amount_cents: number;
+  currency: string;
+  status: string;
+  chart_id: string;
+  lead_id: string;
+  preference_id: string | null;
+  init_point: string | null;
+};
+
+async function latestOrder(query: PromiseLike<{ data: unknown; error: { message?: string } | null }>) {
+  const result = await query;
+  const rows = Array.isArray(result.data) ? result.data : result.data ? [result.data] : [];
+  return (rows[0] as PaymentOrderRow | undefined) ?? null;
+}
+
+export async function findOrderForPaymentNotice(
+  service: ServiceClient,
+  input: { orderNsu?: string | null; slug?: string | null },
+) {
+  const byReference = input.orderNsu
+    ? await latestOrder(
+        service.from("orders").select(PAYMENT_ORDER_COLUMNS).eq("external_reference", input.orderNsu).limit(1),
+      )
+    : null;
+  const slug = isCheckoutSlug(input.slug) ? input.slug : null;
+  const bySlug = !byReference && slug
+    ? await latestOrder(
+        service
+          .from("orders")
+          .select(PAYMENT_ORDER_COLUMNS)
+          .eq("preference_id", slug)
+          .order("created_at", { ascending: false })
+          .limit(1),
+      )
+    : null;
+  const byInitPoint = !byReference && !bySlug && slug
+    ? await latestOrder(
+        service
+          .from("orders")
+          .select(PAYMENT_ORDER_COLUMNS)
+          .ilike("init_point", `%${slug}%`)
+          .order("created_at", { ascending: false })
+          .limit(1),
+      )
+    : null;
+  return pickOrderForProviderNotice({
+    byExternalReference: byReference,
+    bySlug,
+    byInitPoint,
+  });
+}
+
 export async function orderStatusByReference(externalReference: string) {
   return loadOrderReturnView({ ref: externalReference });
 }
@@ -159,20 +216,7 @@ export async function orderStatusByReference(externalReference: string) {
 export async function loadOrderReturnView(input: { ref?: string | null; slug?: string | null }) {
   const service = tryServiceClient();
   if (!service) return { configured: false as const, status: "not_configured", readingUrl: null as string | null };
-  const byReference = input.ref
-    ? await service.from("orders").select("id,status,chart_id").eq("external_reference", input.ref).maybeSingle()
-    : { data: null };
-  const bySlug =
-    !byReference.data && input.slug
-      ? await service
-          .from("orders")
-          .select("id,status,chart_id")
-          .eq("preference_id", input.slug)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-      : { data: null };
-  const order = byReference.data ?? bySlug.data;
+  const order = await findOrderForPaymentNotice(service, { orderNsu: input.ref, slug: input.slug });
   if (!order) return { configured: true as const, status: "unknown" as const, readingUrl: null as string | null };
 
   const entitlement = await service

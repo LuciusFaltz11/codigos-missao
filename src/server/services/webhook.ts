@@ -1,46 +1,15 @@
 import "server-only";
-import { pickOrderForProviderNotice, shouldPersistProviderNsu } from "@/features/checkout/return-status";
+import { shouldPersistProviderNsu } from "@/features/checkout/return-status";
 import { decidePaymentTransition, type InfinitePayEvent, type PaymentStatus, type ProviderPayment } from "@/features/checkout/transition";
-import { tryServiceClient, type ServiceClient } from "@/server/db/clients";
+import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { checkPayment } from "@/server/providers/infinitepay";
+import { findOrderForPaymentNotice } from "@/server/services/checkout";
 import { fulfillApprovedOrder } from "@/server/services/fulfillment";
 
-const ORDER_COLUMNS = "id,external_reference,amount_cents,currency,status,chart_id,lead_id,preference_id";
-
-type OrderRow = {
-  id: string;
-  external_reference: string;
-  amount_cents: number;
-  currency: string;
-  status: string;
-  chart_id: string;
-  lead_id: string;
-  preference_id: string | null;
-};
-
 export type ProcessPaymentResult =
-  | { ok: false; httpStatus: number; duplicate?: undefined; approved?: undefined; status?: undefined }
-  | { ok: true; duplicate: boolean; approved: boolean; status: string | null };
-
-async function findOrder(service: ServiceClient, input: { orderNsu: string | null; slug: string | null }) {
-  const byReference = input.orderNsu
-    ? await service.from("orders").select(ORDER_COLUMNS).eq("external_reference", input.orderNsu).maybeSingle()
-    : { data: null };
-  const bySlug = !byReference.data && input.slug
-    ? await service
-        .from("orders")
-        .select(ORDER_COLUMNS)
-        .eq("preference_id", input.slug)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-    : { data: null };
-  return pickOrderForProviderNotice({
-    byExternalReference: (byReference.data as OrderRow | null) ?? null,
-    bySlug: (bySlug.data as OrderRow | null) ?? null,
-  });
-}
+  | { ok: false; httpStatus: number; duplicate?: undefined; approved?: undefined; status?: undefined; note?: string }
+  | { ok: true; duplicate: boolean; approved: boolean; status: string | null; note?: string };
 
 export async function recordAndProcessPayment(input: {
   orderNsu: string | null;
@@ -70,20 +39,21 @@ export async function recordAndProcessPayment(input: {
       .eq("delivery_key", deliveryKey)
       .maybeSingle();
     if (existing.data?.processed_at) {
-      const known = await findOrder(service, { orderNsu: input.orderNsu, slug: input.slug });
+      const known = await findOrderForPaymentNotice(service, { orderNsu: input.orderNsu, slug: input.slug });
       return {
         ok: true as const,
         duplicate: true,
         approved: known?.status === "approved",
         status: known ? String(known.status) : null,
+        note: "already_processed",
       };
     }
   }
 
-  const order = await findOrder(service, { orderNsu: input.orderNsu, slug: input.slug });
+  const order = await findOrderForPaymentNotice(service, { orderNsu: input.orderNsu, slug: input.slug });
   if (!order) {
     await service.from("payment_webhook_events").update({ process_note: "order_not_found" }).eq("delivery_key", deliveryKey);
-    return { ok: true as const, duplicate: false, approved: false, status: null };
+    return { ok: true as const, duplicate: false, approved: false, status: null, note: "order_not_found" };
   }
 
   if (shouldPersistProviderNsu(String(order.external_reference), input.orderNsu) && input.orderNsu) {
@@ -98,7 +68,7 @@ export async function recordAndProcessPayment(input: {
   }
   if (!slug) {
     await service.from("payment_webhook_events").update({ process_note: "missing_slug" }).eq("delivery_key", deliveryKey);
-    return { ok: true as const, duplicate: false, approved: false, status: String(order.status) };
+    return { ok: true as const, duplicate: false, approved: false, status: String(order.status), note: "missing_slug" };
   }
 
   const orderNsu = input.orderNsu || String(order.external_reference);
@@ -111,7 +81,7 @@ export async function recordAndProcessPayment(input: {
     });
   } catch (error) {
     logEvent("error", "payment_check_failed", { code: error instanceof Error ? error.message : "payment_check_failed" });
-    return { ok: false as const, httpStatus: 400 };
+    return { ok: false as const, httpStatus: 400, note: "payment_check_failed" };
   }
 
   const amountCents = checked.paid ? checked.amountCents : (checked.amountCents ?? Number(order.amount_cents));
