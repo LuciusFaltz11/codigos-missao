@@ -7,6 +7,11 @@ import {
   parseWebhookPayload,
   slugFromCheckoutUrl,
 } from "@/features/checkout/infinitepay";
+import {
+  pickOrderForProviderNotice,
+  readingUrlForPaidOrder,
+  shouldPersistProviderNsu,
+} from "@/features/checkout/return-status";
 import { decidePaymentTransition, type ProviderPayment } from "@/features/checkout/transition";
 
 const order = {
@@ -117,5 +122,53 @@ describe("webhook e payment_check", () => {
       paidAmountCents: 15100,
     });
     expect(parsePaymentCheck({ success: false, message: "Not found" })).toMatchObject({ paid: false });
+  });
+
+  it("acha o pedido pelo slug quando a InfinitePay devolve outro order_nsu", () => {
+    const stored = { id: "0f0f75b8-b4b6-4f39-a051-a82b1ca3f8ca", externalReference: "ord_1", preferenceId: "CIO2G5Dr1g" };
+    const found = pickOrderForProviderNotice({
+      byExternalReference: null,
+      bySlug: stored,
+    });
+    expect(found).toEqual(stored);
+    expect(shouldPersistProviderNsu("ord_1", "7a3fb3af-3574-4a1c-8a8b-03b28a456990")).toBe(true);
+    expect(
+      decidePaymentTransition(
+        order,
+        payment({ externalReference: found?.externalReference ?? null }),
+      ),
+    ).toMatchObject({ action: "update", nextStatus: "approved", grantEntitlement: true });
+    expect(decidePaymentTransition(order, payment({ externalReference: "7a3fb3af-3574-4a1c-8a8b-03b28a456990" }))).toMatchObject({
+      action: "reject_mismatch",
+      reason: "external_reference",
+    });
+  });
+
+  it("só monta a URL da leitura completa com pedido aprovado e entitlement", () => {
+    const appUrl = "https://codigos.example";
+    expect(
+      readingUrlForPaidOrder({
+        status: "approved",
+        entitled: true,
+        token: "token-seguro-123456",
+        appUrl,
+      }),
+    ).toBe("https://codigos.example/mapa/completo/token-seguro-123456");
+    expect(
+      readingUrlForPaidOrder({
+        status: "approved",
+        entitled: false,
+        token: "token-seguro-123456",
+        appUrl,
+      }),
+    ).toBeNull();
+    expect(
+      readingUrlForPaidOrder({
+        status: "pending",
+        entitled: true,
+        token: "token-seguro-123456",
+        appUrl,
+      }),
+    ).toBeNull();
   });
 });

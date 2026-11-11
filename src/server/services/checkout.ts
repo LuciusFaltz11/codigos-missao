@@ -4,7 +4,9 @@ import { checkoutBlockers } from "@/features/methodology/snapshot";
 import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { createCheckoutLink } from "@/server/providers/infinitepay";
-import { createExternalReference } from "@/server/security/tokens";
+import { readingUrlForPaidOrder } from "@/features/checkout/return-status";
+import { createExternalReference, openToken } from "@/server/security/tokens";
+import { getServerEnv } from "@/server/env";
 import { deliveryStatus, loadChartByToken } from "@/server/services/charts";
 import { quoteCoupon } from "@/server/services/coupons";
 import { fulfillApprovedOrder } from "@/server/services/fulfillment";
@@ -151,13 +153,57 @@ export async function startCheckout(token: string, couponCode = ""): Promise<Sta
 }
 
 export async function orderStatusByReference(externalReference: string) {
+  return loadOrderReturnView({ ref: externalReference });
+}
+
+export async function loadOrderReturnView(input: { ref?: string | null; slug?: string | null }) {
   const service = tryServiceClient();
-  if (!service) return { configured: false as const };
-  const order = await service
-    .from("orders")
-    .select("status,chart_id")
-    .eq("external_reference", externalReference)
+  if (!service) return { configured: false as const, status: "not_configured", readingUrl: null as string | null };
+  const byReference = input.ref
+    ? await service.from("orders").select("id,status,chart_id").eq("external_reference", input.ref).maybeSingle()
+    : { data: null };
+  const bySlug =
+    !byReference.data && input.slug
+      ? await service
+          .from("orders")
+          .select("id,status,chart_id")
+          .eq("preference_id", input.slug)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
+  const order = byReference.data ?? bySlug.data;
+  if (!order) return { configured: true as const, status: "unknown" as const, readingUrl: null as string | null };
+
+  const entitlement = await service
+    .from("entitlements")
+    .select("id,revoked_at,refund_pending_policy")
+    .eq("order_id", order.id)
+    .order("granted_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
-  if (!order.data) return { configured: true as const, status: "unknown" as const };
-  return { configured: true as const, status: String(order.data.status) };
+  const entitled = Boolean(
+    entitlement.data && !entitlement.data.revoked_at && !entitlement.data.refund_pending_policy,
+  );
+  let token: string | null = null;
+  if (entitled && order.chart_id) {
+    const chart = await service.from("natal_charts").select("access_token_id").eq("id", order.chart_id).maybeSingle();
+    const sealed = chart.data
+      ? await service.from("access_tokens").select("token_sealed").eq("id", chart.data.access_token_id).maybeSingle()
+      : null;
+    if (sealed?.data?.token_sealed) {
+      try {
+        token = openToken(String(sealed.data.token_sealed));
+      } catch {
+        token = null;
+      }
+    }
+  }
+  const readingUrl = readingUrlForPaidOrder({
+    status: String(order.status),
+    entitled,
+    token,
+    appUrl: getServerEnv().appUrl,
+  });
+  return { configured: true as const, status: String(order.status), readingUrl };
 }

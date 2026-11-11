@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     return new Response(null, { status: 200 });
   }
   const parsed = parseWebhookPayload(body);
-  if (!parsed?.orderNsu || !parsed.transactionNsu) return new Response(null, { status: 200 });
+  if (!parsed?.transactionNsu || (!parsed.orderNsu && !parsed.slug)) return new Response(null, { status: 200 });
   const result = await recordAndProcessPayment({
     orderNsu: parsed.orderNsu,
     transactionNsu: parsed.transactionNsu,
