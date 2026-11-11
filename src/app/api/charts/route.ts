@@ -1,3 +1,4 @@
+import { CHART_LOCKED_MESSAGE, chartGenerationLocked } from "@/features/launch/chart-gate";
 import { chartRequestSchema } from "@/lib/schemas/forms";
 import { consumeMemoryLimit, rateLimitKey } from "@/server/security/rate-limit";
 import { createBirthChart } from "@/server/services/charts";
@@ -6,6 +7,9 @@ import { tryServiceClient } from "@/server/db/clients";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (chartGenerationLocked()) {
+    return Response.json({ ok: false, code: "locked", message: CHART_LOCKED_MESSAGE }, { status: 403 });
+  }
   const limit = consumeMemoryLimit(rateLimitKey(request, "charts"), 8, 15 * 60_000);
   if (!limit.allowed) {
     return Response.json({ ok: false, code: "rate_limited", message: "Muitas tentativas. Aguarde alguns minutos." }, { status: 429 });

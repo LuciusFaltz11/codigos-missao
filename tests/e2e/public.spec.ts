@@ -9,6 +9,12 @@ test("a landing explica o método e não promete destino", async ({ page }) => {
 
 test("o formulário reúne os dados numa tela", async ({ page }) => {
   await page.goto("/mapa");
+  const locked = page.getByText("Aberto às 20:00");
+  if (await locked.isVisible()) {
+    await expect(locked).toBeVisible();
+    await expect(page.getByLabel("Tempo restante")).toBeVisible();
+    return;
+  }
   await expect(page.getByLabel("Nome")).toBeVisible();
   await expect(page.getByLabel("Ano")).toBeVisible();
   await expect(page.getByLabel("Mês")).toBeVisible();

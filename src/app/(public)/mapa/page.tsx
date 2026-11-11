@@ -1,5 +1,6 @@
-import { PageShell } from "@/components/site/chrome";
 import { BirthWizard } from "@/components/birth-form/wizard";
+import { ChartLaunchGate } from "@/components/chart/chart-launch-gate";
+import { PageShell } from "@/components/site/chrome";
 
 export const metadata = { title: "Gerar mapa" };
 
@@ -14,7 +15,9 @@ export default function MapPage() {
             A hora importa porque as casas e a Roda da Fortuna dependem dela. Se você não souber a hora, o cálculo completo não será feito.
           </p>
         </div>
-        <BirthWizard />
+        <ChartLaunchGate>
+          <BirthWizard />
+        </ChartLaunchGate>
       </div>
     </PageShell>
   );

@@ -26,6 +26,11 @@ vi.mock("@/server/db/clients", () => ({
   tryServiceClient: () => null,
 }));
 
+vi.mock("@/features/launch/chart-gate", () => ({
+  chartGenerationLocked: () => false,
+  CHART_LOCKED_MESSAGE: "O mapa será liberado às 20:00 de 11/11.",
+}));
+
 const payload = {
   name: "Ana Silva",
   email: "rota@example.com",

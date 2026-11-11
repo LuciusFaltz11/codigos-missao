@@ -1,4 +1,5 @@
 import { corsHeadersForOrigin } from "@/features/integrations/wix-origins";
+import { CHART_LOCKED_MESSAGE, chartGenerationLocked } from "@/features/launch/chart-gate";
 import { isSafePreviewRedirect, previewRedirectUrl } from "@/features/integrations/wix-messages";
 import { wixChartRequestSchema } from "@/features/integrations/wix-chart-request";
 import { consumeMemoryLimit, clientAddress, rateLimitKey } from "@/server/security/rate-limit";
@@ -27,6 +28,9 @@ export async function POST(request: Request) {
   const env = getServerEnv();
   const origin = request.headers.get("origin");
   const allowed = env.wixEmbedOrigins;
+  if (chartGenerationLocked()) {
+    return json({ ok: false, code: "locked", message: CHART_LOCKED_MESSAGE }, 403, origin, allowed);
+  }
   const limit = consumeMemoryLimit(rateLimitKey(request, "wix-charts"), 8, 15 * 60_000);
   if (!limit.allowed) {
     return json(
