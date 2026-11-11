@@ -48,7 +48,9 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
     },
     "/admin/configuracoes": () => {
       if (salvo === "1") return successFlash("Preço salvo.");
+      if (salvo === "perfil") return successFlash("Nome salvo. A saudação da home usa esse nome.");
       if (erro === "permissao") return errorFlash("Seu papel não altera o preço.");
+      if (erro === "nome") return errorFlash("Informe um nome com pelo menos 2 letras, ou deixe em branco.");
       if (erro === "config") return errorFlash("O banco ainda não está configurado.");
       if (erro === "1") return errorFlash("Informe um valor entre R$ 1,00 e R$ 100.000,00.");
       return null;
@@ -69,6 +71,7 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
       if (salvo === "email") return successFlash("E-mail de acesso reenviado.");
       if (erro === "permissao") return errorFlash("Seu papel não gerencia usuários.");
       if (erro === "senha") return errorFlash("A senha precisa ter pelo menos 8 caracteres e coincidir com a confirmação.");
+      if (erro === "nome") return errorFlash("Informe um nome com pelo menos 2 letras, ou deixe em branco.");
       if (erro === "email") return errorFlash("Configure o envio de e-mail para cadastrar ou reenviar o acesso.");
       if (erro === "existe") return errorFlash("Já existe um usuário com este e-mail.");
       if (erro === "ultimo") return errorFlash("O último super admin ativo não pode ser bloqueado nem rebaixado.");

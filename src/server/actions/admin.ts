@@ -3,14 +3,14 @@
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { DEFAULT_ACTIVATION_POINTS, PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
-import { adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, interpretationPromptSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
+import { adminProfileNameSchema, adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, interpretationPromptSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
 import { PROMPT_VERSION } from "@/features/interpretation/prompts";
 import { normalizeCouponCode } from "@/features/checkout/coupons";
 import { datetimeLocalToIso } from "@/features/admin/coupons";
 import { isAdminRole } from "@/server/auth/rbac";
 import { getAdminSession, requirePermission } from "@/server/auth/session";
 import { tryServiceClient, trySessionClient } from "@/server/db/clients";
-import { countActiveSuperAdmins, sendAdminAccessEmail } from "@/server/services/admin-users";
+import { countActiveSuperAdmins, saveAdminProfileName, sendAdminAccessEmail } from "@/server/services/admin-users";
 import { CARD_ART_BUCKET, isStoredCardArtPath, readCardArtUpload } from "@/features/missions/card-art";
 import { officialCatalog, type MissionCode } from "@/features/missions/catalog";
 import { inspectCatalog } from "@/features/missions/integrity";
@@ -315,6 +315,17 @@ export async function updatePrice(formData: FormData) {
   redirect("/admin/configuracoes?salvo=1");
 }
 
+export async function updateOwnAdminProfile(formData: FormData) {
+  const admin = await getAdminSession();
+  if (!admin) redirect("/admin/login");
+  const parsed = adminProfileNameSchema.safeParse({ name: String(formData.get("name") ?? "") });
+  if (!parsed.success) redirect("/admin/configuracoes?erro=nome");
+  const saved = await saveAdminProfileName(admin.userId, parsed.data.name);
+  if (!saved.ok) redirect("/admin/configuracoes?erro=config");
+  await audit(admin.userId, "admin_profile_updated", "admin_profiles", admin.userId);
+  redirect("/admin/configuracoes?salvo=perfil");
+}
+
 function couponFormError(parsed: { success: false; period?: boolean; error?: { issues: Array<{ path: PropertyKey[] }> } }) {
   if (parsed.period) return "periodo";
   if (parsed.error?.issues.some((issue) => issue.path[0] === "startsAt" || issue.path[0] === "endsAt")) return "periodo";
@@ -408,12 +419,16 @@ export async function createAdminUser(formData: FormData) {
   const service = tryServiceClient();
   if (!service) redirect("/admin/usuarios?erro=config");
   const parsed = adminUserCreateSchema.safeParse({
+    name: String(formData.get("name") ?? ""),
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     role: formData.get("role"),
     password: formData.get("password"),
     confirm: formData.get("confirm"),
   });
-  if (!parsed.success) redirect("/admin/usuarios?novo=1&erro=senha");
+  if (!parsed.success) {
+    const nameIssue = parsed.error.issues.some((issue) => issue.path[0] === "name");
+    redirect(`/admin/usuarios?novo=1&erro=${nameIssue ? "nome" : "senha"}`);
+  }
   if (parsed.data.role === "super_admin" && auth.admin.role !== "super_admin") {
     redirect("/admin/usuarios?novo=1&erro=permissao");
   }
@@ -423,11 +438,13 @@ export async function createAdminUser(formData: FormData) {
     email: parsed.data.email,
     password: parsed.data.password,
     email_confirm: true,
+    user_metadata: parsed.data.name ? { full_name: parsed.data.name, name: parsed.data.name } : undefined,
   });
   if (created.error || !created.data.user) redirect("/admin/usuarios?novo=1&erro=existe");
   const inserted = await service.from("admin_profiles").insert({
     id: created.data.user.id,
     email: parsed.data.email,
+    name: parsed.data.name,
     role: parsed.data.role,
     created_by: auth.admin.userId,
   });
@@ -442,10 +459,14 @@ export async function updateAdminUser(id: string, formData: FormData) {
   const service = tryServiceClient();
   if (!service) redirect("/admin/usuarios?erro=config");
   const parsed = adminUserUpdateSchema.safeParse({
+    name: String(formData.get("name") ?? ""),
     role: formData.get("role"),
     blocked: formData.get("blocked") === "on",
   });
-  if (!parsed.success) redirect(`/admin/usuarios?editar=${id}&erro=1`);
+  if (!parsed.success) {
+    const nameIssue = parsed.error.issues.some((issue) => issue.path[0] === "name");
+    redirect(`/admin/usuarios?editar=${id}&erro=${nameIssue ? "nome" : "1"}`);
+  }
   if (parsed.data.blocked && id === auth.admin.userId) redirect(`/admin/usuarios?editar=${id}&erro=proprio`);
   const current = await service.from("admin_profiles").select("id,role,email").eq("id", id).maybeSingle();
   if (!current.data || !isAdminRole(String(current.data.role))) redirect(`/admin/usuarios?editar=${id}&erro=1`);
@@ -457,10 +478,12 @@ export async function updateAdminUser(id: string, formData: FormData) {
   const updated = await service
     .from("admin_profiles")
     .update({
+      name: parsed.data.name,
       role: parsed.data.role,
     })
     .eq("id", id);
   if (updated.error) redirect(`/admin/usuarios?editar=${id}&erro=1`);
+  await saveAdminProfileName(id, parsed.data.name);
   await service.auth.admin.updateUserById(id, {
     ban_duration: parsed.data.blocked ? "876600h" : "none",
   });

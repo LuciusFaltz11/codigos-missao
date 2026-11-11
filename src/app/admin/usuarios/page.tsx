@@ -20,7 +20,7 @@ export default async function UsersPage({
     <AdminPanel>
       <h1 className="font-display text-4xl">Usuários</h1>
       <p className="mt-2 text-sm text-muted">
-        Cadastre e-mail, papel e senha neste painel. A pessoa entra com esses dados, sem depender do e-mail de convite.
+        Cadastre nome, e-mail, papel e senha neste painel. A pessoa entra com o e-mail e a senha, sem depender do convite.
       </p>
       {rows.length === 0 ? (
         <div className="mt-6">

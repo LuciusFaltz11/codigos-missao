@@ -289,6 +289,7 @@ describe("usuários do painel", () => {
     const { adminUserCreateSchema } = await import("@/lib/schemas/forms");
     expect(
       adminUserCreateSchema.safeParse({
+        name: "Val Wilges",
         email: "nova@example.com",
         role: "editor",
         password: "senhaforte",
@@ -297,6 +298,25 @@ describe("usuários do painel", () => {
     ).toBe(true);
     expect(
       adminUserCreateSchema.safeParse({
+        name: "",
+        email: "nova@example.com",
+        role: "editor",
+        password: "senhaforte",
+        confirm: "senhaforte",
+      }).success,
+    ).toBe(true);
+    expect(
+      adminUserCreateSchema.safeParse({
+        name: "V",
+        email: "nova@example.com",
+        role: "editor",
+        password: "senhaforte",
+        confirm: "senhaforte",
+      }).success,
+    ).toBe(false);
+    expect(
+      adminUserCreateSchema.safeParse({
+        name: "",
         email: "nova@example.com",
         role: "editor",
         password: "senhaforte",

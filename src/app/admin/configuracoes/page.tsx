@@ -1,7 +1,7 @@
 import { AdminPanel, Empty } from "@/components/admin/shell";
-import { Field, InputShell } from "@/components/ui/input";
+import { Field, Input, InputShell } from "@/components/ui/input";
 import { formatBrl } from "@/lib/formatters";
-import { updatePrice } from "@/server/actions/admin";
+import { updateOwnAdminProfile, updatePrice } from "@/server/actions/admin";
 import { roleHas } from "@/server/auth/rbac";
 import { getAdminSession } from "@/server/auth/session";
 import { tryServiceClient } from "@/server/db/clients";
@@ -50,8 +50,25 @@ export default async function SettingsPage() {
     <AdminPanel>
       <h1 className="font-display text-4xl">Configurações</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
-        Preço da leitura completa e o estado das integrações. Nenhuma chave secreta aparece aqui.
+        Seu nome no painel, o preço da leitura completa e o estado das integrações. Nenhuma chave secreta aparece aqui.
       </p>
+
+      {session ? (
+        <section className="mt-8 max-w-xl rounded-3xl border border-border bg-surface p-6">
+          <h2 className="font-display text-3xl">Seu nome</h2>
+          <p className="mt-2 text-sm text-muted">
+            A home do admin usa o primeiro nome. O e-mail de acesso continua sendo {session.email}.
+          </p>
+          <form action={updateOwnAdminProfile} className="mt-5 grid gap-4">
+            <Field label="Nome" hint="Opcional. Deixe em branco para voltar a usar o e-mail na saudação.">
+              <Input name="name" maxLength={80} defaultValue={session.profileName ?? ""} autoComplete="name" placeholder="Como você quer ser chamado" />
+            </Field>
+            <button className="min-h-11 rounded-xl bg-wine text-white" type="submit">
+              Salvar nome
+            </button>
+          </form>
+        </section>
+      ) : null}
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
         <section className="rounded-3xl border border-border bg-surface p-6">

@@ -15,6 +15,7 @@ export type AdminUserStatus = "active" | "pending" | "blocked";
 export type AdminUserRow = {
   id: string;
   email: string;
+  name: string | null;
   role: AdminRole;
   createdAt: string;
   lastSignInAt: string | null;

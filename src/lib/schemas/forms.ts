@@ -64,8 +64,16 @@ export const interpretationPromptSchema = z.object({
   body: z.string().trim().min(80).max(20_000),
 });
 
+export const adminNameSchema = z
+  .string()
+  .trim()
+  .max(80)
+  .transform((value) => (value.length === 0 ? null : value))
+  .refine((value) => value === null || value.length >= 2, { message: "Informe um nome com pelo menos 2 letras." });
+
 export const adminUserCreateSchema = z
   .object({
+    name: adminNameSchema,
     email: z.string().trim().email().max(200),
     role: z.enum(["super_admin", "admin", "editor", "support"]),
     password: z.string().min(8).max(72),
@@ -74,8 +82,13 @@ export const adminUserCreateSchema = z
   .refine((value) => value.password === value.confirm, { path: ["confirm"] });
 
 export const adminUserUpdateSchema = z.object({
+  name: adminNameSchema,
   role: z.enum(["super_admin", "admin", "editor", "support"]),
   blocked: z.boolean(),
+});
+
+export const adminProfileNameSchema = z.object({
+  name: adminNameSchema,
 });
 
 export const firstAccessSchema = z.object({

@@ -1,26 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { getAdminSession } from "@/server/auth/session";
 import { integrationStatus } from "@/server/env";
 import { signOut } from "@/server/actions/admin";
 import { AdminBreadcrumb } from "@/components/ui/breadcrumb";
-
-const links = [
-  ["Visão", "/admin"],
-  ["Códigos", "/admin/codigos"],
-  ["Astrologia", "/admin/astrologia"],
-  ["Metodologia", "/admin/metodologia"],
-  ["Prompts", "/admin/prompts"],
-  ["Simulador", "/admin/simulador"],
-  ["Leads", "/admin/leads"],
-  ["Mapas", "/admin/mapas"],
-  ["Pedidos", "/admin/pedidos"],
-  ["Cupons", "/admin/cupons"],
-  ["Relatórios", "/admin/relatorios"],
-  ["Usuários", "/admin/usuarios"],
-  ["Auditoria", "/admin/auditoria"],
-  ["Configurações", "/admin/configuracoes"],
-];
 
 export async function AdminPanel({ children }: { children: React.ReactNode }) {
   const status = integrationStatus();
@@ -31,13 +14,7 @@ export async function AdminPanel({ children }: { children: React.ReactNode }) {
       <aside className="border-r border-border bg-canvas p-4">
         <p className="font-display text-2xl text-wine">Admin</p>
         <p className="mt-1 text-xs text-muted">{session ? session.role : "sem autenticação configurada"}</p>
-        <nav className="mt-6 grid gap-1 text-sm" aria-label="Administração">
-          {links.map(([label, href]) => (
-            <Link key={href} href={href} className="rounded px-2 py-2 hover:bg-white">
-              {label}
-            </Link>
-          ))}
-        </nav>
+        <AdminNav />
         {session ? (
           <form action={signOut} className="mt-6">
             <button className="text-sm text-muted" type="submit">

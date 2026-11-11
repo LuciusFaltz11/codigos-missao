@@ -60,6 +60,17 @@ describe("avisos em toast", () => {
     });
   });
 
+  it("confirma o nome do admin salvo no perfil", () => {
+    expect(resolveFlash("/admin/configuracoes", params("salvo=perfil"))).toEqual({
+      kind: "success",
+      message: "Nome salvo. A saudação da home usa esse nome.",
+    });
+    expect(resolveFlash("/admin/usuarios", params("erro=nome"))).toEqual({
+      kind: "error",
+      message: "Informe um nome com pelo menos 2 letras, ou deixe em branco.",
+    });
+  });
+
   it("ignora parâmetros que não são aviso", () => {
     expect(resolveFlash("/admin/cupons", params("editar=1&novo=1"))).toBeNull();
   });

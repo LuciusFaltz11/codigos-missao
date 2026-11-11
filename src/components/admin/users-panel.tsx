@@ -88,6 +88,7 @@ export function UsersPanel({
               <th className="w-12 py-2">
                 <span className="sr-only">Abrir</span>
               </th>
+              <th>Nome</th>
               <th>E-mail</th>
               <th>Papel</th>
               <th>Status</th>
@@ -100,7 +101,7 @@ export function UsersPanel({
                 key={row.id}
                 className="cursor-pointer border-b border-border hover:bg-gold-soft/70"
                 tabIndex={0}
-                aria-label={`Abrir ${row.email}`}
+                aria-label={`Abrir ${row.name ?? row.email}`}
                 data-open={row.id === openId ? "true" : undefined}
                 onClick={() => openUser(row.id)}
                 onKeyDown={(event) => {
@@ -115,7 +116,7 @@ export function UsersPanel({
                   <button
                     type="button"
                     className="grid size-10 place-items-center rounded-lg text-wine hover:bg-gold-soft"
-                    aria-label={`Abrir ${row.email}`}
+                    aria-label={`Abrir ${row.name ?? row.email}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       openUser(row.id);
@@ -124,6 +125,7 @@ export function UsersPanel({
                     <Pencil className="size-4" strokeWidth={1.75} aria-hidden="true" />
                   </button>
                 </td>
+                <td>{row.name ?? "—"}</td>
                 <td>{row.email}</td>
                 <td>{ROLE_LABEL[row.role]}</td>
                 <td>{STATUS_LABEL[row.status]}</td>
@@ -147,7 +149,7 @@ export function UsersPanel({
                 <div>
                   <Dialog.Title className="font-display text-3xl">Novo usuário</Dialog.Title>
                   <Dialog.Description className="mt-1 text-sm text-muted">
-                    A pessoa entra no painel com o e-mail e a senha definidos aqui.
+                    Nome é opcional e aparece na saudação da home. A pessoa entra com o e-mail e a senha.
                   </Dialog.Description>
                 </div>
                 <Dialog.Close className="grid size-10 shrink-0 place-items-center rounded-lg text-muted hover:bg-gold-soft hover:text-ink" aria-label="Fechar cadastro">
@@ -155,6 +157,10 @@ export function UsersPanel({
                 </Dialog.Close>
               </div>
               <form action={createAdminUser} className="grid gap-3 overflow-y-auto px-6 py-5">
+                <label className="grid gap-1 text-sm">
+                  Nome
+                  <Input name="name" maxLength={80} autoComplete="name" placeholder="Como a pessoa aparece no painel" />
+                </label>
                 <label className="grid gap-1 text-sm">
                   E-mail
                   <Input type="email" name="email" required autoComplete="off" />
@@ -182,7 +188,7 @@ export function UsersPanel({
             <Dialog.Content className="admin-drawer fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-lg flex-col bg-surface shadow-[-16px_0_40px_rgba(36,29,34,0.08)]">
               <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
                 <div>
-                  <Dialog.Title className="font-display text-3xl">{selected.email}</Dialog.Title>
+                  <Dialog.Title className="font-display text-3xl">{selected.name ?? selected.email}</Dialog.Title>
                   <Dialog.Description className="mt-1 text-sm text-muted">
                     {STATUS_LABEL[selected.status]}
                     {selected.lastSignInAt ? ` · último acesso ${formatDateTimePt(selected.lastSignInAt)}` : " · ainda sem senha definida"}
@@ -195,11 +201,19 @@ export function UsersPanel({
               <div className="grid gap-6 overflow-y-auto px-6 py-5">
                 <dl className="grid gap-3 text-sm">
                   <div>
+                    <dt className="text-muted">E-mail</dt>
+                    <dd className="mt-1 break-all">{selected.email}</dd>
+                  </div>
+                  <div>
                     <dt className="text-muted">Cadastro</dt>
                     <dd className="mt-1">{selected.createdAt ? formatDateTimePt(selected.createdAt) : "—"}</dd>
                   </div>
                 </dl>
                 <form action={updateAdminUser.bind(null, selected.id)} className="grid gap-3">
+                  <label className="grid gap-1 text-sm">
+                    Nome
+                    <Input name="name" maxLength={80} defaultValue={selected.name ?? ""} autoComplete="name" placeholder="Como a pessoa aparece no painel" disabled={!canManage} />
+                  </label>
                   <label className="grid gap-1 text-sm">
                     Papel
                     <Select name="role" defaultValue={selected.role} disabled={!canManage}>

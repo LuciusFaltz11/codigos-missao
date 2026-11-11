@@ -26,6 +26,7 @@ async function main() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
+  const name = process.env.ADMIN_NAME?.trim() || null;
 
   if (!url || !key || !email || !password) {
     console.error("Defina NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_EMAIL e ADMIN_PASSWORD.");
@@ -33,7 +34,12 @@ async function main() {
   }
 
   const supabase = createClient(url, key, { auth: { persistSession: false } });
-  const created = await supabase.auth.admin.createUser({ email, password, email_confirm: true });
+  const created = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: name ? { full_name: name, name } : undefined,
+  });
   if (created.error || !created.data.user) {
     console.error("Não foi possível criar o usuário.");
     process.exit(1);
@@ -42,6 +48,7 @@ async function main() {
   const profile = await supabase.from("admin_profiles").insert({
     id: created.data.user.id,
     email,
+    name,
     role: "super_admin",
   });
   if (profile.error) {
