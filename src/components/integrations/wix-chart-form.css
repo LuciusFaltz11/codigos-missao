@@ -4,10 +4,11 @@
   --wix-muted: #60605f;
   --wix-ink: #0b0a09;
   box-sizing: border-box;
+  display: block;
   width: 100%;
   max-width: 560px;
   margin: 0 auto;
-  padding: 28px 24px 32px;
+  padding: 20px 16px 24px;
   background: #f3f3f3;
   color: var(--wix-ink);
   font-family: var(--font-montserrat), var(--font-manrope), sans-serif;
@@ -134,7 +135,8 @@
   accent-color: var(--wix-gold);
 }
 
-.wix-privacy a {
+.wix-privacy a,
+.wix-success a {
   color: var(--wix-ink);
   text-decoration: underline;
   text-underline-offset: 2px;

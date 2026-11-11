@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { birthMinutes, birthMonths, birthYears, composeBirthDate, daysInMonth } from "@/components/birth-form/birth-fields";
 import { CityAutocomplete, type CitySearchStatus } from "@/components/birth-form/city-autocomplete";
 import { TurnstileField } from "@/components/integrations/turnstile-field";
-import { postToWixParent, wixChartReadyMessage, wixResizeMessage } from "@/features/integrations/wix-messages";
+import {
+  embedPreviewUrl,
+  navigateToPreview,
+  postToWixParent,
+  wixChartReadyMessage,
+  wixResizeMessage,
+} from "@/features/integrations/wix-messages";
 import { twelveHourHours, twelveHourToBirthTime } from "@/features/integrations/wix-time";
 import type { TimeOption } from "@/features/astrology/time";
 import "./wix-chart-form.css";
@@ -28,6 +34,7 @@ export function WixChartForm({
 }) {
   const rootRef = useRef<HTMLFormElement>(null);
   const [pending, setPending] = useState(false);
+  const [previewHref, setPreviewHref] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cityStatus, setCityStatus] = useState<CitySearchStatus>(null);
@@ -137,15 +144,18 @@ export function WixChartForm({
           }
         | null;
       if (body?.ok && body.redirectUrl) {
-        setMessage("Sua leitura está pronta. Abrindo a prévia…");
-        if (window.parent === window) {
-          window.location.href = body.redirectUrl;
-        } else {
-          postToWixParent(wixChartReadyMessage(body.redirectUrl), {
-            allowedOrigins: wixOrigins,
-            referrer: document.referrer,
-          });
+        const previewUrl = embedPreviewUrl(body.redirectUrl, window.location.origin);
+        if (!previewUrl) {
+          setError("O mapa foi gerado, mas o endereço da prévia é inválido.");
+          return;
         }
+        setPreviewHref(previewUrl);
+        setMessage("Sua leitura está pronta. Abrindo a prévia…");
+        postToWixParent(wixChartReadyMessage(previewUrl), {
+          allowedOrigins: wixOrigins,
+          referrer: document.referrer,
+        });
+        navigateToPreview(previewUrl);
         return;
       }
       if (body?.code === "ambiguous_time") {
@@ -388,7 +398,19 @@ export function WixChartForm({
           {error}
         </p>
       ) : null}
-      {message ? <p className="wix-success">{message}</p> : null}
+      {message ? (
+        <p className="wix-success">
+          {message}
+          {previewHref ? (
+            <>
+              {" "}
+              <a href={previewHref} target="_top" rel="noopener noreferrer">
+                Abrir a prévia
+              </a>
+            </>
+          ) : null}
+        </p>
+      ) : null}
 
       <button className="wix-submit" type="submit" disabled={pending || !form.cityLabel}>
         {pending ? "Gerando mapa…" : "Gerar mapa"}

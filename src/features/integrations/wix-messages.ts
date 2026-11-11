@@ -36,6 +36,31 @@ export function previewRedirectUrl(appUrl: string, token: string) {
   return `${origin}/mapa/resultado/${encodeURIComponent(token)}`;
 }
 
+export function embedPreviewUrl(redirectUrl: string, embedOrigin: string) {
+  try {
+    const parsed = new URL(redirectUrl);
+    const origin = new URL(embedOrigin).origin;
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    if (parsed.search || parsed.hash || parsed.username || parsed.password) return null;
+    if (parts.length !== 3 || parts[0] !== "mapa" || parts[1] !== "resultado" || parts[2].length <= 8) return null;
+    return `${origin}/mapa/resultado/${parts[2]}`;
+  } catch {
+    return null;
+  }
+}
+
+export function navigateToPreview(url: string) {
+  try {
+    if (window.top && window.top !== window) {
+      window.top.location.assign(url);
+      return;
+    }
+  } catch {
+    // Alguns browsers bloqueiam leitura de top; a atribuição da URL ainda pode funcionar no catch abaixo.
+  }
+  window.location.assign(url);
+}
+
 export function isSafePreviewRedirect(url: string, appUrl: string) {
   try {
     const parsed = new URL(url);
@@ -81,7 +106,17 @@ export function postToWixParent(
   input: { allowedOrigins: string[]; referrer?: string; post?: (message: WixEmbedMessage, origin: string) => void },
 ) {
   const preferred = input.referrer ? parentOriginFromReferrer(input.referrer, input.allowedOrigins) : null;
-  const targets = preferred ? [preferred] : input.allowedOrigins;
-  const send = input.post ?? ((message, origin) => window.parent.postMessage(message, origin));
+  const targets = new Set<string>(preferred ? [preferred, ...input.allowedOrigins] : input.allowedOrigins);
+  if (targets.size === 0) targets.add("*");
+  const send =
+    input.post ??
+    ((message, origin) => {
+      window.parent.postMessage(message, origin);
+      try {
+        window.top?.postMessage(message, origin);
+      } catch {
+        // iframe aninhado no Wix
+      }
+    });
   for (const origin of targets) send(payload, origin);
 }
