@@ -233,10 +233,12 @@ export type OrderReturnView = {
   readingUrl: string | null;
   amountCents: number | null;
   email: string | null;
+  orderId: string | null;
+  orderRef: string | null;
 };
 
 function emptyReturnView(status: string, configured = true): OrderReturnView {
-  return { configured, status, readingUrl: null, amountCents: null, email: null };
+  return { configured, status, readingUrl: null, amountCents: null, email: null, orderId: null, orderRef: null };
 }
 
 export async function loadOrderReturnView(input: {
@@ -294,5 +296,7 @@ export async function loadOrderReturnView(input: {
     readingUrl,
     amountCents: Number(order.amount_cents),
     email,
+    orderId: String(order.id),
+    orderRef: String(order.external_reference),
   };
 }

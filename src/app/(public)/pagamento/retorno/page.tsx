@@ -60,6 +60,8 @@ export default async function PaymentReturnPage({
           initialStatus={view.status}
           initialAmountCents={view.amountCents}
           initialEmail={view.email}
+          initialOrderId={view.orderId}
+          initialOrderRef={view.orderRef}
         />
       </div>
     </PageShell>

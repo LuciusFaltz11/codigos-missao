@@ -11,6 +11,8 @@ type View = {
   readingUrl: string | null;
   amountCents: number | null;
   email: string | null;
+  orderId: string | null;
+  orderRef: string | null;
   note?: string | null;
 };
 
@@ -20,6 +22,8 @@ function mergeView(current: View, next: Partial<View>): View {
     readingUrl: next.readingUrl ?? current.readingUrl,
     amountCents: next.amountCents ?? current.amountCents,
     email: next.email ?? current.email,
+    orderId: next.orderId ?? current.orderId,
+    orderRef: next.orderRef ?? current.orderRef,
     note: next.note,
   };
 }
@@ -34,6 +38,8 @@ export function PaymentReturn({
   initialStatus,
   initialAmountCents,
   initialEmail,
+  initialOrderId,
+  initialOrderRef,
 }: {
   orderNsu: string | null;
   localRef: string | null;
@@ -44,6 +50,8 @@ export function PaymentReturn({
   initialStatus: string;
   initialAmountCents: number | null;
   initialEmail: string | null;
+  initialOrderId: string | null;
+  initialOrderRef: string | null;
 }) {
   const canQuery = Boolean(orderNsu || slug || localRef);
   const canRecheck = Boolean(transactionNsu && canQuery);
@@ -52,6 +60,8 @@ export function PaymentReturn({
     readingUrl: null,
     amountCents: initialAmountCents,
     email: initialEmail,
+    orderId: initialOrderId,
+    orderRef: initialOrderRef ?? localRef,
   });
   const [busy, setBusy] = useState(false);
 
@@ -180,6 +190,14 @@ export function PaymentReturn({
           )}
           {methodLabel ? <p className="mt-3 text-sm text-muted">{methodLabel}</p> : null}
         </div>
+
+        {view.orderId || view.orderRef ? (
+          <p className="text-sm leading-6 text-muted">
+            Id do pedido{" "}
+            <span className="break-all font-semibold text-ink">{view.orderId ?? view.orderRef}</span>
+            {view.orderId && view.orderRef ? <span className="block pt-1 text-xs">Ref. {view.orderRef}</span> : null}
+          </p>
+        ) : null}
 
         {emailNotice ? (
           <p className="max-w-xl border-l-2 border-gold bg-canvas px-4 py-3 text-sm leading-6">

@@ -24,7 +24,16 @@ export async function POST(request: Request) {
   const localRef = pickLocalOrderReference(text(body?.local_ref), cookieStore.get(CHECKOUT_REF_COOKIE)?.value);
   if (!transactionNsu || (!orderNsu && !slug && !localRef)) {
     return Response.json(
-      { ok: false, status: "unknown", readingUrl: null, amountCents: null, email: null, note: "missing_reference" },
+      {
+        ok: false,
+        status: "unknown",
+        readingUrl: null,
+        amountCents: null,
+        email: null,
+        orderId: null,
+        orderRef: null,
+        note: "missing_reference",
+      },
       { status: 400, headers: NO_STORE },
     );
   }
@@ -49,6 +58,8 @@ export async function POST(request: Request) {
       readingUrl: view.readingUrl,
       amountCents: view.amountCents,
       email: view.email,
+      orderId: view.orderId,
+      orderRef: view.orderRef,
       note: result.note ?? (result.ok ? null : "payment_check_failed"),
     },
     { headers: NO_STORE },
