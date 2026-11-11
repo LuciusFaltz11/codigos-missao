@@ -1,10 +1,10 @@
 import "server-only";
-import { shouldPersistProviderNsu } from "@/features/checkout/return-status";
+import { isCheckoutSlug, pickProviderOrderNsu, shouldPersistProviderNsu } from "@/features/checkout/return-status";
 import { decidePaymentTransition, type InfinitePayEvent, type PaymentStatus, type ProviderPayment } from "@/features/checkout/transition";
 import { tryServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { checkPayment } from "@/server/providers/infinitepay";
-import { findOrderForPaymentNotice } from "@/server/services/checkout";
+import { findOrderForPaymentNotice, findUniquePendingOrderByAmount, type PaymentOrderRow } from "@/server/services/checkout";
 import { fulfillApprovedOrder } from "@/server/services/fulfillment";
 
 export type ProcessPaymentResult =
@@ -16,6 +16,8 @@ export async function recordAndProcessPayment(input: {
   transactionNsu: string;
   slug: string | null;
   event: InfinitePayEvent | null;
+  localRef?: string | null;
+  orderId?: string | null;
 }): Promise<ProcessPaymentResult> {
   const service = tryServiceClient();
   if (!service) return { ok: false as const, httpStatus: 503 };
@@ -39,7 +41,12 @@ export async function recordAndProcessPayment(input: {
       .eq("delivery_key", deliveryKey)
       .maybeSingle();
     if (existing.data?.processed_at) {
-      const known = await findOrderForPaymentNotice(service, { orderNsu: input.orderNsu, slug: input.slug });
+      const known = await findOrderForPaymentNotice(service, {
+        orderNsu: input.orderNsu,
+        slug: input.slug,
+        localRef: input.localRef,
+        orderId: input.orderId,
+      });
       return {
         ok: true as const,
         duplicate: true,
@@ -50,7 +57,50 @@ export async function recordAndProcessPayment(input: {
     }
   }
 
-  const order = await findOrderForPaymentNotice(service, { orderNsu: input.orderNsu, slug: input.slug });
+  let order: PaymentOrderRow | null = await findOrderForPaymentNotice(service, {
+    orderNsu: input.orderNsu,
+    slug: input.slug,
+    localRef: input.localRef,
+    orderId: input.orderId,
+  });
+
+  const slug = isCheckoutSlug(input.slug)
+    ? input.slug
+    : isCheckoutSlug(order?.preference_id)
+      ? String(order?.preference_id)
+      : null;
+  if (!slug) {
+    await service.from("payment_webhook_events").update({ process_note: "missing_slug" }).eq("delivery_key", deliveryKey);
+    return { ok: true as const, duplicate: false, approved: false, status: order ? String(order.status) : null, note: "missing_slug" };
+  }
+
+  const providerNsu = pickProviderOrderNsu(input.orderNsu) ?? input.orderNsu ?? (order ? String(order.external_reference) : null);
+  if (!providerNsu) {
+    await service.from("payment_webhook_events").update({ process_note: "missing_nsu" }).eq("delivery_key", deliveryKey);
+    return { ok: true as const, duplicate: false, approved: false, status: order ? String(order.status) : null, note: "missing_reference" };
+  }
+
+  let checked;
+  try {
+    checked = await checkPayment({
+      orderNsu: providerNsu,
+      transactionNsu: input.transactionNsu,
+      slug,
+    });
+  } catch (error) {
+    logEvent("error", "payment_check_failed", { code: error instanceof Error ? error.message : "payment_check_failed" });
+    return { ok: false as const, httpStatus: 400, note: "payment_check_failed" };
+  }
+
+  if (!order && checked.paid && checked.amountCents != null) {
+    const matched = await findUniquePendingOrderByAmount(service, checked.amountCents);
+    if (matched.count > 1) {
+      await service.from("payment_webhook_events").update({ process_note: "ambiguous_pending_orders" }).eq("delivery_key", deliveryKey);
+      return { ok: true as const, duplicate: false, approved: false, status: null, note: "ambiguous_pending_orders" };
+    }
+    order = matched.order;
+  }
+
   if (!order) {
     await service.from("payment_webhook_events").update({ process_note: "order_not_found" }).eq("delivery_key", deliveryKey);
     return { ok: true as const, duplicate: false, approved: false, status: null, note: "order_not_found" };
@@ -60,28 +110,9 @@ export async function recordAndProcessPayment(input: {
     const persisted = await service.from("orders").update({ external_reference: input.orderNsu }).eq("id", order.id);
     if (!persisted.error) order.external_reference = input.orderNsu;
   }
-
-  const slug = input.slug ?? (order.preference_id ? String(order.preference_id) : null);
   if (input.slug && input.slug !== order.preference_id) {
     await service.from("orders").update({ preference_id: input.slug }).eq("id", order.id);
     order.preference_id = input.slug;
-  }
-  if (!slug) {
-    await service.from("payment_webhook_events").update({ process_note: "missing_slug" }).eq("delivery_key", deliveryKey);
-    return { ok: true as const, duplicate: false, approved: false, status: String(order.status), note: "missing_slug" };
-  }
-
-  const orderNsu = input.orderNsu || String(order.external_reference);
-  let checked;
-  try {
-    checked = await checkPayment({
-      orderNsu,
-      transactionNsu: input.transactionNsu,
-      slug,
-    });
-  } catch (error) {
-    logEvent("error", "payment_check_failed", { code: error instanceof Error ? error.message : "payment_check_failed" });
-    return { ok: false as const, httpStatus: 400, note: "payment_check_failed" };
   }
 
   const amountCents = checked.paid ? checked.amountCents : (checked.amountCents ?? Number(order.amount_cents));

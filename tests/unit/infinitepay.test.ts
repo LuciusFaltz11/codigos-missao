@@ -9,8 +9,12 @@ import {
 } from "@/features/checkout/infinitepay";
 import {
   isCheckoutSlug,
+  isLocalOrderReference,
   orderMatchesCheckoutSlug,
+  parseInfinitePayReturnUrl,
+  pickLocalOrderReference,
   pickOrderForProviderNotice,
+  pickUniquePendingOrder,
   readingUrlForPaidOrder,
   shouldPersistProviderNsu,
 } from "@/features/checkout/return-status";
@@ -63,7 +67,7 @@ describe("link da InfinitePay", () => {
       handle: "minha-loja",
       order_nsu: "ord_1",
       items: [{ quantity: 1, price: 3500, description: "Leitura completa" }],
-      redirect_url: "https://codigosmissao.com/pagamento/retorno",
+      redirect_url: "https://codigosmissao.com/pagamento/retorno?ref=ord_1",
       webhook_url: "https://codigosmissao.com/api/webhooks/infinitepay",
       customer: { name: "Maria Silva", email: "maria@example.com" },
     });
@@ -140,7 +144,22 @@ describe("webhook e payment_check", () => {
         byInitPoint: stored,
       }),
     ).toEqual(stored);
-    expect(shouldPersistProviderNsu("ord_1", "7a3fb3af-3574-4a1c-8a8b-03b28a456990")).toBe(true);
+    expect(shouldPersistProviderNsu("ord_1", "7a3fb3af-3574-4a1c-8a8b-03b28a456990")).toBe(false);
+    expect(isLocalOrderReference("ord_2c41d6fb8fd9001b0434e503069938e0")).toBe(true);
+    expect(pickLocalOrderReference("cb70e553-1ff9-4a25-b8b4-3bad88e55d48", "ord_2c41d6fb8fd9001b0434e503069938e0")).toBe(
+      "ord_2c41d6fb8fd9001b0434e503069938e0",
+    );
+    expect(pickUniquePendingOrder([{ id: "only" }])?.id).toBe("only");
+    expect(pickUniquePendingOrder([{ id: "a" }, { id: "b" }])).toBeNull();
+    expect(
+      parseInfinitePayReturnUrl(
+        "https://codigosdamissao.valwilges.com.br/pagamento/retorno?capture_method=pix&transaction_nsu=9cf86f3e-aee3-459d-b8c5-982d7c1d78b6&slug=Gi3NyoxCKs&order_nsu=cb70e553-1ff9-4a25-b8b4-3bad88e55d48",
+      ),
+    ).toMatchObject({
+      slug: "Gi3NyoxCKs",
+      transactionNsu: "9cf86f3e-aee3-459d-b8c5-982d7c1d78b6",
+      orderNsu: "cb70e553-1ff9-4a25-b8b4-3bad88e55d48",
+    });
     expect(isCheckoutSlug("CIO2G5Dr1g")).toBe(true);
     expect(
       orderMatchesCheckoutSlug({

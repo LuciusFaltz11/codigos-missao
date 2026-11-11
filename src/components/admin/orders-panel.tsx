@@ -13,7 +13,7 @@ import {
   type AdminOrder,
 } from "@/features/admin/orders";
 import { formatBrl, formatDateTimePt } from "@/lib/formatters";
-import { reprocessReading } from "@/server/actions/admin";
+import { confirmInfinitePayReturn, reprocessReading } from "@/server/actions/admin";
 
 const STATUS_TONE: Record<string, string> = {
   approved: "bg-gold-soft text-wine",
@@ -272,6 +272,32 @@ export function OrdersPanel({
                     )}
                   </Field>
                 </Section>
+                {canReprocess && selected.status === "pending" ? (
+                  <form action={confirmInfinitePayReturn} className="grid gap-3 rounded-2xl border border-border p-4">
+                    <input type="hidden" name="orderId" value={selected.id} />
+                    <h3 className="text-sm font-semibold tracking-wide text-wine uppercase">Confirmar Pix / retorno</h3>
+                    <p className="text-sm text-muted">
+                      Cole a URL completa de <span className="text-ink">/pagamento/retorno</span> da InfinitePay. O
+                      servidor consulta o payment_check e só libera se o valor bater com este pedido.
+                    </p>
+                    <label className="grid gap-1 text-sm">
+                      <span className="text-muted">URL de retorno</span>
+                      <input
+                        name="returnUrl"
+                        type="url"
+                        required
+                        placeholder="https://codigosdamissao.valwilges.com.br/pagamento/retorno?..."
+                        className="rounded-xl border border-border bg-surface px-3 py-2"
+                      />
+                    </label>
+                    <button
+                      className="inline-flex w-fit items-center rounded-xl bg-wine px-4 py-2 text-sm font-semibold text-white"
+                      type="submit"
+                    >
+                      Reverificar pagamento deste pedido
+                    </button>
+                  </form>
+                ) : null}
 
                 <Section title="Acesso">
                   <Field label="Entitlement">{selected.entitlement ? "Concedido" : "Ainda não liberado"}</Field>

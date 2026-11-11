@@ -107,9 +107,14 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
     },
     "/admin/pedidos": () => {
       if (salvo === "1") return successFlash("A leitura foi enfileirada de novo e já está sendo gerada.");
+      if (salvo === "pago") return successFlash("Pagamento confirmado na InfinitePay. A leitura completa foi liberada.");
       if (erro === "permissao") return errorFlash("Seu papel não reprocessa leituras.");
       if (erro === "config") return errorFlash("O banco ainda não está configurado.");
-      if (erro === "1") return errorFlash("Não foi possível gerar esta leitura novamente.");
+      if (erro === "retorno") return errorFlash("Cole a URL de retorno da InfinitePay, com slug e transaction_nsu.");
+      if (erro === "check") return errorFlash("A InfinitePay não confirmou este pagamento. Confira a URL de retorno.");
+      if (erro === "pedido") return errorFlash("Não foi possível vincular este retorno ao pedido.");
+      if (erro === "ambiguo") return errorFlash("Há mais de um pedido pendente com o mesmo valor. Confirme pelo pedido certo.");
+      if (erro === "1") return errorFlash("Não foi possível concluir esta ação.");
       return null;
     },
     "/admin/simulador": () => {

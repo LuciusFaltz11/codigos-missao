@@ -73,7 +73,7 @@ export function buildCheckoutLinkPayload(input: CheckoutLinkInput) {
     items: [{ quantity: 1, price: input.amountCents, description: input.title }],
   };
   if (appUrl.startsWith("https://")) {
-    payload.redirect_url = `${appUrl}/pagamento/retorno`;
+    payload.redirect_url = `${appUrl}/pagamento/retorno?ref=${encodeURIComponent(input.orderNsu)}`;
     payload.webhook_url = `${appUrl}/api/webhooks/infinitepay`;
   }
   const name = input.customerName.trim();

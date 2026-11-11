@@ -17,12 +17,15 @@ const NOTES: Record<string, string> = {
   missing_slug: "Faltou o código do checkout para localizar o pedido.",
   missing_reference: "Faltam dados da transação para reverificar.",
   already_processed: "Esta transação já tinha sido processada.",
+  ambiguous_pending_orders:
+    "Há mais de um pedido pendente com este valor. No painel, abra o pedido e cole a URL de retorno da InfinitePay.",
 };
 
 type View = { status: string; readingUrl: string | null; note?: string | null };
 
 export function PaymentReturn({
   orderNsu,
+  localRef,
   slug,
   transactionNsu,
   captureMethod,
@@ -30,13 +33,14 @@ export function PaymentReturn({
   outcome,
 }: {
   orderNsu: string | null;
+  localRef: string | null;
   slug: string | null;
   transactionNsu: string | null;
   captureMethod: string | null;
   receiptUrl: string | null;
   outcome: string | null;
 }) {
-  const canQuery = Boolean(orderNsu || slug);
+  const canQuery = Boolean(orderNsu || slug || localRef);
   const canRecheck = Boolean(transactionNsu && canQuery);
   const [view, setView] = useState<View>({ status: canQuery ? "carregando" : "unknown", readingUrl: null });
   const [busy, setBusy] = useState(false);
@@ -45,6 +49,7 @@ export function PaymentReturn({
     if (!canQuery) return;
     const statusQuery = new URLSearchParams();
     if (orderNsu) statusQuery.set("ref", orderNsu);
+    if (localRef) statusQuery.set("local_ref", localRef);
     if (slug) statusQuery.set("slug", slug);
     let stopped = false;
     let confirms = 0;
@@ -71,6 +76,7 @@ export function PaymentReturn({
           order_nsu: orderNsu,
           transaction_nsu: transactionNsu,
           slug,
+          local_ref: localRef,
         }),
       });
       const body = (await response.json().catch(() => null)) as View | null;
@@ -108,7 +114,7 @@ export function PaymentReturn({
       window.clearInterval(statusTimer);
       if (confirmTimer) window.clearInterval(confirmTimer);
     };
-  }, [canQuery, orderNsu, slug, transactionNsu]);
+  }, [canQuery, orderNsu, localRef, slug, transactionNsu]);
 
   async function recheck() {
     if (!canRecheck || busy) return;
@@ -121,6 +127,7 @@ export function PaymentReturn({
           order_nsu: orderNsu,
           transaction_nsu: transactionNsu,
           slug,
+          local_ref: localRef,
         }),
       });
       const body = (await response.json().catch(() => null)) as View | null;
@@ -151,7 +158,7 @@ export function PaymentReturn({
               : "Ainda não localizamos este pedido. Reverifique o pagamento para consultar a InfinitePay de novo.";
 
   const methodLabel = captureMethod === "pix" ? "Pix" : captureMethod;
-  const reference = orderNsu ?? slug;
+  const reference = localRef ?? orderNsu ?? slug;
   const note = view.note ? NOTES[view.note] ?? null : null;
 
   return (

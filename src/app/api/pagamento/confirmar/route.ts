@@ -1,4 +1,6 @@
 import { after } from "next/server";
+import { cookies } from "next/headers";
+import { CHECKOUT_REF_COOKIE, pickLocalOrderReference } from "@/features/checkout/return-status";
 import { runDueJobs } from "@/server/jobs/runner";
 import { recordAndProcessPayment } from "@/server/services/webhook";
 import { loadOrderReturnView } from "@/server/services/checkout";
@@ -18,13 +20,16 @@ export async function POST(request: Request) {
   const orderNsu = text(body?.order_nsu);
   const transactionNsu = text(body?.transaction_nsu);
   const slug = text(body?.slug);
-  if (!transactionNsu || (!orderNsu && !slug)) {
+  const cookieStore = await cookies();
+  const localRef = pickLocalOrderReference(text(body?.local_ref), cookieStore.get(CHECKOUT_REF_COOKIE)?.value);
+  if (!transactionNsu || (!orderNsu && !slug && !localRef)) {
     return Response.json({ ok: false, status: "unknown", readingUrl: null, note: "missing_reference" }, { status: 400, headers: NO_STORE });
   }
   const result = await recordAndProcessPayment({
     orderNsu,
     transactionNsu,
     slug,
+    localRef,
     event: "paid",
   });
   if (result.ok && result.approved) {
@@ -32,7 +37,7 @@ export async function POST(request: Request) {
       await runDueJobs(3);
     });
   }
-  const view = await loadOrderReturnView({ ref: orderNsu, slug });
+  const view = await loadOrderReturnView({ ref: orderNsu, slug, localRef });
   const status = view.status !== "unknown" ? view.status : result.status ?? "unknown";
   return Response.json(
     {

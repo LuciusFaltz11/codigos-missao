@@ -1,6 +1,8 @@
 import { after } from "next/server";
+import { cookies } from "next/headers";
 import { PageShell } from "@/components/site/chrome";
 import { PaymentReturn } from "@/components/checkout/payment-return";
+import { CHECKOUT_REF_COOKIE, pickLocalOrderReference } from "@/features/checkout/return-status";
 import { runDueJobs } from "@/server/jobs/runner";
 import { recordAndProcessPayment } from "@/server/services/webhook";
 
@@ -20,15 +22,18 @@ export default async function PaymentReturnPage({
   }>;
 }) {
   const params = await searchParams;
-  const orderNsu = params.order_nsu ?? params.ref ?? null;
+  const cookieStore = await cookies();
+  const localRef = pickLocalOrderReference(params.ref, params.order_nsu, cookieStore.get(CHECKOUT_REF_COOKIE)?.value);
+  const orderNsu = params.order_nsu ?? null;
   const slug = params.slug ?? null;
   const transactionNsu = params.transaction_nsu ?? null;
-  if (transactionNsu && (orderNsu || slug)) {
+  if (transactionNsu && (orderNsu || slug || localRef)) {
     try {
       const result = await recordAndProcessPayment({
         orderNsu,
         transactionNsu,
         slug,
+        localRef,
         event: "paid",
       });
       if (result.ok && result.approved) {
@@ -45,6 +50,7 @@ export default async function PaymentReturnPage({
       <div className="mx-auto max-w-2xl px-4 py-12">
         <PaymentReturn
           orderNsu={orderNsu}
+          localRef={localRef}
           slug={slug}
           transactionNsu={transactionNsu}
           captureMethod={params.capture_method ?? null}

@@ -17,6 +17,8 @@ import { activatePositions } from "@/features/missions/activate";
 import type { MethodologySnapshot } from "@/features/interpretation/context";
 import { adoptPublishedSnapshot } from "@/features/methodology/snapshot";
 import { runDueJobs } from "@/server/jobs/runner";
+import { parseInfinitePayReturnUrl } from "@/features/checkout/return-status";
+import { recordAndProcessPayment } from "@/server/services/webhook";
 
 function withQuery(path: string, query: string) {
   return `${path}${path.includes("?") ? "&" : "?"}${query}`;
@@ -489,6 +491,41 @@ export async function completeFirstAccess(formData: FormData) {
     redirect("/admin/login?erro=bloqueado");
   }
   redirect("/admin");
+}
+
+export async function confirmInfinitePayReturn(formData: FormData) {
+  const orderId = String(formData.get("orderId") ?? "").trim();
+  const back = orderId ? `/admin/pedidos?ver=${encodeURIComponent(orderId)}` : "/admin/pedidos";
+  const auth = await requirePermission("orders.reprocess");
+  if (!auth.ok) redirect(auth.status === 401 ? "/admin/login" : withQuery(back, "erro=permissao"));
+  const pasted = String(formData.get("returnUrl") ?? "").trim();
+  const parsed = pasted ? parseInfinitePayReturnUrl(pasted) : null;
+  const slug = String(formData.get("slug") ?? parsed?.slug ?? "").trim() || null;
+  const transactionNsu = String(formData.get("transactionNsu") ?? parsed?.transactionNsu ?? "").trim() || null;
+  const orderNsu = String(formData.get("orderNsu") ?? parsed?.orderNsu ?? "").trim() || null;
+  if (!orderId || !transactionNsu || !slug) redirect(withQuery(back, "erro=retorno"));
+  const result = await recordAndProcessPayment({
+    orderNsu,
+    transactionNsu,
+    slug,
+    orderId,
+    event: "paid",
+  });
+  if (!result.ok) redirect(withQuery(back, result.note === "payment_check_failed" ? "erro=check" : "erro=1"));
+  if (!result.approved) {
+    const code =
+      result.note === "ambiguous_pending_orders"
+        ? "ambiguo"
+        : result.note === "order_not_found"
+          ? "pedido"
+          : "check";
+    redirect(withQuery(back, `erro=${code}`));
+  }
+  await audit(auth.admin.userId, "payment_recheck", "orders", orderId);
+  after(async () => {
+    await runDueJobs(3);
+  });
+  redirect(withQuery(back, "salvo=pago"));
 }
 
 export async function reprocessReading(formData: FormData) {

@@ -4,7 +4,13 @@ import { checkoutBlockers } from "@/features/methodology/snapshot";
 import { tryServiceClient, type ServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
 import { createCheckoutLink } from "@/server/providers/infinitepay";
-import { isCheckoutSlug, pickOrderForProviderNotice, readingUrlForPaidOrder } from "@/features/checkout/return-status";
+import {
+  isCheckoutSlug,
+  isLocalOrderReference,
+  pickOrderForProviderNotice,
+  pickUniquePendingOrder,
+  readingUrlForPaidOrder,
+} from "@/features/checkout/return-status";
 import { createExternalReference, openToken } from "@/server/security/tokens";
 import { getServerEnv } from "@/server/env";
 import { deliveryStatus, loadChartByToken } from "@/server/services/charts";
@@ -13,7 +19,7 @@ import { fulfillApprovedOrder } from "@/server/services/fulfillment";
 
 export type StartCheckoutResult =
   | { ok: true; redirectTo: string; runJobs?: boolean }
-  | { ok: true; initPoint: string }
+  | { ok: true; initPoint: string; externalReference: string }
   | { ok: false; message: string; blockers?: string[]; code: string };
 
 export async function startCheckout(token: string, couponCode = ""): Promise<StartCheckoutResult> {
@@ -65,7 +71,7 @@ export async function startCheckout(token: string, couponCode = ""): Promise<Sta
 
   const pending = await loaded.service
     .from("orders")
-    .select("id,init_point,amount_cents,coupon_code")
+    .select("id,init_point,amount_cents,coupon_code,external_reference")
     .eq("chart_id", loaded.chartId)
     .eq("status", "pending")
     .not("init_point", "is", null);
@@ -76,7 +82,11 @@ export async function startCheckout(token: string, couponCode = ""): Promise<Sta
       order.init_point,
   );
   if (reusable?.init_point && !complimentary) {
-    return { ok: true as const, initPoint: String(reusable.init_point) };
+    return {
+      ok: true as const,
+      initPoint: String(reusable.init_point),
+      externalReference: String(reusable.external_reference),
+    };
   }
   if (pending.data?.length) {
     await loaded.service
@@ -135,17 +145,23 @@ export async function startCheckout(token: string, couponCode = ""): Promise<Sta
       customerName: loaded.leadName,
       customerEmail: loaded.leadEmail,
     });
-    await loaded.service
+    const saved = await loaded.service
       .from("orders")
       .update({ preference_id: link.slug, init_point: link.checkoutUrl })
-      .eq("id", order.data.id);
+      .eq("id", order.data.id)
+      .select("id")
+      .single();
+    if (saved.error) {
+      logEvent("error", "checkout_link_persist_failed", { code: saved.error.code ?? "db" });
+      return { ok: false as const, message: "Não foi possível gravar o link de pagamento.", blockers: [], code: "link" };
+    }
     await loaded.service.from("analytics_events").insert({
       name: "checkout_started",
       chart_id: loaded.chartId,
       order_id: order.data.id,
       properties: storedCode ? { coupon_code: storedCode, discount_cents: discountCents } : {},
     });
-    return { ok: true as const, initPoint: link.checkoutUrl };
+    return { ok: true as const, initPoint: link.checkoutUrl, externalReference };
   } catch (error) {
     logEvent("error", "checkout_link_failed", { code: error instanceof Error ? error.message : "checkout_link_failed" });
     return { ok: false as const, message: "A InfinitePay não confirmou o link de pagamento.", blockers: [], code: "link" };
@@ -174,15 +190,26 @@ async function latestOrder(query: PromiseLike<{ data: unknown; error: { message?
 
 export async function findOrderForPaymentNotice(
   service: ServiceClient,
-  input: { orderNsu?: string | null; slug?: string | null },
+  input: { orderNsu?: string | null; slug?: string | null; localRef?: string | null; orderId?: string | null },
 ) {
+  const byId = input.orderId
+    ? await latestOrder(service.from("orders").select(PAYMENT_ORDER_COLUMNS).eq("id", input.orderId).limit(1))
+    : null;
+  if (byId) return byId;
+
+  const localRef = input.localRef && isLocalOrderReference(input.localRef) ? input.localRef : null;
+  const byLocalRef = localRef
+    ? await latestOrder(
+        service.from("orders").select(PAYMENT_ORDER_COLUMNS).eq("external_reference", localRef).limit(1),
+      )
+    : null;
   const byReference = input.orderNsu
     ? await latestOrder(
         service.from("orders").select(PAYMENT_ORDER_COLUMNS).eq("external_reference", input.orderNsu).limit(1),
       )
     : null;
   const slug = isCheckoutSlug(input.slug) ? input.slug : null;
-  const bySlug = !byReference && slug
+  const bySlug = !byLocalRef && !byReference && slug
     ? await latestOrder(
         service
           .from("orders")
@@ -192,7 +219,7 @@ export async function findOrderForPaymentNotice(
           .limit(1),
       )
     : null;
-  const byInitPoint = !byReference && !bySlug && slug
+  const byInitPoint = !byLocalRef && !byReference && !bySlug && slug
     ? await latestOrder(
         service
           .from("orders")
@@ -203,20 +230,46 @@ export async function findOrderForPaymentNotice(
       )
     : null;
   return pickOrderForProviderNotice({
+    byLocalRef,
     byExternalReference: byReference,
     bySlug,
     byInitPoint,
   });
 }
 
+const PENDING_MATCH_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+export async function findUniquePendingOrderByAmount(service: ServiceClient, amountCents: number) {
+  const since = new Date(Date.now() - PENDING_MATCH_WINDOW_MS).toISOString();
+  const pending = await service
+    .from("orders")
+    .select(PAYMENT_ORDER_COLUMNS)
+    .eq("status", "pending")
+    .eq("amount_cents", amountCents)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(3);
+  const rows = Array.isArray(pending.data) ? (pending.data as PaymentOrderRow[]) : [];
+  const unique = pickUniquePendingOrder(rows);
+  return { order: unique ?? null, count: rows.length };
+}
+
 export async function orderStatusByReference(externalReference: string) {
   return loadOrderReturnView({ ref: externalReference });
 }
 
-export async function loadOrderReturnView(input: { ref?: string | null; slug?: string | null }) {
+export async function loadOrderReturnView(input: {
+  ref?: string | null;
+  slug?: string | null;
+  localRef?: string | null;
+}) {
   const service = tryServiceClient();
   if (!service) return { configured: false as const, status: "not_configured", readingUrl: null as string | null };
-  const order = await findOrderForPaymentNotice(service, { orderNsu: input.ref, slug: input.slug });
+  const order = await findOrderForPaymentNotice(service, {
+    orderNsu: input.ref,
+    slug: input.slug,
+    localRef: input.localRef,
+  });
   if (!order) return { configured: true as const, status: "unknown" as const, readingUrl: null as string | null };
 
   const entitlement = await service
