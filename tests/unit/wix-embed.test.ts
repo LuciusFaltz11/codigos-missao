@@ -10,6 +10,12 @@ import { corsHeadersForOrigin, parseOriginList, frameAncestorsDirective } from "
 import { twelveHourToBirthTime } from "@/features/integrations/wix-time";
 import { verifyTurnstileToken } from "@/server/security/turnstile";
 import { findRememberedWixChart, rememberWixChart, wixChartFingerprint } from "@/server/security/wix-chart-repeat";
+import {
+  iframeSrc,
+  isWixBirthChartFormMeta,
+  resolveWixFormMount,
+  WIX_FORM_MOUNT_ID,
+} from "@/features/integrations/wix-parent-mount";
 
 const validRequest = {
   name: "Ana Silva",
@@ -135,5 +141,58 @@ describe("duplicidade do POST Wix", () => {
         cityLabel: "São Paulo, Brasil",
       }),
     ).toBe(fingerprint);
+  });
+});
+
+describe("container do iframe no Wix", () => {
+  const chartMeta = {
+    ariaLabel: "Cálculo Códigos da Missão Página",
+    fieldTypes: ["CONTACTS_FIRST_NAME", "CONTACTS_BIRTHDATE", "TIME_INPUT", "CONTACTS_ADDRESS", "CONTACTS_EMAIL"],
+    dataHooks: ["form-field-nome_de3c", "form-field-data_de_nascimento", "form-field-horario_de_nascimento"],
+  };
+
+  it("reconhece o formulário pela estrutura Wix Forms", () => {
+    expect(isWixBirthChartFormMeta(chartMeta)).toBe(true);
+    expect(isWixBirthChartFormMeta({ ariaLabel: "Newsletter", fieldTypes: ["CONTACTS_EMAIL"], dataHooks: [] })).toBe(false);
+  });
+
+  it("usa #comp-mw2gfm71 quando existe", () => {
+    expect(
+      resolveWixFormMount({
+        preferred: { id: WIX_FORM_MOUNT_ID },
+        forms: [{ meta: chartMeta, closestComp: { id: "comp-outro" } }],
+      }),
+    ).toEqual({ id: WIX_FORM_MOUNT_ID });
+  });
+
+  it("cai no wrapping comp-* do único formulário se o id mudar", () => {
+    expect(
+      resolveWixFormMount({
+        preferred: null,
+        forms: [{ meta: chartMeta, closestComp: { id: "comp-novo123" }, formWrapper: { id: "wrap" } }],
+      }),
+    ).toEqual({ id: "comp-novo123" });
+    expect(
+      resolveWixFormMount({
+        preferred: null,
+        forms: [
+          {
+            meta: { ariaLabel: "Contato", fieldTypes: ["CONTACTS_EMAIL"], dataHooks: [] },
+            closestComp: { id: "comp-contato" },
+          },
+        ],
+      }),
+    ).toEqual({ id: "comp-contato" });
+    expect(resolveWixFormMount({ preferred: null, forms: [] })).toBeNull();
+    expect(
+      resolveWixFormMount({
+        preferred: null,
+        forms: [
+          { meta: { ariaLabel: "Newsletter", fieldTypes: ["CONTACTS_EMAIL"], dataHooks: [] }, closestComp: { id: "comp-news" } },
+          { meta: chartMeta, closestComp: { id: "comp-mapa" } },
+        ],
+      }),
+    ).toEqual({ id: "comp-mapa" });
+    expect(iframeSrc("https://app.example/")).toBe("https://app.example/integracoes/wix/formulario-mapa");
   });
 });
