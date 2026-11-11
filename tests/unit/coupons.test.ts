@@ -3,13 +3,15 @@ import {
   applyCoupon,
   couponDiscountLabel,
   couponOfferLabel,
+  couponWindow,
   isComplimentaryAmount,
   normalizeCouponCode,
   type CouponRecord,
 } from "@/features/checkout/coupons";
+import { datetimeLocalToIso, isoToDatetimeLocal } from "@/features/admin/coupons";
 import { formatBrl } from "@/lib/formatters";
 
-function coupon(partial: Partial<CouponRecord>): CouponRecord {
+function coupon(partial: Partial<CouponRecord> = {}): CouponRecord {
   return {
     id: "c1",
     code: "LANCA10",
@@ -18,6 +20,8 @@ function coupon(partial: Partial<CouponRecord>): CouponRecord {
     percent: 10,
     amountCents: null,
     active: true,
+    startsAt: null,
+    endsAt: null,
     ...partial,
   };
 }
@@ -61,5 +65,20 @@ describe("cupons", () => {
     expect(couponOfferLabel(coupon({ kind: "fixed", percent: null, amountCents: 2000 }))).toBe(
       `LANCA10 · ${formatBrl(2000)} de desconto`,
     );
+  });
+
+  it("respeita a janela opcional de ativação e expiração", () => {
+    const now = new Date("2026-11-11T16:00:00.000Z");
+    expect(couponWindow(coupon(), now)).toBe("ok");
+    expect(applyCoupon(9700, coupon({ startsAt: "2026-12-01T00:00:00.000Z" }), now).ok).toBe(false);
+    expect(applyCoupon(9700, coupon({ startsAt: "2026-12-01T00:00:00.000Z" }), now)).toMatchObject({
+      reason: "not_started",
+    });
+    expect(applyCoupon(9700, coupon({ endsAt: "2026-11-01T00:00:00.000Z" }), now)).toMatchObject({ reason: "expired" });
+    expect(applyCoupon(9700, coupon({ startsAt: "2026-11-01T00:00:00.000Z", endsAt: "2026-12-01T00:00:00.000Z" }), now).ok).toBe(
+      true,
+    );
+    expect(datetimeLocalToIso("2026-11-11T13:00")).toBe("2026-11-11T16:00:00.000Z");
+    expect(isoToDatetimeLocal("2026-11-11T16:00:00.000Z")).toBe("2026-11-11T13:00");
   });
 });

@@ -6,6 +6,7 @@ import { DEFAULT_ACTIVATION_POINTS, PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/c
 import { adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, interpretationPromptSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
 import { PROMPT_VERSION } from "@/features/interpretation/prompts";
 import { normalizeCouponCode } from "@/features/checkout/coupons";
+import { datetimeLocalToIso } from "@/features/admin/coupons";
 import { isAdminRole } from "@/server/auth/rbac";
 import { getAdminSession, requirePermission } from "@/server/auth/session";
 import { tryServiceClient, trySessionClient } from "@/server/db/clients";
@@ -314,10 +315,20 @@ export async function updatePrice(formData: FormData) {
   redirect("/admin/configuracoes?salvo=1");
 }
 
+function couponFormError(parsed: { success: false; period?: boolean; error?: { issues: Array<{ path: PropertyKey[] }> } }) {
+  if (parsed.period) return "periodo";
+  if (parsed.error?.issues.some((issue) => issue.path[0] === "startsAt" || issue.path[0] === "endsAt")) return "periodo";
+  return "1";
+}
+
 function parseCouponForm(formData: FormData) {
   const kind = formData.get("kind") === "fixed" ? "fixed" : "percent";
   const percentRaw = String(formData.get("percent") ?? "").trim();
   const amountRaw = String(formData.get("amount") ?? "").replace(",", ".");
+  const startsRaw = String(formData.get("startsAt") ?? "").trim();
+  const endsRaw = String(formData.get("endsAt") ?? "").trim();
+  if (startsRaw && !datetimeLocalToIso(startsRaw)) return { success: false as const, period: true as const };
+  if (endsRaw && !datetimeLocalToIso(endsRaw)) return { success: false as const, period: true as const };
   return couponSchema.safeParse({
     name: formData.get("name"),
     code: normalizeCouponCode(String(formData.get("code") ?? "")),
@@ -325,6 +336,8 @@ function parseCouponForm(formData: FormData) {
     percent: kind === "percent" && percentRaw ? Number(percentRaw) : null,
     amountCents: kind === "fixed" && amountRaw ? Math.round(Number(amountRaw) * 100) : null,
     active: formData.get("active") === "on",
+    startsAt: datetimeLocalToIso(startsRaw),
+    endsAt: datetimeLocalToIso(endsRaw),
   });
 }
 
@@ -334,7 +347,9 @@ export async function createCoupon(formData: FormData) {
   const service = tryServiceClient();
   if (!service) redirect("/admin/cupons?erro=config");
   const parsed = parseCouponForm(formData);
-  if (!parsed.success) redirect("/admin/cupons?novo=1&erro=1");
+  if (!parsed.success) {
+    redirect(`/admin/cupons?novo=1&erro=${couponFormError(parsed)}`);
+  }
   const existing = await service.from("coupons").select("id").eq("code", parsed.data.code).maybeSingle();
   if (existing.data) redirect("/admin/cupons?novo=1&erro=existe");
   const inserted = await service
@@ -346,6 +361,8 @@ export async function createCoupon(formData: FormData) {
       percent: parsed.data.kind === "percent" ? parsed.data.percent : null,
       amount_cents: parsed.data.kind === "fixed" ? parsed.data.amountCents : null,
       active: parsed.data.active,
+      starts_at: parsed.data.startsAt,
+      ends_at: parsed.data.endsAt,
     })
     .select("id")
     .maybeSingle();
@@ -360,7 +377,9 @@ export async function updateCoupon(id: string, formData: FormData) {
   const service = tryServiceClient();
   if (!service) redirect(`/admin/cupons?editar=${id}&erro=config`);
   const parsed = parseCouponForm(formData);
-  if (!parsed.success) redirect(`/admin/cupons?editar=${id}&erro=1`);
+  if (!parsed.success) {
+    redirect(`/admin/cupons?editar=${id}&erro=${couponFormError(parsed)}`);
+  }
   const clash = await service.from("coupons").select("id").eq("code", parsed.data.code).neq("id", id).maybeSingle();
   if (clash.data) redirect(`/admin/cupons?editar=${id}&erro=existe`);
   const updated = await service
@@ -372,6 +391,8 @@ export async function updateCoupon(id: string, formData: FormData) {
       percent: parsed.data.kind === "percent" ? parsed.data.percent : null,
       amount_cents: parsed.data.kind === "fixed" ? parsed.data.amountCents : null,
       active: parsed.data.active,
+      starts_at: parsed.data.startsAt,
+      ends_at: parsed.data.endsAt,
     })
     .eq("id", id)
     .select("id")

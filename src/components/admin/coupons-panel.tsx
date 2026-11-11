@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Pencil, Plus, X } from "lucide-react";
-import { KIND_LABEL, couponDiscountLabel, type AdminCouponRow, type CouponKind } from "@/features/admin/coupons";
+import {
+  KIND_LABEL,
+  couponDiscountLabel,
+  couponScheduleLabel,
+  couponStateLabel,
+  isoToDatetimeLocal,
+  type AdminCouponRow,
+  type CouponKind,
+} from "@/features/admin/coupons";
 import { formatDateTimePt } from "@/lib/formatters";
 import { Input, InputShell, Select } from "@/components/ui/input";
 import { createCoupon, updateCoupon } from "@/server/actions/admin";
@@ -114,7 +122,10 @@ export function CouponsPanel({
                 <td>{row.name}</td>
                 <td className="font-medium tracking-wide">{row.code}</td>
                 <td>{couponDiscountLabel(row)}</td>
-                <td>{row.active ? "Ativo" : "Inativo"}</td>
+                <td>
+                  <span>{couponStateLabel(row)}</span>
+                  <span className="mt-0.5 block text-xs text-muted">{couponScheduleLabel(row)}</span>
+                </td>
                 <td>{formatDateTimePt(row.createdAt)}</td>
               </tr>
             ))}
@@ -236,6 +247,26 @@ function CouponFields({ coupon, canManage }: { coupon?: AdminCouponRow; canManag
           </InputShell>
         </label>
       )}
+      <label className="grid gap-1 text-sm">
+        Ativo a partir de
+        <Input
+          name="startsAt"
+          type="datetime-local"
+          defaultValue={isoToDatetimeLocal(coupon?.startsAt)}
+          disabled={!canManage}
+        />
+        <span className="font-normal text-muted">Opcional. Vazio: vale agora, se estiver marcado como ativo.</span>
+      </label>
+      <label className="grid gap-1 text-sm">
+        Expira em
+        <Input
+          name="endsAt"
+          type="datetime-local"
+          defaultValue={isoToDatetimeLocal(coupon?.endsAt)}
+          disabled={!canManage}
+        />
+        <span className="font-normal text-muted">Opcional. Vazio: continua válido até você desativar na mão.</span>
+      </label>
       <label className="flex items-center gap-2 text-sm">
         <input name="active" type="checkbox" defaultChecked={coupon?.active ?? true} disabled={!canManage} />
         Cupom ativo para o checkout

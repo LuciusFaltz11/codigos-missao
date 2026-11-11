@@ -1,5 +1,5 @@
 import "server-only";
-import { isComplimentaryAmount, normalizeCouponCode } from "@/features/checkout/coupons";
+import { couponQuoteErrorCode, isComplimentaryAmount, normalizeCouponCode } from "@/features/checkout/coupons";
 import { checkoutBlockers } from "@/features/methodology/snapshot";
 import { tryServiceClient, type ServiceClient } from "@/server/db/clients";
 import { logEvent } from "@/server/logging";
@@ -46,7 +46,7 @@ export async function startCheckout(token: string, couponCode = ""): Promise<Sta
   if (typedCode) {
     const quoted = await quoteCoupon(loaded.priceCents, typedCode);
     if (!quoted.ok) {
-      const code = quoted.reason === "below_minimum" ? "minimo" : "cupom";
+      const code = couponQuoteErrorCode(quoted.reason);
       return { ok: false as const, message: "Este cupom não se aplica a esta compra.", blockers: [], code };
     }
     amountCents = quoted.amountCents;

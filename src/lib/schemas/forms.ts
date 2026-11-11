@@ -39,6 +39,8 @@ export const couponSchema = z
     percent: z.number().int().min(1).max(100).nullable(),
     amountCents: z.number().int().min(1).max(100_000_00).nullable(),
     active: z.boolean(),
+    startsAt: z.string().datetime().nullable(),
+    endsAt: z.string().datetime().nullable(),
   })
   .superRefine((value, ctx) => {
     if (value.kind === "percent" && value.percent == null) {
@@ -46,6 +48,9 @@ export const couponSchema = z
     }
     if (value.kind === "fixed" && value.amountCents == null) {
       ctx.addIssue({ code: "custom", path: ["amountCents"], message: "Informe o valor." });
+    }
+    if (value.startsAt && value.endsAt && Date.parse(value.startsAt) >= Date.parse(value.endsAt)) {
+      ctx.addIssue({ code: "custom", path: ["endsAt"], message: "O fim precisa ser depois do início." });
     }
   });
 

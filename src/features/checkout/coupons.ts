@@ -12,18 +12,43 @@ export type CouponRecord = {
   percent: number | null;
   amountCents: number | null;
   active: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
 };
+
+export type CouponWindow = "ok" | "inactive" | "not_started" | "expired";
 
 export type CouponApplication =
   | { ok: true; amountCents: number; discountCents: number }
-  | { ok: false; reason: "inactive" | "invalid" | "below_minimum" };
+  | { ok: false; reason: "inactive" | "invalid" | "below_minimum" | "not_started" | "expired" };
 
 export function normalizeCouponCode(raw: string) {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
 }
 
-export function applyCoupon(priceCents: number, coupon: CouponRecord): CouponApplication {
-  if (!coupon.active) return { ok: false, reason: "inactive" };
+export function couponWindow(coupon: Pick<CouponRecord, "active" | "startsAt" | "endsAt">, now = new Date()): CouponWindow {
+  if (!coupon.active) return "inactive";
+  if (coupon.startsAt) {
+    const start = new Date(coupon.startsAt);
+    if (!Number.isNaN(start.getTime()) && now.getTime() < start.getTime()) return "not_started";
+  }
+  if (coupon.endsAt) {
+    const end = new Date(coupon.endsAt);
+    if (!Number.isNaN(end.getTime()) && now.getTime() >= end.getTime()) return "expired";
+  }
+  return "ok";
+}
+
+export function couponQuoteErrorCode(reason: Extract<CouponApplication, { ok: false }>["reason"]) {
+  if (reason === "below_minimum") return "minimo";
+  if (reason === "not_started") return "ainda";
+  if (reason === "expired") return "expirou";
+  return "cupom";
+}
+
+export function applyCoupon(priceCents: number, coupon: CouponRecord, now = new Date()): CouponApplication {
+  const window = couponWindow(coupon, now);
+  if (window !== "ok") return { ok: false, reason: window };
   let discountCents = 0;
   if (coupon.kind === "percent") {
     if (coupon.percent == null || coupon.percent < 1 || coupon.percent > 100) return { ok: false, reason: "invalid" };

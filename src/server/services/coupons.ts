@@ -12,13 +12,18 @@ function mapCoupon(row: Record<string, unknown>): CouponRecord {
     percent: row.percent == null ? null : Number(row.percent),
     amountCents: row.amount_cents == null ? null : Number(row.amount_cents),
     active: Boolean(row.active),
+    startsAt: typeof row.starts_at === "string" && row.starts_at ? row.starts_at : null,
+    endsAt: typeof row.ends_at === "string" && row.ends_at ? row.ends_at : null,
   };
 }
 
 export async function loadAdminCoupons(): Promise<AdminCouponRow[]> {
   const service = tryServiceClient();
   if (!service) return [];
-  const result = await service.from("coupons").select("id,code,name,kind,percent,amount_cents,active,created_at").order("created_at", { ascending: false });
+  const result = await service
+    .from("coupons")
+    .select("id,code,name,kind,percent,amount_cents,active,starts_at,ends_at,created_at")
+    .order("created_at", { ascending: false });
   if (result.error) return [];
   return (result.data ?? []).map((row) => ({
     ...mapCoupon(row as Record<string, unknown>),
@@ -31,10 +36,13 @@ export async function findActiveCoupon(code: string): Promise<CouponRecord | nul
   if (!normalized) return null;
   const service = tryServiceClient();
   if (!service) return null;
-  const result = await service.from("coupons").select("id,code,name,kind,percent,amount_cents,active").eq("code", normalized).maybeSingle();
+  const result = await service
+    .from("coupons")
+    .select("id,code,name,kind,percent,amount_cents,active,starts_at,ends_at")
+    .eq("code", normalized)
+    .maybeSingle();
   if (result.error || !result.data) return null;
-  const coupon = mapCoupon(result.data as Record<string, unknown>);
-  return coupon.active ? coupon : null;
+  return mapCoupon(result.data as Record<string, unknown>);
 }
 
 export async function quoteCoupon(priceCents: number, code: string) {

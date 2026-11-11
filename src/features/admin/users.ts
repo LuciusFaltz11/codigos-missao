@@ -1,3 +1,4 @@
+import { brandedEmailHtml } from "@/features/email/brand";
 import type { AdminRole } from "@/server/auth/rbac";
 
 export const PANEL_ROLES = ["super_admin", "admin", "editor", "support"] as const;
@@ -61,10 +62,10 @@ export function firstAccessEmailHtml(link: string, kind: "invite" | "recovery") 
     kind === "invite"
       ? "Você foi cadastrado no painel de Códigos da Missão. Use o botão abaixo para criar sua senha no primeiro acesso."
       : "Use o botão abaixo para criar uma nova senha e entrar no painel de Códigos da Missão.";
-  return `<div style="font-family:Georgia,serif;color:#241d22;line-height:1.5">
-  <h1 style="font-size:28px;font-weight:400">${title}</h1>
-  <p>${intro}</p>
-  <p><a href="${link}" style="display:inline-block;background:#482931;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:12px">Abrir primeiro acesso</a></p>
-  <p style="color:#5e5664;font-size:14px">Se você não esperava este e-mail, ignore a mensagem.</p>
-</div>`;
+  return brandedEmailHtml({
+    title,
+    bodyHtml: `<p style="margin:0;">${intro}</p>`,
+    cta: { href: link, label: "Abrir primeiro acesso" },
+    note: "Se você não esperava este e-mail, ignore a mensagem.",
+  });
 }

@@ -13,6 +13,9 @@ describe("e-mail da leitura completa", () => {
     expect(message.html).not.toContain("Ana <Silva>");
     expect(message.html).toContain("O PDF da leitura segue anexo");
     expect(message.html).toContain("https://codigos.test/mapa/completo/abc");
+    expect(message.html).toContain("#1E332D");
+    expect(message.html).toContain("#C7A96B");
+    expect(message.html).not.toContain("#482931");
     expect(message.text).toContain("https://codigos.test/mapa/completo/abc");
   });
 

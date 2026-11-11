@@ -43,6 +43,14 @@ describe("avisos em toast", () => {
       kind: "error",
       message: "Este código de desconto não é válido.",
     });
+    expect(resolveFlash("/checkout/abc", params("erro=ainda"))).toEqual({
+      kind: "error",
+      message: "Este cupom ainda não está ativo.",
+    });
+    expect(resolveFlash("/checkout/abc", params("erro=expirou"))).toEqual({
+      kind: "error",
+      message: "Este cupom já expirou.",
+    });
   });
 
   it("confirma cadastro direto de usuário no painel", () => {

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PageShell } from "@/components/site/chrome";
 import { CheckoutCouponForm } from "@/components/checkout/coupon-form";
 import { ImmediateFlash } from "@/components/ui/flash-toast";
-import { couponOfferLabel, isComplimentaryAmount, normalizeCouponCode } from "@/features/checkout/coupons";
+import { couponOfferLabel, couponQuoteErrorCode, isComplimentaryAmount, normalizeCouponCode } from "@/features/checkout/coupons";
 import { formatBrl } from "@/lib/formatters";
 import { checkoutBlockers } from "@/features/methodology/snapshot";
 import { quoteCoupon } from "@/server/services/coupons";
@@ -14,6 +14,8 @@ export const dynamic = "force-dynamic";
 const ERROR_MESSAGE: Record<string, string> = {
   "1": "Não foi possível abrir o pagamento.",
   cupom: "Este código de desconto não é válido.",
+  ainda: "Este cupom ainda não está ativo.",
+  expirou: "Este cupom já expirou.",
   minimo: "Este cupom deixa o valor abaixo do mínimo de cobrança.",
   link: "A InfinitePay não confirmou o link de pagamento.",
 };
@@ -32,7 +34,7 @@ export default async function CheckoutPage({
   const typed = normalizeCouponCode(query.cupom ?? "");
   const quoted =
     typed && loaded.priceCents != null ? await quoteCoupon(loaded.priceCents, typed) : null;
-  const couponError = typed && quoted && !quoted.ok ? (quoted.reason === "below_minimum" ? "minimo" : "cupom") : null;
+  const couponError = typed && quoted && !quoted.ok ? couponQuoteErrorCode(quoted.reason) : null;
   const applied = quoted?.ok ? quoted : null;
   const chargeCents = applied?.amountCents ?? loaded.priceCents;
   const complimentary = Boolean(applied) && chargeCents !== null && isComplimentaryAmount(chargeCents);

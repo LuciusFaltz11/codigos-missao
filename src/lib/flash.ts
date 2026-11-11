@@ -58,6 +58,7 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
       if (erro === "permissao") return errorFlash("Seu papel não altera cupons.");
       if (erro === "existe") return errorFlash("Já existe um cupom com este código.");
       if (erro === "1") return errorFlash("Informe nome, código e um desconto em percentual ou em reais.");
+      if (erro === "periodo") return errorFlash("O início precisa ser anterior ao fim, no horário de Brasília.");
       if (erro === "config") return errorFlash("O banco ainda não está configurado.");
       return null;
     },
@@ -127,6 +128,8 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
 
   if (pathname.startsWith("/checkout/")) {
     if (erro === "cupom") return errorFlash("Este código de desconto não é válido.");
+    if (erro === "ainda") return errorFlash("Este cupom ainda não está ativo.");
+    if (erro === "expirou") return errorFlash("Este cupom já expirou.");
     if (erro === "minimo") return errorFlash("Este cupom deixa o valor abaixo do mínimo de cobrança.");
     if (erro === "link") return errorFlash("A InfinitePay não confirmou o link de pagamento.");
     if (erro === "1") return errorFlash("Não foi possível abrir o pagamento.");
