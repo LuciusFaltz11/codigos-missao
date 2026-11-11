@@ -1,7 +1,7 @@
 .wix-embed-root {
   min-height: 0;
   height: auto;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   color: #0b0a09;
 }

@@ -135,8 +135,7 @@
   accent-color: var(--wix-gold);
 }
 
-.wix-privacy a,
-.wix-success a {
+.wix-privacy a {
   color: var(--wix-ink);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -170,7 +169,9 @@
 }
 
 .wix-submit {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-height: 48px;
   border: 0;
@@ -180,6 +181,7 @@
   font: inherit;
   font-size: 16px;
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
 }
 

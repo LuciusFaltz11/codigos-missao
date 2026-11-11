@@ -5,10 +5,9 @@ import { birthMinutes, birthMonths, birthYears, composeBirthDate, daysInMonth } 
 import { CityAutocomplete, type CitySearchStatus } from "@/components/birth-form/city-autocomplete";
 import { TurnstileField } from "@/components/integrations/turnstile-field";
 import {
+  embedContentHeight,
   embedPreviewUrl,
-  navigateToPreview,
   postToWixParent,
-  wixChartReadyMessage,
   wixResizeMessage,
 } from "@/features/integrations/wix-messages";
 import { twelveHourHours, twelveHourToBirthTime } from "@/features/integrations/wix-time";
@@ -73,18 +72,28 @@ export function WixChartForm({
 
   useEffect(() => {
     const node = rootRef.current;
-    if (!node || typeof ResizeObserver === "undefined") return;
+    if (!node) return;
     const notify = () => {
-      postToWixParent(wixResizeMessage(node.getBoundingClientRect().height + 24), {
+      const root = node.closest(".wix-embed-root");
+      const height = embedContentHeight({
+        formHeight: Math.max(node.scrollHeight, node.getBoundingClientRect().height),
+        rootHeight: root instanceof HTMLElement ? Math.max(root.scrollHeight, root.getBoundingClientRect().height) : 0,
+        documentHeight: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
+      });
+      postToWixParent(wixResizeMessage(height), {
         allowedOrigins: wixOrigins,
         referrer: document.referrer,
       });
     };
     notify();
-    const observer = new ResizeObserver(notify);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [wixOrigins]);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(notify);
+    observer?.observe(node);
+    window.addEventListener("load", notify);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("load", notify);
+    };
+  }, [wixOrigins, options.length, error, message, cityStatus, turnstileSiteKey]);
 
   async function submit() {
     const date = composeBirthDate(birth.year, birth.month, birth.day);
@@ -150,12 +159,7 @@ export function WixChartForm({
           return;
         }
         setPreviewHref(previewUrl);
-        setMessage("Sua leitura está pronta. Abrindo a prévia…");
-        postToWixParent(wixChartReadyMessage(previewUrl), {
-          allowedOrigins: wixOrigins,
-          referrer: document.referrer,
-        });
-        navigateToPreview(previewUrl);
+        setMessage("O mapa foi gerado. Abra a prévia em uma nova guia.");
         return;
       }
       if (body?.code === "ambiguous_time") {
@@ -398,23 +402,17 @@ export function WixChartForm({
           {error}
         </p>
       ) : null}
-      {message ? (
-        <p className="wix-success">
-          {message}
-          {previewHref ? (
-            <>
-              {" "}
-              <a href={previewHref} target="_top" rel="noopener noreferrer">
-                Abrir a prévia
-              </a>
-            </>
-          ) : null}
-        </p>
-      ) : null}
+      {message ? <p className="wix-success">{message}</p> : null}
 
-      <button className="wix-submit" type="submit" disabled={pending || !form.cityLabel}>
-        {pending ? "Gerando mapa…" : "Gerar mapa"}
-      </button>
+      {previewHref ? (
+        <a className="wix-submit" href={previewHref} target="_blank" rel="noopener noreferrer">
+          Ver meu mapa
+        </a>
+      ) : (
+        <button className="wix-submit" type="submit" disabled={pending || !form.cityLabel}>
+          {pending ? "Gerando mapa…" : "Gerar mapa"}
+        </button>
+      )}
     </form>
   );
 }

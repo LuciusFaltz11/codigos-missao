@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { wixChartRequestSchema } from "@/features/integrations/wix-chart-request";
 import {
+  embedContentHeight,
   embedPreviewUrl,
   isSafePreviewRedirect,
   previewRedirectUrl,
@@ -78,6 +79,7 @@ describe("redirectUrl da prévia", () => {
     expect(isSafePreviewRedirect("http://codigos.example/mapa/resultado/token-seguro-123456", app)).toBe(false);
     expect(embedPreviewUrl(url, "https://app.live")).toBe("https://app.live/mapa/resultado/token-seguro-123456");
     expect(embedPreviewUrl("https://evil.example/mapa/completo/token-seguro-123456", "https://app.live")).toBeNull();
+    expect(embedContentHeight({ formHeight: 820, documentHeight: 790 })).toBe(844);
   });
 });
 

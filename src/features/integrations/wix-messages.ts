@@ -22,6 +22,19 @@ export function wixResizeMessage(height: number): WixResizeMessage {
   return { source: WIX_MESSAGE_SOURCE, type: "resize", height: Math.max(0, Math.round(height)) };
 }
 
+export function embedContentHeight(input: {
+  formHeight: number;
+  rootHeight?: number;
+  documentHeight?: number;
+  extra?: number;
+}) {
+  const extra = input.extra ?? 24;
+  return Math.max(
+    0,
+    Math.round(Math.max(input.formHeight, input.rootHeight ?? 0, input.documentHeight ?? 0) + extra),
+  );
+}
+
 export function isWixEmbedMessage(data: unknown): data is WixEmbedMessage {
   if (!data || typeof data !== "object") return false;
   const payload = data as Record<string, unknown>;
@@ -47,18 +60,6 @@ export function embedPreviewUrl(redirectUrl: string, embedOrigin: string) {
   } catch {
     return null;
   }
-}
-
-export function navigateToPreview(url: string) {
-  try {
-    if (window.top && window.top !== window) {
-      window.top.location.assign(url);
-      return;
-    }
-  } catch {
-    // Alguns browsers bloqueiam leitura de top; a atribuição da URL ainda pode funcionar no catch abaixo.
-  }
-  window.location.assign(url);
 }
 
 export function isSafePreviewRedirect(url: string, appUrl: string) {

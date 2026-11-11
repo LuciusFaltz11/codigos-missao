@@ -2,9 +2,10 @@
  * Cole em Wix Harmony → Configurações → Código personalizado (todas as páginas, body end).
  * Troque APP_ORIGIN pela origem exata do Next.js, sem barra no final.
  *
- * O Thunderbolt do Wix re-renderiza o formulário nativo depois do primeiro paint.
- * O script esconde o form nativo, estica a div pai, centraliza o iframe e
- * reabre a prévia no topo da página (não só dentro do iframe).
+ * A div da Wix tem altura fixa no mesh. O iframe precisa ter pelo menos a
+ * altura do formulário completo; overflow auto entra só como fallback.
+ * O mapa abre em uma nova guia pelo botão no formulário — a página da Wix
+ * não navega e não tenta enquadrar a prévia.
  */
 (function () {
   var APP_ORIGIN = "https://SEU-DOMINIO-DA-APP";
@@ -13,7 +14,9 @@
   var FORM_PATH = "/integracoes/wix/formulario-mapa";
   var MARK = "data-codigos-missao-embed";
   var STYLE_ID = "codigos-missao-embed-style";
+  var MIN_HEIGHT = 960;
   var frame = null;
+  var lastHeight = MIN_HEIGHT;
   var scheduled = false;
 
   function injectStyle() {
@@ -24,7 +27,7 @@
       "[" +
       MARK +
       '="1"]{left:0!important;right:0!important;width:100%!important;max-width:100%!important;' +
-      "height:auto!important;overflow:visible!important;transform:none!important;margin-left:auto!important;" +
+      "max-height:none!important;overflow:visible!important;transform:none!important;margin-left:auto!important;" +
       "margin-right:auto!important;background:transparent!important;box-shadow:none!important;}" +
       "[" +
       MARK +
@@ -35,7 +38,7 @@
       "#" +
       IFRAME_ID +
       "{display:block!important;position:relative!important;z-index:99999!important;width:100%!important;" +
-      "max-width:640px!important;margin:0 auto!important;overflow:hidden!important;border:0!important;" +
+      "max-width:640px!important;max-height:none!important;margin:0 auto!important;overflow:auto!important;border:0!important;" +
       "background:transparent!important;}";
     (document.head || document.documentElement).appendChild(style);
   }
@@ -99,9 +102,13 @@
     iframe.src = APP_ORIGIN.replace(/\/$/, "") + FORM_PATH;
     iframe.setAttribute("loading", "eager");
     iframe.setAttribute("referrerpolicy", "origin");
-    iframe.setAttribute("scrolling", "no");
+    iframe.setAttribute("scrolling", "auto");
     iframe.style.cssText =
-      "display:block;width:100%;max-width:640px;margin:0 auto;border:0;min-height:520px;overflow:hidden;background:transparent;";
+      "display:block;width:100%;max-width:640px;margin:0 auto;border:0;min-height:" +
+      MIN_HEIGHT +
+      "px;height:" +
+      MIN_HEIGHT +
+      "px;overflow:auto;background:transparent;";
     return iframe;
   }
 
@@ -116,12 +123,33 @@
   function unlockOverflow(slot) {
     var node = slot;
     var hops = 0;
-    while (node && hops < 8 && node !== document.body) {
+    while (node && hops < 12 && node !== document.body) {
       node.style.setProperty("overflow", "visible", "important");
       node.style.setProperty("overflow-x", "visible", "important");
       node.style.setProperty("overflow-y", "visible", "important");
+      node.style.setProperty("max-height", "none", "important");
       node = node.parentElement;
       hops += 1;
+    }
+  }
+
+  function sizeFrame(height) {
+    lastHeight = Math.max(MIN_HEIGHT, Math.round(height || lastHeight));
+    var px = lastHeight + "px";
+    var iframe = document.getElementById(IFRAME_ID) || frame;
+    if (iframe) {
+      iframe.style.setProperty("height", px, "important");
+      iframe.style.setProperty("min-height", px, "important");
+      iframe.style.setProperty("max-height", "none", "important");
+      iframe.style.setProperty("overflow", "auto", "important");
+      iframe.setAttribute("scrolling", "auto");
+    }
+    var slot = iframe && iframe.parentElement ? iframe.parentElement : findMount();
+    if (slot) {
+      slot.style.setProperty("height", px, "important");
+      slot.style.setProperty("min-height", px, "important");
+      slot.style.setProperty("max-height", "none", "important");
+      slot.style.setProperty("overflow", "visible", "important");
     }
   }
 
@@ -131,7 +159,7 @@
     slot.style.setProperty("right", "0", "important");
     slot.style.setProperty("width", "100%", "important");
     slot.style.setProperty("max-width", "100%", "important");
-    slot.style.setProperty("height", "auto", "important");
+    slot.style.setProperty("max-height", "none", "important");
     slot.style.setProperty("overflow", "visible", "important");
     slot.style.setProperty("background", "transparent", "important");
     unlockOverflow(slot);
@@ -143,20 +171,6 @@
     }
   }
 
-  function sizeFrame(height) {
-    var iframe = document.getElementById(IFRAME_ID);
-    if (!iframe) return;
-    var px = Math.max(520, Math.round(height)) + "px";
-    iframe.style.setProperty("height", px, "important");
-    iframe.style.setProperty("min-height", px, "important");
-    iframe.style.setProperty("overflow", "hidden", "important");
-    var slot = iframe.parentElement;
-    if (slot) {
-      slot.style.setProperty("height", "auto", "important");
-      slot.style.setProperty("min-height", px, "important");
-    }
-  }
-
   function ensureEmbed() {
     injectStyle();
     var slot = findMount();
@@ -164,6 +178,7 @@
     hideWixChrome(slot);
     var iframe = getFrame();
     if (iframe.parentNode !== slot) slot.appendChild(iframe);
+    sizeFrame(lastHeight);
     return true;
   }
 
@@ -185,41 +200,12 @@
     document.addEventListener("visibilitychange", ensureEmbed);
   }
 
-  function previewFromMessage(url) {
-    try {
-      var parsed = new URL(url);
-      var parts = parsed.pathname.split("/").filter(Boolean);
-      if (parsed.search || parsed.hash || parsed.username || parsed.password) return null;
-      if (parts.length !== 3 || parts[0] !== "mapa" || parts[1] !== "resultado" || parts[2].length <= 8) return null;
-      return APP_ORIGIN.replace(/\/$/, "") + "/mapa/resultado/" + parts[2];
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function goToPreview(url) {
-    try {
-      if (window.top && window.top !== window) {
-        window.top.location.href = url;
-        return;
-      }
-    } catch (error) {
-      // segue no window atual
-    }
-    window.location.href = url;
-  }
-
   window.addEventListener("message", function (event) {
     if (event.origin !== APP_ORIGIN) return;
     var data = event.data;
     if (!data || data.source !== "codigos-missao") return;
     if (data.type === "resize" && typeof data.height === "number") {
       sizeFrame(data.height);
-      return;
-    }
-    if (data.type === "chart-ready" && typeof data.redirectUrl === "string") {
-      var preview = previewFromMessage(data.redirectUrl);
-      if (preview) goToPreview(preview);
     }
   });
 
