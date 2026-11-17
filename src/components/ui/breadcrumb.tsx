@@ -15,6 +15,7 @@ const labels: Record<string, string> = {
   pedidos: "Pedidos",
   cupons: "Cupons",
   relatorios: "Relatórios",
+  tokens: "Tokens",
   usuarios: "Usuários",
   auditoria: "Auditoria",
   configuracoes: "Configurações",

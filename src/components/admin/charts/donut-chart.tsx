@@ -10,6 +10,8 @@ const COLORS: Record<string, string> = {
   rejected: "#8C3A3A",
   cancelled: "#60605F",
   refunded: "#5679BC",
+  input: "#1E332D",
+  output: "#C7A96B",
 };
 
 function polar(cx: number, cy: number, r: number, angle: number) {
@@ -26,7 +28,19 @@ function donutSlice(cx: number, cy: number, r0: number, r1: number, start: numbe
   return `M ${p1.x} ${p1.y} A ${r1} ${r1} 0 ${large} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r0} ${r0} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
 }
 
-export function DonutChart({ slices }: { slices: DashboardStatusSlice[] }) {
+export function DonutChart({
+  slices,
+  title = "Pedidos",
+  subtitle = "Distribuição por estado no período.",
+  ariaLabel = "Pedidos por estado",
+  empty = "Nenhum pedido neste recorte.",
+}: {
+  slices: DashboardStatusSlice[];
+  title?: string;
+  subtitle?: string;
+  ariaLabel?: string;
+  empty?: string;
+}) {
   const [active, setActive] = useState<string | null>(null);
   const total = slices.reduce((sum, slice) => sum + slice.count, 0);
   const arcs = useMemo(() => {
@@ -42,13 +56,13 @@ export function DonutChart({ slices }: { slices: DashboardStatusSlice[] }) {
   const selected = arcs.find((slice) => slice.status === active) ?? arcs[0] ?? null;
 
   return (
-    <ChartCard title="Pedidos" subtitle="Distribuição por estado no período.">
+    <ChartCard title={title} subtitle={subtitle}>
       {total === 0 ? (
-        <p className="py-8 text-sm text-muted">Nenhum pedido neste recorte.</p>
+        <p className="py-8 text-sm text-muted">{empty}</p>
       ) : (
         <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,11rem)_1fr]">
           <div className="relative mx-auto w-44">
-            <svg viewBox="0 0 160 160" className="w-full" role="img" aria-label="Pedidos por estado">
+            <svg viewBox="0 0 160 160" className="w-full" role="img" aria-label={ariaLabel}>
               {arcs.map((slice) => (
                 <path
                   key={slice.status}
@@ -61,8 +75,8 @@ export function DonutChart({ slices }: { slices: DashboardStatusSlice[] }) {
               ))}
             </svg>
             <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-              <p className="font-display text-3xl leading-none">{selected?.count ?? total}</p>
-              <p className="mt-1 text-xs text-muted">{selected?.label ?? "Pedidos"}</p>
+              <p className="font-display text-2xl leading-none">{(selected?.count ?? total).toLocaleString("pt-BR")}</p>
+              <p className="mt-1 text-xs text-muted">{selected?.label ?? title}</p>
             </div>
           </div>
           <ul className="grid gap-2 text-sm">
@@ -81,7 +95,7 @@ export function DonutChart({ slices }: { slices: DashboardStatusSlice[] }) {
                     {slice.label}
                   </span>
                   <span className="text-muted">
-                    {slice.count} · {total ? Math.round((slice.count / total) * 100) : 0}%
+                    {slice.count.toLocaleString("pt-BR")} · {total ? Math.round((slice.count / total) * 100) : 0}%
                   </span>
                 </button>
               </li>

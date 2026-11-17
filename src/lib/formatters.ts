@@ -2,6 +2,21 @@ export function formatBrl(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
+export function formatUsd(amount: number) {
+  const abs = Math.abs(amount);
+  const fractionDigits = abs > 0 && abs < 0.1 ? 4 : 2;
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(amount);
+}
+
+export function formatTokenCount(value: number) {
+  return Math.round(value).toLocaleString("pt-BR");
+}
+
 export function formatDatePt(isoDate: string) {
   const [year, month, day] = isoDate.split("-");
   if (!year || !month || !day) return isoDate;

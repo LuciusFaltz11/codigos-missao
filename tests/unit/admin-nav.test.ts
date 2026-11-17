@@ -11,5 +11,7 @@ describe("menu do admin", () => {
     expect(isAdminNavActive("/admin/codigos", "/admin/codigos")).toBe(true);
     expect(isAdminNavActive("/admin/codigos/sol-1", "/admin/codigos")).toBe(true);
     expect(isAdminNavActive("/admin/pedidos", "/admin/codigos")).toBe(false);
+    expect(isAdminNavActive("/admin/tokens", "/admin/tokens")).toBe(true);
+    expect(isAdminNavActive("/admin/tokens", "/admin")).toBe(false);
   });
 });

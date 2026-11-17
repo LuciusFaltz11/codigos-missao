@@ -5,21 +5,30 @@ import { useRouter } from "next/navigation";
 import type { PeriodPreset } from "@/features/admin/dashboard";
 import { cn } from "@/lib/utils";
 
-const PRESETS: Array<{ id: PeriodPreset; label: string; href: string }> = [
-  { id: "7d", label: "7 dias", href: "/admin?periodo=7d" },
-  { id: "15d", label: "15 dias", href: "/admin?periodo=15d" },
-  { id: "mes", label: "Mês", href: "/admin?periodo=mes" },
-  { id: "custom", label: "Personalizado", href: "/admin?periodo=custom" },
+const PRESET_IDS: Array<{ id: PeriodPreset; label: string }> = [
+  { id: "7d", label: "7 dias" },
+  { id: "15d", label: "15 dias" },
+  { id: "mes", label: "Mês" },
+  { id: "custom", label: "Personalizado" },
 ];
+
+function periodHref(basePath: string, preset: PeriodPreset, fromDate?: string, toDate?: string) {
+  if (preset === "custom" && fromDate && toDate) {
+    return `${basePath}?periodo=custom&de=${fromDate}&ate=${toDate}`;
+  }
+  return `${basePath}?periodo=${preset}`;
+}
 
 export function DashboardPeriod({
   preset,
   fromDate,
   toDate,
+  basePath = "/admin",
 }: {
   preset: PeriodPreset;
   fromDate: string;
   toDate: string;
+  basePath?: string;
 }) {
   const router = useRouter();
   const custom = preset === "custom";
@@ -27,10 +36,9 @@ export function DashboardPeriod({
   return (
     <div className="grid gap-3">
       <div role="group" aria-label="Período" className="flex flex-wrap rounded border border-border bg-surface p-1">
-        {PRESETS.map((item) => {
+        {PRESET_IDS.map((item) => {
           const active = item.id === "custom" ? custom : preset === item.id;
-          const href =
-            item.id === "custom" ? `/admin?periodo=custom&de=${fromDate}&ate=${toDate}` : item.href;
+          const href = periodHref(basePath, item.id, fromDate, toDate);
           return (
             <Link
               key={item.id}
@@ -48,13 +56,13 @@ export function DashboardPeriod({
       </div>
       <form
         className="flex flex-wrap items-end gap-2"
-        action="/admin"
+        action={basePath}
         onSubmit={(event) => {
           event.preventDefault();
           const data = new FormData(event.currentTarget);
           const de = String(data.get("de") ?? "");
           const ate = String(data.get("ate") ?? "");
-          router.push(`/admin?periodo=custom&de=${encodeURIComponent(de)}&ate=${encodeURIComponent(ate)}`);
+          router.push(`${basePath}?periodo=custom&de=${encodeURIComponent(de)}&ate=${encodeURIComponent(ate)}`);
         }}
       >
         <input type="hidden" name="periodo" value="custom" />

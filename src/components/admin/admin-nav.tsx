@@ -16,6 +16,7 @@ const links = [
   ["Pedidos", "/admin/pedidos"],
   ["Cupons", "/admin/cupons"],
   ["Relatórios", "/admin/relatorios"],
+  ["Tokens", "/admin/tokens"],
   ["Usuários", "/admin/usuarios"],
   ["Auditoria", "/admin/auditoria"],
   ["Configurações", "/admin/configuracoes"],
