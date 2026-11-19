@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   serverExternalPackages: ["geo-tz", "@react-pdf/renderer"],
   experimental: {
+    agentUpgrade: "security",
     serverActions: {
       bodySizeLimit: "6mb",
     },
