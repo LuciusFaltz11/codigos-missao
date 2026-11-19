@@ -10,6 +10,44 @@ export function orderStatusLabel(status: string) {
   return ORDER_STATUS_LABEL[status] ?? status;
 }
 
+export const ORDER_LIST_FILTERS = ["all", "approved", "pending", "cancelled"] as const;
+export type OrderListFilter = (typeof ORDER_LIST_FILTERS)[number];
+
+export function isOrderListFilter(value: string | null | undefined): value is OrderListFilter {
+  return ORDER_LIST_FILTERS.includes(value as OrderListFilter);
+}
+
+export function parseOrderListFilter(value: string | null | undefined): OrderListFilter {
+  if (value === "concluidas" || value === "approved") return "approved";
+  if (value === "pendentes" || value === "pending") return "pending";
+  if (value === "canceladas" || value === "cancelled") return "cancelled";
+  return "all";
+}
+
+export function orderFilterParam(filter: OrderListFilter) {
+  if (filter === "approved") return "concluidas";
+  if (filter === "pending") return "pendentes";
+  if (filter === "cancelled") return "canceladas";
+  return null;
+}
+
+export function filterAdminOrders<T extends { status: string }>(rows: T[], filter: OrderListFilter) {
+  if (filter === "all") return rows;
+  return rows.filter((row) => row.status === filter);
+}
+
+export function orderValueTotals(rows: Array<{ status: string; amountCents: number }>) {
+  const soldCents = rows.filter((row) => row.status === "approved").reduce((sum, row) => sum + row.amountCents, 0);
+  const pendingCents = rows.filter((row) => row.status === "pending").reduce((sum, row) => sum + row.amountCents, 0);
+  const cancelledCents = rows.filter((row) => row.status === "cancelled").reduce((sum, row) => sum + row.amountCents, 0);
+  return {
+    soldCents,
+    pendingCents,
+    cancelledCents,
+    totalCents: soldCents + pendingCents + cancelledCents,
+  };
+}
+
 export function paymentProviderLabel(provider: string) {
   if (provider === "infinitepay") return "InfinitePay";
   if (provider === "coupon") return "Cupom";

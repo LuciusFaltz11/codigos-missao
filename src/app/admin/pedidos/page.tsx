@@ -1,6 +1,7 @@
 import { OrdersPanel } from "@/components/admin/orders-panel";
 import { AdminPanel, Empty } from "@/components/admin/shell";
 import { ImmediateFlash } from "@/components/ui/flash-toast";
+import { parseOrderListFilter } from "@/features/admin/orders";
 import { resolveFlash } from "@/lib/flash";
 import { maskEmail } from "@/lib/formatters";
 import { roleHas } from "@/server/auth/rbac";
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ver?: string; erro?: string; salvo?: string }>;
+  searchParams: Promise<{ ver?: string; erro?: string; salvo?: string; estado?: string }>;
 }) {
   const query = await searchParams;
   const flashParams = new URLSearchParams();
@@ -52,6 +53,7 @@ export default async function OrdersPage({
         <OrdersPanel
           rows={rows}
           initialId={query.ver}
+          initialFilter={parseOrderListFilter(query.estado)}
           canDownloadReport={!session || roleHas(session.role, "reports.read")}
           canReprocess={!session || roleHas(session.role, "orders.reprocess")}
         />

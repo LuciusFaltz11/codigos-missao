@@ -1,5 +1,6 @@
 import { AdminPanel, Empty } from "@/components/admin/shell";
 import { LeadsPanel } from "@/components/admin/leads-panel";
+import { parseLeadFilter } from "@/features/admin/leads";
 import { maskEmail } from "@/lib/formatters";
 import { roleHas } from "@/server/auth/rbac";
 import { getAdminSession } from "@/server/auth/session";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ver?: string }>;
+  searchParams: Promise<{ ver?: string; filtro?: string }>;
 }) {
   const notice = await searchParams;
   const session = await getAdminSession();
@@ -33,12 +34,20 @@ export default async function LeadsPage({
   return (
     <AdminPanel>
       <h1 className="font-display text-4xl">Leads</h1>
+      <p className="mt-2 max-w-2xl text-sm text-muted">
+        Filtre cadastros, marque quem comprou e exporte a planilha ou só os e-mails.
+      </p>
       {rows.length === 0 ? (
         <div className="mt-6">
           <Empty>Nenhum lead registrado.</Empty>
         </div>
       ) : (
-        <LeadsPanel rows={rows} initialId={notice.ver} />
+        <LeadsPanel
+          rows={rows}
+          initialId={notice.ver}
+          initialFilter={parseLeadFilter(notice.filtro)}
+          canExport={!session || session.role !== "support"}
+        />
       )}
     </AdminPanel>
   );

@@ -39,37 +39,74 @@ function toChartView(row: Record<string, unknown>, houses: Record<string, number
   };
 }
 
+const PAGE = 1000;
+const IN_CHUNK = 200;
+
+async function fetchAllLeads(service: NonNullable<ReturnType<typeof tryServiceClient>>) {
+  const rows: Array<Record<string, unknown>> = [];
+  for (let from = 0; ; from += PAGE) {
+    const result = await service
+      .from("leads")
+      .select("id,name,email,marketing_opt_in,created_at")
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE - 1);
+    rows.push(...((result.data ?? []) as unknown as Array<Record<string, unknown>>));
+    if ((result.data ?? []).length < PAGE) break;
+  }
+  return rows;
+}
+
+async function fetchIn(ids: string[], load: (chunk: string[]) => PromiseLike<{ data: unknown[] | null }>) {
+  const rows: Array<Record<string, unknown>> = [];
+  for (let index = 0; index < ids.length; index += IN_CHUNK) {
+    const chunk = ids.slice(index, index + IN_CHUNK);
+    if (chunk.length === 0) continue;
+    const result = await load(chunk);
+    rows.push(...((result.data ?? []) as Array<Record<string, unknown>>));
+  }
+  return rows;
+}
+
 export async function loadAdminLeads(): Promise<AdminLead[]> {
   const service = tryServiceClient();
   if (!service) return [];
-  const leads = await service
-    .from("leads")
-    .select("id,name,email,marketing_opt_in,created_at")
-    .order("created_at", { ascending: false })
-    .limit(100);
-  const rows = leads.data ?? [];
+  const rows = await fetchAllLeads(service);
   if (rows.length === 0) return [];
   const leadIds = rows.map((row) => String(row.id));
-  const [consents, births] = await Promise.all([
-    service.from("consent_records").select("lead_id,kind,accepted,policy_version,created_at").in("lead_id", leadIds),
-    service.from("birth_records").select("id,lead_id,birth_date,birth_time,city_label,country,iana_timezone,created_at").in("lead_id", leadIds),
+  const [consents, births, approvedOrders] = await Promise.all([
+    fetchIn(leadIds, (chunk) =>
+      service.from("consent_records").select("lead_id,kind,accepted,policy_version,created_at").in("lead_id", chunk),
+    ),
+    fetchIn(leadIds, (chunk) =>
+      service
+        .from("birth_records")
+        .select("id,lead_id,birth_date,birth_time,city_label,country,iana_timezone,created_at")
+        .in("lead_id", chunk),
+    ),
+    fetchIn(leadIds, (chunk) => service.from("orders").select("lead_id").eq("status", "approved").in("lead_id", chunk)),
   ]);
-  const birthRows = births.data ?? [];
+  const birthRows = births;
   const birthIds = birthRows.map((row) => String(row.id));
-  const charts = birthIds.length
-    ? await service
-        .from("natal_charts")
-        .select("id,birth_record_id,status,engine,engine_status,error_code,positions,cusps,ascendant,midheaven,methodology_snapshot,created_at")
-        .in("birth_record_id", birthIds)
-    : { data: [] as Array<Record<string, unknown>> };
-  const chartRows = charts.data ?? [];
+  const chartRows = birthIds.length
+    ? await fetchIn(birthIds, (chunk) =>
+        service
+          .from("natal_charts")
+          .select(
+            "id,birth_record_id,status,engine,engine_status,error_code,positions,cusps,ascendant,midheaven,methodology_snapshot,created_at",
+          )
+          .in("birth_record_id", chunk),
+      )
+    : [];
   const chartIds = chartRows.map((row) => String(row.id));
   const activations = chartIds.length
-    ? await service.from("mission_activations").select("chart_id,point_id,house_number").in("chart_id", chartIds)
-    : { data: [] as Array<Record<string, unknown>> };
+    ? await fetchIn(chartIds, (chunk) =>
+        service.from("mission_activations").select("chart_id,point_id,house_number").in("chart_id", chunk),
+      )
+    : [];
 
+  const convertedLeadIds = new Set(approvedOrders.map((row) => String(row.lead_id)).filter(Boolean));
   const housesByChart = new Map<string, Record<string, number>>();
-  for (const row of activations.data ?? []) {
+  for (const row of activations) {
     const chartId = String(row.chart_id);
     const current = housesByChart.get(chartId) ?? {};
     current[String(row.point_id)] = Number(row.house_number);
@@ -93,7 +130,7 @@ export async function loadAdminLeads(): Promise<AdminLead[]> {
   }
 
   const privacyByLead = new Map<string, { accepted: boolean; policyVersion: string }>();
-  for (const consent of latestByCreatedAt(consents.data ?? [])) {
+  for (const consent of latestByCreatedAt(consents)) {
     if (String(consent.kind) !== "privacy") continue;
     const leadId = String(consent.lead_id);
     if (!privacyByLead.has(leadId)) {
@@ -111,6 +148,7 @@ export async function loadAdminLeads(): Promise<AdminLead[]> {
       name: String(lead.name),
       email: String(lead.email),
       marketingOptIn: Boolean(lead.marketing_opt_in),
+      converted: convertedLeadIds.has(id),
       createdAt: String(lead.created_at),
       privacyAccepted: privacy?.accepted ?? null,
       policyVersion: privacy?.policyVersion ?? null,

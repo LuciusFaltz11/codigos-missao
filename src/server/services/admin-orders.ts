@@ -15,8 +15,17 @@ function text(value: unknown) {
 export async function loadAdminOrders(): Promise<AdminOrder[]> {
   const service = tryServiceClient();
   if (!service) return [];
-  const orders = await service.from("orders").select("*").order("created_at", { ascending: false }).limit(100);
-  const rows = orders.data ?? [];
+  const rows: Array<Record<string, unknown>> = [];
+  const page = 1000;
+  for (let from = 0; ; from += page) {
+    const orders = await service
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, from + page - 1);
+    rows.push(...((orders.data ?? []) as Array<Record<string, unknown>>));
+    if ((orders.data ?? []).length < page) break;
+  }
   if (rows.length === 0) return [];
 
   const orderIds = rows.map((row) => String(row.id));

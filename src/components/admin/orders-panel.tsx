@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Download, Eye, X } from "lucide-react";
 import {
   adminReadingNeedsRetry,
   adminReportDownloadable,
+  filterAdminOrders,
+  orderFilterParam,
   orderStatusLabel,
+  orderValueTotals,
   paymentProviderLabel,
   readingStatusLabel,
   type AdminOrder,
+  type OrderListFilter,
 } from "@/features/admin/orders";
 import { formatBrl, formatDateTimePt } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
 import { confirmInfinitePayReturn, reprocessReading } from "@/server/actions/admin";
 
 const STATUS_TONE: Record<string, string> = {
@@ -56,26 +61,61 @@ function originLabel(order: AdminOrder) {
   return "—";
 }
 
+const ORDER_FILTERS: Array<{ id: OrderListFilter; label: string }> = [
+  { id: "all", label: "Todas" },
+  { id: "approved", label: "Concluídas" },
+  { id: "pending", label: "Pendentes" },
+  { id: "cancelled", label: "Canceladas" },
+];
+
+function ordersUrl(filter: OrderListFilter, id?: string | null) {
+  const params = new URLSearchParams();
+  const estado = orderFilterParam(filter);
+  if (estado) params.set("estado", estado);
+  if (id) params.set("ver", id);
+  const query = params.toString();
+  return query ? `/admin/pedidos?${query}` : "/admin/pedidos";
+}
+
+function TotalCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <article className="rounded border border-border bg-surface p-4">
+      <p className="text-sm text-muted">{label}</p>
+      <p className="mt-2 font-display text-3xl">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
+    </article>
+  );
+}
+
 export function OrdersPanel({
   rows,
   initialId,
+  initialFilter = "all",
   canDownloadReport = false,
   canReprocess = false,
 }: {
   rows: AdminOrder[];
   initialId?: string;
+  initialFilter?: OrderListFilter;
   canDownloadReport?: boolean;
   canReprocess?: boolean;
 }) {
   const [openId, setOpenId] = useState(initialId ?? null);
-  const selected = rows.find((row) => row.id === openId) ?? null;
+  const [filter, setFilter] = useState<OrderListFilter>(initialFilter);
+  const totals = useMemo(() => orderValueTotals(rows), [rows]);
+  const visible = useMemo(() => filterAdminOrders(rows, filter), [rows, filter]);
+  const selected = visible.find((row) => row.id === openId) ?? rows.find((row) => row.id === openId) ?? null;
 
   useEffect(() => {
     setOpenId(initialId ?? null);
   }, [initialId]);
 
-  function syncUrl(id: string | null) {
-    window.history.replaceState(null, "", id ? `/admin/pedidos?ver=${id}` : "/admin/pedidos");
+  useEffect(() => {
+    setFilter(initialFilter);
+  }, [initialFilter]);
+
+  function syncUrl(id: string | null, nextFilter = filter) {
+    window.history.replaceState(null, "", ordersUrl(nextFilter, id));
   }
 
   function openOrder(id: string) {
@@ -88,9 +128,53 @@ export function OrdersPanel({
     syncUrl(null);
   }
 
+  function applyFilter(next: OrderListFilter) {
+    setFilter(next);
+    const stillVisible = filterAdminOrders(rows, next).some((row) => row.id === openId);
+    const nextId = stillVisible ? openId : null;
+    if (!stillVisible) setOpenId(null);
+    syncUrl(nextId, next);
+  }
+
   return (
     <>
-      <div className="mt-6 overflow-x-auto">
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <TotalCard label="Vendidas" value={formatBrl(totals.soldCents)} hint="Pedidos concluídos" />
+        <TotalCard label="Pendentes" value={formatBrl(totals.pendingCents)} hint="Aguardando pagamento" />
+        <TotalCard label="Canceladas" value={formatBrl(totals.cancelledCents)} hint="Pedidos cancelados" />
+        <TotalCard
+          label="Total"
+          value={formatBrl(totals.totalCents)}
+          hint="Concluídas, pendentes e canceladas"
+        />
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div role="group" aria-label="Filtro de pedidos" className="flex flex-wrap rounded border border-border bg-surface p-1">
+          {ORDER_FILTERS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={cn(
+                "rounded px-3 py-2 text-sm",
+                filter === item.id ? "bg-wine text-white" : "text-ink hover:bg-gold-soft",
+              )}
+              aria-pressed={filter === item.id}
+              onClick={() => applyFilter(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-sm text-muted">
+          {visible.length === 1 ? "1 pedido neste recorte." : `${visible.length} pedidos neste recorte.`}
+        </p>
+      </div>
+      {visible.length === 0 ? (
+        <p className="mt-6 rounded border border-dashed border-border bg-surface p-6 text-sm text-muted">
+          Nenhum pedido neste recorte.
+        </p>
+      ) : (
+      <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-160 border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border">
@@ -106,7 +190,7 @@ export function OrdersPanel({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {visible.map((row) => (
               <tr
                 key={row.id}
                 className="cursor-pointer border-b border-border hover:bg-gold-soft/70"
@@ -159,6 +243,7 @@ export function OrdersPanel({
           </tbody>
         </table>
       </div>
+      )}
       <Dialog.Root
         open={Boolean(selected)}
         onOpenChange={(open) => {
