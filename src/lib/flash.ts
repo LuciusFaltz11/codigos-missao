@@ -1,9 +1,10 @@
+import { broadcastSendSummary } from "@/features/admin/broadcast";
 import { loginErrorMessage } from "@/features/admin/users";
 
 export type FlashKind = "success" | "error";
 export type Flash = { kind: FlashKind; message: string };
 
-export const FLASH_PARAM_KEYS = ["erro", "salvo", "publicado", "email"] as const;
+export const FLASH_PARAM_KEYS = ["erro", "salvo", "publicado", "email", "enviados", "pulo", "falha"] as const;
 
 function errorFlash(message: string): Flash {
   return { kind: "error", message };
@@ -107,6 +108,27 @@ export function resolveFlash(pathname: string, params: URLSearchParams): Flash |
       if (salvo === "1") return successFlash("Reprocessamento enfileirado.");
       if (erro === "permissao") return errorFlash("Seu papel não reprocessa relatórios.");
       if (erro === "config") return errorFlash("O banco ainda não está configurado.");
+      return null;
+    },
+    "/admin/emails": () => {
+      if (salvo === "1") {
+        return successFlash(
+          broadcastSendSummary({
+            sent: Number(params.get("enviados") ?? 0),
+            skipped: Number(params.get("pulo") ?? 0),
+            failed: Number(params.get("falha") ?? 0),
+          }),
+        );
+      }
+      if (erro === "permissao") return errorFlash("Seu papel não envia esta campanha.");
+      if (erro === "email") return errorFlash("Configure o envio de e-mail da Resend antes de disparar.");
+      if (erro === "destinatarios") return errorFlash("Informe pelo menos um e-mail válido.");
+      if (erro === "limite") return errorFlash("Este envio aceita no máximo 80 endereços por vez.");
+      if (erro === "assunto") return errorFlash("Informe um assunto com pelo menos 3 caracteres.");
+      if (erro === "html") return errorFlash("Cole o HTML do e-mail antes de enviar.");
+      if (erro === "config") return errorFlash("O banco ainda não está configurado.");
+      if (erro === "envio") return errorFlash("Nenhum e-mail saiu. Confira a Resend e tente de novo.");
+      if (erro === "1") return errorFlash("Não foi possível concluir este envio.");
       return null;
     },
     "/admin/pedidos": () => {

@@ -12,6 +12,7 @@ const links = [
   ["Prompts", "/admin/prompts"],
   ["Simulador", "/admin/simulador"],
   ["Leads", "/admin/leads"],
+  ["E-mail", "/admin/emails"],
   ["Mapas", "/admin/mapas"],
   ["Pedidos", "/admin/pedidos"],
   ["Cupons", "/admin/cupons"],

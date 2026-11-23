@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   "reports.read",
   "audit.read",
   "settings.write",
+  "broadcast.send",
   "simulator.use",
 ] as const;
 
@@ -32,6 +33,7 @@ const MATRIX: Record<AdminRole, readonly Permission[]> = {
     "reports.read",
     "audit.read",
     "settings.write",
+    "broadcast.send",
     "simulator.use",
   ],
   editor: ["content.read", "content.write", "simulator.use"],

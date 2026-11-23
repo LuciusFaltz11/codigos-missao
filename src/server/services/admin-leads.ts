@@ -1,5 +1,5 @@
 import "server-only";
-import { type AdminLead, type AdminLeadChart } from "@/features/admin/leads";
+import { applyPurchaseByEmail, type AdminLead, type AdminLeadChart } from "@/features/admin/leads";
 import { buildNatalChart, longitudeFromAngle, parseCusps, parseWheelPositions } from "@/features/astrology/wheel";
 import type { MethodologySnapshot } from "@/features/interpretation/context";
 import { tryServiceClient } from "@/server/db/clients";
@@ -138,30 +138,32 @@ export async function loadAdminLeads(): Promise<AdminLead[]> {
     }
   }
 
-  return rows.map((lead) => {
-    const id = String(lead.id);
-    const birth = birthByLead.get(id) ?? null;
-    const privacy = privacyByLead.get(id) ?? null;
-    const chartsForLead = birth ? latestByCreatedAt(chartsByBirth.get(String(birth.id)) ?? []) : [];
-    return {
-      id,
-      name: String(lead.name),
-      email: String(lead.email),
-      marketingOptIn: Boolean(lead.marketing_opt_in),
-      converted: convertedLeadIds.has(id),
-      createdAt: String(lead.created_at),
-      privacyAccepted: privacy?.accepted ?? null,
-      policyVersion: privacy?.policyVersion ?? null,
-      birth: birth
-        ? {
-            date: String(birth.birth_date),
-            time: String(birth.birth_time).slice(0, 5),
-            city: String(birth.city_label),
-            country: birth.country ? String(birth.country) : null,
-            timezone: String(birth.iana_timezone),
-          }
-        : null,
-      charts: chartsForLead,
-    };
-  });
+  return applyPurchaseByEmail(
+    rows.map((lead) => {
+      const id = String(lead.id);
+      const birth = birthByLead.get(id) ?? null;
+      const privacy = privacyByLead.get(id) ?? null;
+      const chartsForLead = birth ? latestByCreatedAt(chartsByBirth.get(String(birth.id)) ?? []) : [];
+      return {
+        id,
+        name: String(lead.name),
+        email: String(lead.email),
+        marketingOptIn: Boolean(lead.marketing_opt_in),
+        converted: convertedLeadIds.has(id),
+        createdAt: String(lead.created_at),
+        privacyAccepted: privacy?.accepted ?? null,
+        policyVersion: privacy?.policyVersion ?? null,
+        birth: birth
+          ? {
+              date: String(birth.birth_date),
+              time: String(birth.birth_time).slice(0, 5),
+              city: String(birth.city_label),
+              country: birth.country ? String(birth.country) : null,
+              timezone: String(birth.iana_timezone),
+            }
+          : null,
+        charts: chartsForLead,
+      };
+    }),
+  );
 }

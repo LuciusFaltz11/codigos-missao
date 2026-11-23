@@ -68,17 +68,44 @@ export function uniqueLeadsByEmail(rows: AdminLead[]) {
   return unique;
 }
 
+export function applyPurchaseByEmail(rows: AdminLead[]) {
+  const purchased = new Set<string>();
+  for (const row of rows) {
+    if (!row.converted) continue;
+    const key = normalizeLeadEmail(row.email);
+    if (key) purchased.add(key);
+  }
+  if (purchased.size === 0) return rows;
+  return rows.map((row) => {
+    const key = normalizeLeadEmail(row.email);
+    return key && purchased.has(key) && !row.converted ? { ...row, converted: true } : row;
+  });
+}
+
+export function unconvertedLeads(rows: AdminLead[]) {
+  return uniqueLeadsByEmail(applyPurchaseByEmail(rows).filter((row) => !row.converted));
+}
+
 export function filterAdminLeads(rows: AdminLead[], filter: LeadFilter) {
-  if (filter === "unconverted") return rows.filter((row) => !row.converted);
-  if (filter === "unique") return uniqueLeadsByEmail(rows);
-  return rows;
+  const withPurchase = applyPurchaseByEmail(rows);
+  if (filter === "unconverted") return unconvertedLeads(withPurchase);
+  if (filter === "unique") return uniqueLeadsByEmail(withPurchase);
+  return withPurchase;
 }
 
 export function emailsForExport(rows: AdminLead[], scope: LeadEmailScope) {
-  const source =
-    scope === "unconverted" ? rows.filter((row) => !row.converted) : scope === "unique" ? uniqueLeadsByEmail(rows) : rows;
-  if (scope === "unique") return source.map((row) => normalizeLeadEmail(row.email)).filter(Boolean);
-  return source.map((row) => row.email.trim()).filter(Boolean);
+  const withPurchase = applyPurchaseByEmail(rows);
+  if (scope === "unconverted") {
+    return unconvertedLeads(withPurchase)
+      .map((row) => normalizeLeadEmail(row.email))
+      .filter(Boolean);
+  }
+  if (scope === "unique") {
+    return uniqueLeadsByEmail(withPurchase)
+      .map((row) => normalizeLeadEmail(row.email))
+      .filter(Boolean);
+  }
+  return withPurchase.map((row) => row.email.trim()).filter(Boolean);
 }
 
 export function csvCell(value: string | number | boolean | null | undefined) {

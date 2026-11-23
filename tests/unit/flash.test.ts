@@ -93,6 +93,17 @@ describe("avisos em toast", () => {
     });
   });
 
+  it("resume o envio manual de e-mail", () => {
+    expect(resolveFlash("/admin/emails", params("salvo=1&enviados=12&pulo=3&falha=1"))).toEqual({
+      kind: "success",
+      message: "12 e-mails enviados. 3 já descadastrados. 1 falhou.",
+    });
+    expect(resolveFlash("/admin/emails", params("erro=destinatarios"))).toEqual({
+      kind: "error",
+      message: "Informe pelo menos um e-mail válido.",
+    });
+  });
+
   it("explica o reenvio da leitura completa", () => {
     expect(resolveFlash("/mapa/completo/abc", params("email=queued"))).toEqual({
       kind: "success",

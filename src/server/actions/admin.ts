@@ -3,7 +3,8 @@
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { DEFAULT_ACTIVATION_POINTS, PROVISIONAL_ASTROLOGY_NOTICE } from "@/lib/constants/astrology";
-import { adminProfileNameSchema, adminUserCreateSchema, adminUserUpdateSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, interpretationPromptSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
+import { MAX_BROADCAST_RECIPIENTS, parseBroadcastEmails } from "@/features/admin/broadcast";
+import { adminProfileNameSchema, adminUserCreateSchema, adminUserUpdateSchema, broadcastSendSchema, codeUpdate, couponSchema, firstAccessSchema, glossaryUpdateSchema, interpretationPromptSchema, methodologyDraftSchema, priceUpdateSchema } from "@/lib/schemas/forms";
 import { PROMPT_VERSION } from "@/features/interpretation/prompts";
 import { normalizeCouponCode } from "@/features/checkout/coupons";
 import { datetimeLocalToIso } from "@/features/admin/coupons";
@@ -21,6 +22,8 @@ import { adoptPublishedSnapshot } from "@/features/methodology/snapshot";
 import { runDueJobs } from "@/server/jobs/runner";
 import { parseInfinitePayReturnUrl } from "@/features/checkout/return-status";
 import { recordAndProcessPayment } from "@/server/services/webhook";
+import { sendManualBroadcast } from "@/server/services/broadcast";
+import { createEmailProvider } from "@/server/providers/email";
 
 function withQuery(path: string, query: string) {
   return `${path}${path.includes("?") ? "&" : "?"}${query}`;
@@ -616,4 +619,46 @@ export async function simulateManual(formData: FormData) {
     result,
   };
   redirect(`/admin/simulador?resultado=${encodeURIComponent(JSON.stringify(payload))}`);
+}
+
+export async function sendBroadcast(formData: FormData) {
+  const auth = await requirePermission("broadcast.send");
+  if (!auth.ok) redirect(auth.status === 401 ? "/admin/login" : "/admin/emails?erro=permissao");
+  const provider = createEmailProvider();
+  if (provider.state !== "configured") redirect("/admin/emails?erro=email");
+  const service = tryServiceClient();
+  if (!service) redirect("/admin/emails?erro=config");
+  const parsedRecipients = parseBroadcastEmails(String(formData.get("recipients") ?? ""));
+  if (parsedRecipients.emails.length === 0) redirect("/admin/emails?erro=destinatarios");
+  if (parsedRecipients.emails.length > MAX_BROADCAST_RECIPIENTS) redirect("/admin/emails?erro=limite");
+  const parsed = broadcastSendSchema.safeParse({
+    subject: formData.get("subject"),
+    html: formData.get("html"),
+  });
+  if (!parsed.success) {
+    const htmlIssue = parsed.error.issues.some((issue) => issue.path[0] === "html");
+    redirect(htmlIssue ? "/admin/emails?erro=html" : "/admin/emails?erro=assunto");
+  }
+  let result;
+  try {
+    result = await sendManualBroadcast({
+      recipients: parsedRecipients.emails,
+      subject: parsed.data.subject,
+      html: parsed.data.html,
+      actorId: auth.admin.userId,
+    });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "";
+    if (code === "email_not_configured") redirect("/admin/emails?erro=email");
+    if (code === "config") redirect("/admin/emails?erro=config");
+    redirect("/admin/emails?erro=1");
+  }
+  if (result.sent.length === 0 && result.failed.length > 0) redirect("/admin/emails?erro=envio");
+  const query = new URLSearchParams({
+    salvo: "1",
+    enviados: String(result.sent.length),
+    pulo: String(result.skipped.length),
+    falha: String(result.failed.length),
+  });
+  redirect(`/admin/emails?${query.toString()}`);
 }

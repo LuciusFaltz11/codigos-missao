@@ -253,6 +253,9 @@ describe("RBAC", () => {
     expect(roleHas("editor", "leads.read")).toBe(false);
     expect(roleHas("support", "orders.read")).toBe(true);
     expect(roleHas("support", "content.write")).toBe(false);
+    expect(roleHas("support", "broadcast.send")).toBe(false);
+    expect(roleHas("admin", "broadcast.send")).toBe(true);
+    expect(roleHas("editor", "broadcast.send")).toBe(false);
     expect(roleHas("editor", "orders.read")).toBe(false);
   });
 

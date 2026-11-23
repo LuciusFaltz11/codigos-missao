@@ -122,3 +122,8 @@ export const methodologyDraftSchema = z.object({
   ]),
   rulesValidated: z.boolean(),
 });
+
+export const broadcastSendSchema = z.object({
+  subject: z.string().trim().min(3).max(200),
+  html: z.string().trim().min(20).max(500_000),
+});

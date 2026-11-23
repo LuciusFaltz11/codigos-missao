@@ -11,6 +11,7 @@ const labels: Record<string, string> = {
   prompts: "Prompts",
   simulador: "Simulador",
   leads: "Leads",
+  emails: "E-mail",
   mapas: "Mapas",
   pedidos: "Pedidos",
   cupons: "Cupons",
