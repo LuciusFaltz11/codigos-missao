@@ -10,10 +10,11 @@ export function wixChartFingerprint(input: {
   birthDate: string;
   birthTime: string;
   cityLabel: string;
+  cep?: string;
 }) {
   return createHash("sha256")
     .update(
-      `${input.email.trim().toLowerCase()}|${input.birthDate}|${input.birthTime}|${input.cityLabel.trim().toLowerCase()}`,
+      `${input.email.trim().toLowerCase()}|${input.birthDate}|${input.birthTime}|${input.cityLabel.trim().toLowerCase()}|${input.cep ?? ""}`,
     )
     .digest("hex");
 }

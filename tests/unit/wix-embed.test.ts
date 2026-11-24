@@ -63,6 +63,7 @@ describe("schema do POST Wix", () => {
     expect(wixChartRequestSchema.safeParse({ ...validRequest, turnstileToken: "" }).success).toBe(true);
     expect(wixChartRequestSchema.safeParse({ ...validRequest, turnstileToken: undefined }).success).toBe(true);
     expect(wixChartRequestSchema.safeParse({ ...validRequest, cityLabel: "" }).success).toBe(false);
+    expect(wixChartRequestSchema.safeParse({ ...validRequest, cep: "98900-000" }).data?.cep).toBe("98900000");
     expect(wixChartRequestSchema.safeParse({ ...validRequest, marketingOptIn: undefined }).success).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { everyPointHasHint, pointHint } from "@/features/astrology/point-hints";
 import { formatDegreeDecimal } from "@/features/astrology/longitude";
+import { POINT_GLYPH_PATHS, SIGN_GLYPH_PATHS } from "@/features/astrology/glyph-paths";
 import { buildNatalChart, chartPoint } from "@/features/astrology/wheel";
 import { NATAL_POINTS } from "@/lib/constants/astrology";
 import { toFreePreview, type PreparedChart } from "@/features/preview/redact";
@@ -8,6 +9,17 @@ import { officialCatalog } from "@/features/missions/catalog";
 import type { MissionActivation } from "@/features/missions/activate";
 
 describe("roda do mapa", () => {
+  it("tem um desenho próprio para cada signo e cada ponto da roda", () => {
+    expect(SIGN_GLYPH_PATHS).toHaveLength(12);
+    for (const parts of SIGN_GLYPH_PATHS) {
+      expect(parts.length).toBeGreaterThan(0);
+    }
+    const drawn = NATAL_POINTS.filter((point) => point.id !== "ascendant" && point.id !== "midheaven");
+    for (const point of drawn) {
+      expect(POINT_GLYPH_PATHS[point.id]?.length, point.id).toBeGreaterThan(0);
+    }
+  });
+
   it("explica cada glifo em uma frase curta", () => {
     expect(everyPointHasHint()).toBe(true);
     expect(pointHint("sun")).toMatch(/Identidade/);

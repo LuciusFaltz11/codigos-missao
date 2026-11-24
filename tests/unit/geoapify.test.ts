@@ -51,7 +51,7 @@ describe("Geoapify", () => {
       const url = new URL(String(input));
       expect(`${url.origin}${url.pathname}`).toBe("https://api.geoapify.com/v1/geocode/autocomplete");
       expect(url.searchParams.get("text")).toBe("São Paulo, São Paulo, Brasil");
-      expect(url.searchParams.get("type")).toBe("city");
+      expect(url.searchParams.has("type")).toBe(false);
       expect(url.searchParams.get("lang")).toBe("pt");
       expect(url.searchParams.get("format")).toBe("geojson");
       expect(url.searchParams.get("apiKey")).toBe("test-key");

@@ -14,6 +14,7 @@ import { tryServiceClient } from "@/server/db/clients";
 import { getServerEnv, integrationStatus } from "@/server/env";
 import { logEvent } from "@/server/logging";
 import { createAstronomyProvider } from "@/server/providers/astronomy";
+import { confirmCepPlace } from "@/server/providers/cep";
 import { confirmPlace, createGeoProvider } from "@/server/providers/geo";
 import { timezoneForCoordinates } from "@/server/providers/timezone";
 import { createAccessToken, hashAccessToken, sealToken } from "@/server/security/tokens";
@@ -84,7 +85,9 @@ export async function createBirthChart(input: ChartRequest): Promise<CreateChart
 
   let place;
   try {
-    place = await confirmPlace(geo, input.cityQuery, input.cityLabel);
+    place = input.cep
+      ? await confirmCepPlace({ cep: input.cep, cityLabel: input.cityLabel, provider: geo })
+      : await confirmPlace(geo, input.cityQuery, input.cityLabel);
   } catch (error) {
     logEvent("error", "geocoding_failed", { code: error instanceof Error ? error.name : "error" });
     return { ok: false, code: "place_not_confirmed", message: "Não foi possível confirmar a cidade agora." };
@@ -93,7 +96,9 @@ export async function createBirthChart(input: ChartRequest): Promise<CreateChart
     return {
       ok: false,
       code: "place_not_confirmed",
-      message: "Escolha uma cidade da lista para confirmar as coordenadas.",
+      message: input.cep
+        ? "Não foi possível confirmar esse CEP. Confira os 8 dígitos ou busque pela cidade."
+        : "Escolha uma cidade da lista para confirmar as coordenadas.",
     };
   }
 

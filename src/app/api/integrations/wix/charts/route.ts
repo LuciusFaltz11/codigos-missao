@@ -83,6 +83,7 @@ export async function POST(request: Request) {
     birthTime: parsed.data.birthTime,
     cityQuery: parsed.data.cityQuery,
     cityLabel: parsed.data.cityLabel,
+    cep: parsed.data.cep,
     offsetChoice: parsed.data.offsetChoice,
     acceptPrivacy: true as const,
     marketingOptIn: false,

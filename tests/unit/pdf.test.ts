@@ -172,6 +172,8 @@ describe("documento da leitura", () => {
     expect(text).toContain(INSPIRATION_IMPACT);
     expect(text).toContain(INSPIRATION_TITLE);
     expect(text).toMatch(/cartografia simb/);
+    expect(text).toContain("As");
+    expect(text).toContain("Mc");
     expect(text).toContain("Seu Sol");
     expect(text).toContain("01");
     expect(text).toContain("4,20");

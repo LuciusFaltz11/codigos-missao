@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { birthHours, birthMinutes, birthMonths, birthYears, composeBirthDate, composeBirthTime, daysInMonth } from "@/components/birth-form/birth-fields";
-import { CityAutocomplete, type CitySearchStatus } from "@/components/birth-form/city-autocomplete";
+import { type CitySearchStatus } from "@/components/birth-form/city-autocomplete";
+import { CityPlaceField } from "@/components/birth-form/city-place-field";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
 
@@ -29,6 +30,7 @@ export function BirthWizard() {
     email: "",
     cityQuery: "",
     cityLabel: "",
+    cep: undefined as string | undefined,
     offsetChoice: undefined as number | undefined,
     acceptPrivacy: false,
     marketingOptIn: false,
@@ -73,6 +75,7 @@ export function BirthWizard() {
         birthTime: time,
         cityQuery: form.cityQuery,
         cityLabel: form.cityLabel,
+        cep: form.cep,
         offsetChoice: form.offsetChoice,
         acceptPrivacy: form.acceptPrivacy,
         marketingOptIn: form.marketingOptIn,
@@ -169,11 +172,13 @@ export function BirthWizard() {
 
       <div className="grid gap-2 text-sm font-medium text-ink">
         <label htmlFor="birth-city">Local de nascimento</label>
-        <CityAutocomplete
-          id="birth-city"
-          ariaLabel="Local de nascimento"
+        <CityPlaceField
+          cityId="birth-city"
           selectedLabel={form.cityLabel}
-          onSelect={(label) => update({ cityQuery: label, cityLabel: label })}
+          cep={form.cep}
+          onCitySelect={(label) => update({ cityQuery: label, cityLabel: label, cep: undefined })}
+          onCepResolved={({ cep, label }) => update({ cep, cityQuery: label, cityLabel: label })}
+          onUseCitySearch={() => update({ cep: undefined, cityQuery: "", cityLabel: "" })}
           onStatus={setCityStatus}
         />
         <span className="font-normal text-muted">Ou a metrópole mais próxima. Escolha uma sugestão para confirmar a coordenada.</span>

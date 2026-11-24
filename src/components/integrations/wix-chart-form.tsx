@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { birthMinutes, birthMonths, birthYears, composeBirthDate, daysInMonth } from "@/components/birth-form/birth-fields";
-import { CityAutocomplete, type CitySearchStatus } from "@/components/birth-form/city-autocomplete";
+import { type CitySearchStatus } from "@/components/birth-form/city-autocomplete";
+import { CityPlaceField } from "@/components/birth-form/city-place-field";
 import { TurnstileField } from "@/components/integrations/turnstile-field";
 import {
   embedContentHeight,
@@ -44,6 +45,7 @@ export function WixChartForm({
     email: "",
     cityQuery: "",
     cityLabel: "",
+    cep: undefined as string | undefined,
     offsetChoice: undefined as number | undefined,
     acceptPrivacy: false,
   });
@@ -93,7 +95,7 @@ export function WixChartForm({
       observer?.disconnect();
       window.removeEventListener("load", notify);
     };
-  }, [wixOrigins, options.length, error, message, cityStatus, turnstileSiteKey]);
+  }, [wixOrigins, options.length, error, message, cityStatus, turnstileSiteKey, form.cep, form.cityLabel]);
 
   async function submit() {
     const date = composeBirthDate(birth.year, birth.month, birth.day);
@@ -136,6 +138,7 @@ export function WixChartForm({
           birthTime: time,
           cityQuery: form.cityQuery,
           cityLabel: form.cityLabel,
+          cep: form.cep,
           offsetChoice: form.offsetChoice,
           acceptPrivacy: true,
           marketingOptIn: false,
@@ -334,11 +337,14 @@ export function WixChartForm({
         <label className="wix-label" htmlFor="wix-city">
           Local de nascimento *
         </label>
-        <CityAutocomplete
-          id="wix-city"
-          ariaLabel="Local de nascimento"
+        <CityPlaceField
+          cityId="wix-city"
           selectedLabel={form.cityLabel}
-          onSelect={(label) => update({ cityQuery: label, cityLabel: label })}
+          cep={form.cep}
+          variant="wix"
+          onCitySelect={(label) => update({ cityQuery: label, cityLabel: label, cep: undefined })}
+          onCepResolved={({ cep, label }) => update({ cep, cityQuery: label, cityLabel: label })}
+          onUseCitySearch={() => update({ cep: undefined, cityQuery: "", cityLabel: "" })}
           onStatus={setCityStatus}
         />
       </div>

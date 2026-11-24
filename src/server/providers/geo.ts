@@ -64,7 +64,18 @@ export class GeoapifyGeoProvider implements GeoProvider {
     const url = new URL("https://api.geoapify.com/v1/geocode/autocomplete");
     url.searchParams.set("text", query);
     url.searchParams.set("apiKey", this.apiKey);
-    url.searchParams.set("type", "city");
+    url.searchParams.set("lang", "pt");
+    url.searchParams.set("limit", "5");
+    url.searchParams.set("format", "geojson");
+    const response = await this.fetchImpl(url);
+    if (!response.ok) throw new Error("geocoding_failed");
+    return geoapifyPlaces(await response.json());
+  }
+
+  async geocode(query: string): Promise<GeoPlace[]> {
+    const url = new URL("https://api.geoapify.com/v1/geocode/search");
+    url.searchParams.set("text", query);
+    url.searchParams.set("apiKey", this.apiKey);
     url.searchParams.set("lang", "pt");
     url.searchParams.set("limit", "5");
     url.searchParams.set("format", "geojson");

@@ -22,6 +22,7 @@ test("o formulário reúne os dados numa tela", async ({ page }) => {
   await expect(page.getByLabel("Hora")).toBeVisible();
   await expect(page.getByLabel("Minuto")).toBeVisible();
   await expect(page.getByLabel("Local de nascimento")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Não encontrou sua cidade?" })).toBeVisible();
   await expect(page.getByLabel("E-mail")).toBeVisible();
   await expect(page.getByRole("button", { name: "Gerar mapa" })).toBeDisabled();
 });

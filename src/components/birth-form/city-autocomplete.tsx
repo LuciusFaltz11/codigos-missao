@@ -37,7 +37,6 @@ export function CityAutocomplete({
     const autocomplete = new GeocoderAutocomplete(host, "", {
       placeholder: "Digite a cidade",
       lang: "pt",
-      type: "city",
       limit: 5,
       debounceDelay: 250,
       skipIcons: true,

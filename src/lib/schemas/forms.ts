@@ -7,6 +7,15 @@ export const chartRequestSchema = z.object({
   birthTime: z.string().regex(/^\d{2}:\d{2}$/),
   cityQuery: z.string().trim().min(2).max(160),
   cityLabel: z.string().trim().min(2).max(240),
+  cep: z
+    .string()
+    .optional()
+    .transform((value) => {
+      if (!value) return undefined;
+      const digits = value.replace(/\D/g, "");
+      return digits.length > 0 ? digits : undefined;
+    })
+    .refine((value) => value === undefined || /^\d{8}$/.test(value), { message: "CEP inválido." }),
   offsetChoice: z.number().int().min(-14 * 60).max(14 * 60).optional(),
   acceptPrivacy: z.literal(true),
   marketingOptIn: z.boolean(),

@@ -84,8 +84,8 @@ const styles = StyleSheet.create({
   groupLabel: { fontFamily: "Helvetica", fontSize: 8, letterSpacing: 1.4, color: gold, textTransform: "uppercase", marginBottom: 6, marginTop: 12 },
   groupRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 4 },
   groupItem: { fontFamily: "Helvetica", fontSize: 11, color: ink, marginRight: 16, marginBottom: 6 },
-  overviewSplit: { flexDirection: "row", alignItems: "flex-start", marginBottom: 16 },
-  overviewWheel: { width: 280, marginRight: 18 },
+  overviewSplit: { alignItems: "center", marginBottom: 16 },
+  overviewWheel: { width: 360 },
   legendRow: {
     flexDirection: "row",
     justifyContent: "space-between",
